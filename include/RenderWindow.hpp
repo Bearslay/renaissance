@@ -21,10 +21,12 @@ class RenderWindow {
 
         int getRefreshRate();
 
-        void clear(Color color = {"black", 0, 0, 0, 0});
+        void clear(Color color = DefaultColors[COLOR_BLACK]);
         void show();
 
-        void drawLine(int x1, int y1, int x2, int y2, Color color = {"white", 1, 255, 255, 255, SDL_ALPHA_OPAQUE});
+        void drawLine(int x1, int y1, int x2, int y2, Color color = DefaultColors[COLOR_WHITE]);
+        void drawPixel(int x, int y, Color color = DefaultColors[COLOR_WHITE]);
+        void drawRectangle(int x, int y, int width, int height, Color color = DefaultColors[COLOR_WHITE]);
 };
 
 #endif /* RENDERWINDOW */

@@ -64,8 +64,11 @@ int main(int argc, char* args[]) {
     if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
     else {std::cout << "SDL2_image successfully initialized\n";}
 
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+
     RenderWindow Window("le windo", 1280, 720);
     SDL_Event event;
+    const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
     // Overall time used for physics simulation
     double t = 0.0;
@@ -102,16 +105,6 @@ int main(int argc, char* args[]) {
         Coord_3D<int>( 100,  100, -100),
         Coord_3D<int>( 100, -100, -100)
     };
-    std::vector<Coord_3D<int>> incremental = {
-        Coord_3D<int>(-1, -1,  1),
-        Coord_3D<int>(-1,  1,  1),
-        Coord_3D<int>( 1,  1,  1),
-        Coord_3D<int>( 1, -1,  1),
-        Coord_3D<int>(-1, -1, -1),
-        Coord_3D<int>(-1,  1, -1),
-        Coord_3D<int>( 1,  1, -1),
-        Coord_3D<int>( 1, -1, -1)    
-    };
 
     std::vector<Coord_3D<int>> pointsNow, projected;
     for (unsigned char i = 0; i < points.size(); i++) {
@@ -120,7 +113,8 @@ int main(int argc, char* args[]) {
     }
 
     double focalLength = 400;
-    double angle = 0;
+    double ax = 0, ay = 0, az = 0;
+    double px = 0, py = 0;
 
     bool running = true;
     while (running) {
@@ -140,20 +134,51 @@ int main(int argc, char* args[]) {
                 }
             }
 
+            if (keystate[SDL_SCANCODE_ESCAPE]) {running = false;}
+            if (keystate[SDL_SCANCODE_W]) {
+                ay++;
+            } else if (keystate[SDL_SCANCODE_S]) {
+                ay--;
+            }
+            if (keystate[SDL_SCANCODE_A]) {
+                az++;
+            } else if (keystate[SDL_SCANCODE_D]) {
+                az--;
+            }
+            if (keystate[SDL_SCANCODE_Q]) {
+                ax++;
+            } else if (keystate[SDL_SCANCODE_E]) {
+                ax--;
+            }
+            if (keystate[SDL_SCANCODE_1]) {
+                focalLength--;
+            } else if (keystate[SDL_SCANCODE_2]) {
+                focalLength++;
+            }
+            if (keystate[SDL_SCANCODE_UP]) {
+                py++;
+            } else if (keystate[SDL_SCANCODE_DOWN]) {
+                py--;
+            }
+            if (keystate[SDL_SCANCODE_LEFT]) {
+                px--;
+            } else if (keystate[SDL_SCANCODE_RIGHT]) {
+                px++;
+            }
+
             // WHEN IMPLEMENTED: previousState = currentState;
             // WHEN IMPLEMENTED: simulatePhysics(currentState, t, dt);
             
             // By calculating the angle that the line should be drawn at here, the angular speed should remain constant across different fps
             // With how it is now, it should make a full rotation every 3.6 seconds
-            angle += 5 * dt;
-            if (angle > 360) {angle -= 360;}
-
             for (unsigned char i = 0; i < points.size(); i++) {
-                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 0, 1), points[i], angle);
+                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 1, 0), points[i], ay / 5);
+                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 0, 1), pointsNow[i], az / 5);
+                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(1, 0, 0), pointsNow[i], ax / 5);
             }
 
             for (unsigned char i = 0; i < points.size(); i++) {
-                projected[i] = projectCoord<int>(pointsNow[i], focalLength);
+                projected[i] = projectCoord<int>(pointsNow[i] + Coord_3D<int>(0, px / 4, py / 4), focalLength);
             }
 
             // Even more simulation jargon
@@ -169,6 +194,9 @@ int main(int argc, char* args[]) {
         
         for (unsigned char i = 0; i < pairs.size(); i++) {
             Window.drawLine(projected[pairs[i].first].getY(), projected[pairs[i].first].getZ(), projected[pairs[i].second].getY(), projected[pairs[i].second].getZ());
+        }
+        for (unsigned char i = 0; i < projected.size(); i++) {
+            Window.drawRectangle(projected[i].getY() - 2, projected[i].getZ() + 2, 5, 5, DefaultColors[5 + i]);
         }
 
         Window.show();

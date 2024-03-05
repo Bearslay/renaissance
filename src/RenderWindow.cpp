@@ -43,3 +43,16 @@ void RenderWindow::drawLine(int x1, int y1, int x2, int y2, Color color) {
 
     SDL_RenderDrawLine(Renderer, Width / 2 + x1, Height / 2 - y1, Width / 2 + x2, Height / 2 - y2);
 }
+
+void RenderWindow::drawPixel(int x, int y, Color color) {
+    SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
+
+    SDL_RenderDrawPoint(Renderer, Width / 2 + x, Height / 2 - y);
+}
+
+void RenderWindow::drawRectangle(int x, int y, int width, int height, Color color) {
+    SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
+
+    SDL_Rect rectangle = {Width / 2 + x, Height / 2 - y, width, height};
+    SDL_RenderFillRect(Renderer, &rectangle);
+}
