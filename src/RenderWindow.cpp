@@ -29,6 +29,10 @@ int RenderWindow::getRefreshRate() {
     return mode.refresh_rate;
 }
 
+void RenderWindow::centerMouse() {
+    SDL_WarpMouseInWindow(Window, Width / 2, Height / 2);
+}
+
 void RenderWindow::clear(Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
     SDL_RenderClear(Renderer);

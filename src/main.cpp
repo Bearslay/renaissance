@@ -64,25 +64,14 @@ int main(int argc, char* args[]) {
     if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
     else {std::cout << "SDL2_image successfully initialized\n";}
 
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-
     RenderWindow Window("le windo", 1280, 720);
     SDL_Event event;
     const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
-    // Overall time used for physics simulation
     double t = 0.0;
-    // Amount of seconds to pass in between 'physics frames'
-    // At 0.01, there should be 100 'physics frames' each second
     double dt = 0.01;
 
-    // WHEN IMPLEMENTED: State previousState;
-    // WHEN IMPLEMENTED: State currentState;
-
-    // Used to ensure that the program doesn't run too fast
     int startTicks = 0, frameTicks = 0;
-
-    // Junk that probably has a purpose when simulating things
     double currentTime = hireTime_Sec();
     double newTime = 0.0;
     double frameTime = 0.0;
@@ -114,14 +103,17 @@ int main(int argc, char* args[]) {
 
     double focalLength = 400;
     double ax = 0, ay = 0, az = 0;
+    double angleMult = 0.2;
     double px = 0, py = 0;
+
+    bool mouseMotion = false;
+    bool mouseFirst = true;
+    bool mouseCaptured = false;
+    double mouseX = 0, mouseY = 0, sensitivity = 2;
 
     bool running = true;
     while (running) {
-        // Get the ticks before computation
         startTicks = SDL_GetTicks();
-
-        // More jargon for simulations
         newTime = hireTime_Sec();
         frameTime = newTime - currentTime;
         currentTime = newTime;
@@ -132,24 +124,59 @@ int main(int argc, char* args[]) {
                 if (event.type == SDL_QUIT) {
                     running = false;
                 }
-            }
 
+                if (event.type == SDL_KEYDOWN && keystate[SDL_SCANCODE_GRAVE]) {
+                    mouseCaptured = !mouseCaptured;
+                    if (mouseCaptured) {
+                        SDL_SetRelativeMouseMode(SDL_TRUE);
+                        mouseFirst = true;
+                        mouseX = mouseY = 0;
+                    } else {
+                        SDL_SetRelativeMouseMode(SDL_FALSE);
+                        Window.centerMouse();
+                    }
+                }
+
+                if (event.type == SDL_MOUSEMOTION) {
+                    mouseMotion = true;
+                    if (!mouseFirst) {
+                        mouseX = event.motion.xrel;
+                        mouseY = event.motion.yrel;
+                    } else {
+                        mouseFirst = false;
+                        mouseX = mouseY = 0;
+                    }
+                }
+            }
             if (keystate[SDL_SCANCODE_ESCAPE]) {running = false;}
+
+            if (mouseMotion && mouseCaptured) {
+                mouseMotion = false;
+                az -= mouseX * sensitivity * angleMult;
+                ay -= mouseY * sensitivity * angleMult;
+            }
             if (keystate[SDL_SCANCODE_W]) {
-                ay++;
+                ay += 1 * angleMult;
             } else if (keystate[SDL_SCANCODE_S]) {
-                ay--;
+                ay -= 1 * angleMult;
             }
             if (keystate[SDL_SCANCODE_A]) {
-                az++;
+                az += 1 * angleMult;
             } else if (keystate[SDL_SCANCODE_D]) {
-                az--;
+                az -= 1 * angleMult;
             }
             if (keystate[SDL_SCANCODE_Q]) {
-                ax++;
+                ax += 1 * angleMult;
             } else if (keystate[SDL_SCANCODE_E]) {
-                ax--;
+                ax -= 1 * angleMult;
             }
+            if (ax > 360) {ax -= 360;}
+            if (ax < 0) {ax += 360;}
+            if (ay > 360) {ay -= 360;}
+            if (ay < 0) {ay += 360;}
+            if (az > 360) {az -= 360;}
+            if (az < 0) {az += 360;}
+
             if (keystate[SDL_SCANCODE_1]) {
                 focalLength--;
             } else if (keystate[SDL_SCANCODE_2]) {
@@ -166,29 +193,19 @@ int main(int argc, char* args[]) {
                 px++;
             }
 
-            // WHEN IMPLEMENTED: previousState = currentState;
-            // WHEN IMPLEMENTED: simulatePhysics(currentState, t, dt);
-            
-            // By calculating the angle that the line should be drawn at here, the angular speed should remain constant across different fps
-            // With how it is now, it should make a full rotation every 3.6 seconds
             for (unsigned char i = 0; i < points.size(); i++) {
-                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 1, 0), points[i], ay / 5);
-                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 0, 1), pointsNow[i], az / 5);
-                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(1, 0, 0), pointsNow[i], ax / 5);
+                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 1, 0), points[i], ay);
+                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 0, 1), pointsNow[i], az);
+                pointsNow[i] = rotateCoord_3D(Vector_3D<int>(1, 0, 0), pointsNow[i], ax);
             }
 
             for (unsigned char i = 0; i < points.size(); i++) {
                 projected[i] = projectCoord<int>(pointsNow[i] + Coord_3D<int>(0, px / 4, py / 4), focalLength);
             }
 
-            // Even more simulation jargon
             t += dt;
             accumulator -= dt;
         }
-
-        // WHEN IMPLEMENTED: const double alpha = accumulator / dt;
-        // WHEN IMPLEMENTED: State renderState = currentState * alpha + previousState * (1.0 - alpha);
-        // WHEN IMPLEMENTED: render(renderState);
 
         Window.clear();
         

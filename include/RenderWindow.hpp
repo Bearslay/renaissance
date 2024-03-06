@@ -20,6 +20,7 @@ class RenderWindow {
         ~RenderWindow();
 
         int getRefreshRate();
+        void centerMouse();
 
         void clear(Color color = DefaultColors[COLOR_BLACK]);
         void show();
