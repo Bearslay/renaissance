@@ -23,6 +23,10 @@ RenderWindow::~RenderWindow() {
     SDL_DestroyWindow(Window);
 }
 
+void RenderWindow::updateDims() {
+    SDL_GetWindowSize(Window, &Width, &Height);
+}
+
 int RenderWindow::getRefreshRate() {
     SDL_DisplayMode mode;
     SDL_GetDisplayMode(SDL_GetWindowDisplayIndex(Window), 0, &mode);
@@ -32,6 +36,30 @@ int RenderWindow::getRefreshRate() {
 void RenderWindow::centerMouse() {
     SDL_WarpMouseInWindow(Window, Width / 2, Height / 2);
 }
+
+void RenderWindow::changeTitle(const char* newTitle) {
+    SDL_SetWindowTitle(Window, newTitle);
+}
+
+bool RenderWindow::toggleFullscreen(bool trueFullscreen) {
+    bool output = IsFullscreen;
+    if (!IsFullscreen) {
+        if (trueFullscreen) {
+            SDL_SetWindowFullscreen(Window, SDL_WINDOW_FULLSCREEN);
+        } else {
+            SDL_SetWindowFullscreen(Window, SDL_WINDOW_FULLSCREEN);
+        }
+        IsFullscreen = true;
+    } else {
+        SDL_SetWindowFullscreen(Window, SDL_FALSE);
+        IsFullscreen = false;
+    }
+    updateDims();
+    return output;
+}
+
+int RenderWindow::getWidth() {return Width;}
+int RenderWindow::getHeight() {return Height;}
 
 void RenderWindow::clear(Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);

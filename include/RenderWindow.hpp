@@ -14,6 +14,9 @@ class RenderWindow {
         SDL_Window* Window;
         SDL_Renderer* Renderer;
         int Width = 0, Height = 0;
+        bool IsFullscreen = false;
+
+        void updateDims();
 
     public:
         RenderWindow(const char* title, int width, int height);
@@ -21,6 +24,11 @@ class RenderWindow {
 
         int getRefreshRate();
         void centerMouse();
+        void changeTitle(const char* newTitle);
+        bool toggleFullscreen(bool trueFullscreen = false);
+
+        int getWidth();
+        int getHeight();
 
         void clear(Color color = DefaultColors[COLOR_BLACK]);
         void show();
