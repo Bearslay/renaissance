@@ -36,6 +36,8 @@ class RenderWindow {
         void drawLine(int x1, int y1, int x2, int y2, Color color = DefaultColors[COLOR_WHITE]);
         void drawPixel(int x, int y, Color color = DefaultColors[COLOR_WHITE]);
         void drawRectangle(int x, int y, int width, int height, Color color = DefaultColors[COLOR_WHITE]);
+        void drawCircle(int x, int y, int radius, Color color = DefaultColors[COLOR_WHITE]);
+        void fillCircle(int x, int y, int radius, Color color = DefaultColors[COLOR_WHITE]);
 };
 
 #endif /* RENDERWINDOW */

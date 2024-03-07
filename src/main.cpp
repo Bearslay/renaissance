@@ -107,12 +107,15 @@ int main(int argc, char* args[]) {
     double focalLength = 400;
     double ax = 0, ay = 0, az = 0;
     double angleMult = 0.2;
-    double cubeMoveSpeed = 2;
-    double px = 0, py = 0;
+    double cubeMoveSpeed = 0.25;
+    double px = Window.getWidth() / 2, py = Window.getHeight() / 2;
 
     double fellaX = Window.getWidth() / 2, fellaY = Window.getHeight() / 2;
     double fellaMoveSpeed = 0.25;
-    int mousePosX = 0, mousePosY = 0;
+    int mousePosX = 0, mousePosY = 0, dmx = 0, dmy = 0;
+    int lineMag = 0;
+    double mouseAngle = 0, mouseAngleOffset = 0;
+    int fovAngle = 30;
 
     bool mouseMotion = false;
     bool mouseFirst = true;
@@ -188,12 +191,12 @@ int main(int argc, char* args[]) {
                     if (mouseMotion && mouseCaptured) {
                         mouseMotion = false;
                         az -= mouseX * sensitivity * angleMult;
-                        ay -= mouseY * sensitivity * angleMult;
+                        ay += mouseY * sensitivity * angleMult;
                     }
                     if (keystate[SDL_SCANCODE_W]) {
-                        ay += angleMult;
-                    } else if (keystate[SDL_SCANCODE_S]) {
                         ay -= angleMult;
+                    } else if (keystate[SDL_SCANCODE_S]) {
+                        ay += angleMult;
                     }
                     if (keystate[SDL_SCANCODE_A]) {
                         az += angleMult;
@@ -201,9 +204,9 @@ int main(int argc, char* args[]) {
                         az -= angleMult;
                     }
                     if (keystate[SDL_SCANCODE_Q]) {
-                        ax += angleMult;
-                    } else if (keystate[SDL_SCANCODE_E]) {
                         ax -= angleMult;
+                    } else if (keystate[SDL_SCANCODE_E]) {
+                        ax += angleMult;
                     }
                     // Make sure to constrain the angles for long-term use and general conveinience
                     if (ax > 360) {ax -= 360;}
@@ -221,9 +224,9 @@ int main(int argc, char* args[]) {
                     }
                     // Move the cube in the four 2d-directions w/ arrow keys
                     if (keystate[SDL_SCANCODE_UP]) {
-                        py += cubeMoveSpeed;
-                    } else if (keystate[SDL_SCANCODE_DOWN]) {
                         py -= cubeMoveSpeed;
+                    } else if (keystate[SDL_SCANCODE_DOWN]) {
+                        py += cubeMoveSpeed;
                     }
                     if (keystate[SDL_SCANCODE_LEFT]) {
                         px -= cubeMoveSpeed;
@@ -238,20 +241,34 @@ int main(int argc, char* args[]) {
                         pointsNow[i] = rotateCoord_3D(Vector_3D<int>(1, 0, 0), pointsNow[i], ax);
                     }
                     for (unsigned char i = 0; i < points.size(); i++) {
-                        projected[i] = projectCoord<int>(pointsNow[i] + Coord_3D<int>(0, px / 4, py / 4), focalLength);
+                        projected[i] = projectCoord<int>(pointsNow[i] + Coord_3D<int>(0, px - Window.getWidth() / 2, py - Window.getHeight() / 2), focalLength);
                     }
                     break;
                 case 1:
                     if (keystate[SDL_SCANCODE_W]) {
-                        fellaY += fellaMoveSpeed;
-                    } else if (keystate[SDL_SCANCODE_S]) {
                         fellaY -= fellaMoveSpeed;
+                    } else if (keystate[SDL_SCANCODE_S]) {
+                        fellaY += fellaMoveSpeed;
                     }
                     if (keystate[SDL_SCANCODE_A]) {
                         fellaX -= fellaMoveSpeed;
                     } else if (keystate[SDL_SCANCODE_D]) {
                         fellaX += fellaMoveSpeed;
                     }
+
+                    dmx = mousePosX - fellaX;
+                    dmy = mousePosY - fellaY;
+                    if (dmx != 0) {
+                        mouseAngle = std::atan2(dmy, dmx);
+                    } else {
+                        if (dmy > 0) {
+                            mouseAngle = M_PI / 2;
+                        } else {
+                            mouseAngle = 3 * M_PI / 2;
+                        }
+                    }
+                    lineMag = dmx / std::cos(mouseAngle);
+
                     break;
             }
 
@@ -266,14 +283,20 @@ int main(int argc, char* args[]) {
             case 0:
                 // Display the wireframe cube
                 for (unsigned char i = 0; i < pairs.size(); i++) {
-                    Window.drawLine(projected[pairs[i].first].getY(), projected[pairs[i].first].getZ(), projected[pairs[i].second].getY(), projected[pairs[i].second].getZ());
+                    Window.drawLine(px + projected[pairs[i].first].getY(), py + projected[pairs[i].first].getZ(), px + projected[pairs[i].second].getY(), py + projected[pairs[i].second].getZ());
                 }
                 for (unsigned char i = 0; i < projected.size(); i++) {
-                    Window.drawRectangle(projected[i].getY() - 2, projected[i].getZ() + 2, 5, 5, DefaultColors[5 + i]);
+                    Window.fillCircle(px + projected[i].getY(), py + projected[i].getZ(), 2, DefaultColors[5 + i]);
                 }
                 break;
             case 1:
-                Window.drawLine(fellaX - Window.getWidth() / 2, fellaY - Window.getHeight() / 2, mousePosX - Window.getWidth() / 2, Window.getHeight() / 2 - mousePosY);
+                for (int i = 0; i < fovAngle / 2 + 1; i++) {
+                    mouseAngleOffset = i * M_PI / 180;
+                    Window.drawLine(fellaX, fellaY, fellaX + (dmx != 0 ? lineMag * std::cos(mouseAngle + mouseAngleOffset) : 0), fellaY + lineMag * (dmx != 0 ? std::sin(mouseAngle + mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
+                    Window.drawLine(fellaX, fellaY, fellaX + (dmx != 0 ? lineMag * std::cos(mouseAngle - mouseAngleOffset) : 0), fellaY + lineMag * (dmx != 0 ? std::sin(mouseAngle - mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
+                }
+                Window.fillCircle(fellaX, fellaY, 25, DefaultColors[COLOR_MAROON]);
+                Window.drawCircle(fellaX, fellaY, 25, DefaultColors[COLOR_RED]);
                 break;
         }
 
