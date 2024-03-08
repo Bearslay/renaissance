@@ -82,8 +82,8 @@ int main(int argc, char* args[]) {
     // NON-BOILER-PLATE
     //
 
-    unsigned char mode = 0, maxMode = 2;
-    const char* titles[maxMode] = {"le windo - cube", "le windo - fella", "le windo - wireframe"};
+    unsigned char mode = 0, maxMode = 3;
+    const char* titles[maxMode] = {"le windo - cube", "le windo - fella", "le windo - wireframe", "le windo - pyramid"};
 
     std::vector<std::pair<unsigned int, unsigned int>> pairs = {
         {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}
@@ -98,8 +98,27 @@ int main(int argc, char* args[]) {
         Coord_3D<double>( 100,  100, -100),
         Coord_3D<double>( 100, -100, -100)
     };
+    std::vector<Coord_3D<double>> translatedPoints = points;
 
-    WireFrame<double> Cube = WireFrame<double>(Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), points, pairs);
+    std::vector<std::pair<unsigned int, unsigned int>> pyramidPairs = {
+        {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4}
+    };
+    std::vector<Coord_3D<double>> pyramidPoints = {
+        Coord_3D<double>(-100, -100, -100),
+        Coord_3D<double>(-100, 100, -100),
+        Coord_3D<double>(100, 100, -100),
+        Coord_3D<double>(100, -100, -100),
+        Coord_3D<double>(0, 0, 100)
+    };
+    WireFrame<double> Pyramid = WireFrame<double>(Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), pyramidPoints, pyramidPairs);
+
+    std::vector<WireFrame<double>> Cubes;
+    for (unsigned char i = 0; i < 10; i++) {
+        for (unsigned char j = 0; j < points.size(); j++) {
+            translatedPoints[j] = points[j] + Coord_3D<double>(0, 200 * i, 0);
+        }
+        Cubes.emplace_back(WireFrame<double>(Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), translatedPoints, pairs));
+    }
 
     std::vector<Coord_3D<double>> pointsNow, projected;
     for (unsigned char i = 0; i < points.size(); i++) {
@@ -107,13 +126,14 @@ int main(int argc, char* args[]) {
         projected.emplace_back();
     }
 
-    double focalLength = 400;
+    double focalLength = 1000;
     double ax = 0, ay = 0, az = 0;
     double angleMult = 0.2;
     double cubeMoveSpeed = 0.25;
     double px = Window.getWidth() / 2, py = Window.getHeight() / 2;
 
-    double fellaX = Window.getWidth() / 2, fellaY = Window.getHeight() / 2;
+    Coord_3D<double> fellaPos = Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2);
+    Vector_3D<int> fellaView = Vector_3D<int>(0, 0, 0);
     double fellaMoveSpeed = 0.25;
     int mousePosX = 0, mousePosY = 0, dmx = 0, dmy = 0;
     int lineMag = 0;
@@ -168,9 +188,13 @@ int main(int argc, char* args[]) {
                 }
 
                 SDL_GetMouseState(&mousePosX, &mousePosY);
+                fellaView.setY(mousePosX);
+                fellaView.setZ(mousePosY);
 
                 switch (mode) {
                     case 0:
+                    case 2:
+                    case 3:
                         // Detect mouse movement and translate that into a variable that can be used to capture the speed of the mouse
                         if (event.type == SDL_MOUSEMOTION) {
                             mouseMotion = true;
@@ -249,53 +273,68 @@ int main(int argc, char* args[]) {
                     break;
                 case 1:
                     if (keystate[SDL_SCANCODE_W]) {
-                        fellaY -= fellaMoveSpeed;
+                        fellaPos.setZ(fellaPos.getZ() - fellaMoveSpeed);
                     } else if (keystate[SDL_SCANCODE_S]) {
-                        fellaY += fellaMoveSpeed;
+                        fellaPos.setZ(fellaPos.getZ() + fellaMoveSpeed);
                     }
                     if (keystate[SDL_SCANCODE_A]) {
-                        fellaX -= fellaMoveSpeed;
+                        fellaPos.setY(fellaPos.getY() - fellaMoveSpeed);
                     } else if (keystate[SDL_SCANCODE_D]) {
-                        fellaX += fellaMoveSpeed;
+                        fellaPos.setY(fellaPos.getY() + fellaMoveSpeed);
                     }
 
-                    dmx = mousePosX - fellaX;
-                    dmy = mousePosY - fellaY;
+                    dmx = fellaView.getY() - fellaPos.getY();
+                    dmy = fellaView.getZ() - fellaPos.getZ();
                     if (dmx != 0) {
-                        mouseAngle = std::atan2(dmy, dmx);
+                        fellaView.setTheta(std::atan2(dmy, dmx));
                     } else {
                         if (dmy > 0) {
-                            mouseAngle = M_PI / 2;
+                            fellaView.setTheta(90);
                         } else {
-                            mouseAngle = 3 * M_PI / 2;
+                            fellaView.setTheta(270);
                         }
                     }
-                    lineMag = dmx / std::cos(mouseAngle);
+                    fellaView.setMag(dmx / std::cos(fellaView.getTheta()));
                     break;
                 case 2:
                     // Change the angles of the cube based on mouse movement/keyboard input
                     if (mouseMotion && mouseCaptured) {
                         mouseMotion = false;
-                        az -= mouseX * sensitivity * angleMult;
-                        ay += mouseY * sensitivity * angleMult;
-                        
-                        Cube.rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
-                        Cube.rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                        for (unsigned char i = 0; i < Cubes.size(); i++) {
+                            Cubes[i].rotateAny(Vector_3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
+                            Cubes[i].rotateAny(Vector_3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
+                        }
                     }
-                    if (keystate[SDL_SCANCODE_W]) {
-                        Cube.rotateAny(Vector_3D<double>(0, 1, 0), -angleMult);
-                    } else if (keystate[SDL_SCANCODE_S]) {
-                        Cube.rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
-                    }
-                    if (keystate[SDL_SCANCODE_A]) {
-                        Cube.rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
-                    } else if (keystate[SDL_SCANCODE_D]) {
-                        Cube.rotateAny(Vector_3D<double>(0, 0, 1), -angleMult);
-                    }
-                    if (keystate[SDL_SCANCODE_Q]) {
-                        Cube.rotateAny(Vector_3D<double>(1, 0, 0), -angleMult);
-                    } else if (keystate[SDL_SCANCODE_E]) {
-                        Cube.rotateAny(Vector_3D<double>(1, 0, 0), angleMult);
+
+                    for (unsigned char i = 0; i < Cubes.size(); i++) {
+                        if (keystate[SDL_SCANCODE_W]) {
+                            Cubes[i].rotateAny(Vector_3D<double>(0, 1, 0), -angleMult);
+                        } else if (keystate[SDL_SCANCODE_S]) {
+                            Cubes[i].rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
+                        }
+                        if (keystate[SDL_SCANCODE_A]) {
+                            Cubes[i].rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                        } else if (keystate[SDL_SCANCODE_D]) {
+                            Cubes[i].rotateAny(Vector_3D<double>(0, 0, 1), -angleMult);
+                        }
+                        if (keystate[SDL_SCANCODE_Q]) {
+                            Cubes[i].rotateAny(Vector_3D<double>(1, 0, 0), -angleMult);
+                        } else if (keystate[SDL_SCANCODE_E]) {
+                            Cubes[i].rotateAny(Vector_3D<double>(1, 0, 0), angleMult);
+                        }
+                        // Move the cube in the four 2d-directions w/ arrow keys
+                        if (keystate[SDL_SCANCODE_UP]) {
+                            Cubes[i].moveZ(cubeMoveSpeed);
+                        } else if (keystate[SDL_SCANCODE_DOWN]) {
+                            Cubes[i].moveZ(-cubeMoveSpeed);
+                        }
+                        if (keystate[SDL_SCANCODE_LEFT]) {
+                            Cubes[i].moveY(-cubeMoveSpeed);
+                        } else if (keystate[SDL_SCANCODE_RIGHT]) {
+                            Cubes[i].moveY(cubeMoveSpeed);
+                        }
+                    
+                        Cubes[i].project(Coord_3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
                     }
                     // Get further away from or closer to the cube
                     if (keystate[SDL_SCANCODE_1]) {
@@ -303,19 +342,42 @@ int main(int argc, char* args[]) {
                     } else if (keystate[SDL_SCANCODE_2]) {
                         focalLength++;
                     }
-                    // Move the cube in the four 2d-directions w/ arrow keys
-                    if (keystate[SDL_SCANCODE_UP]) {
-                        Cube.moveZ(cubeMoveSpeed);
-                    } else if (keystate[SDL_SCANCODE_DOWN]) {
-                        Cube.moveZ(-cubeMoveSpeed);
-                    }
-                    if (keystate[SDL_SCANCODE_LEFT]) {
-                        Cube.moveY(-cubeMoveSpeed);
-                    } else if (keystate[SDL_SCANCODE_RIGHT]) {
-                        Cube.moveY(cubeMoveSpeed);
+                    break;
+                case 3:
+                    // Change the angles of the cube based on mouse movement/keyboard input
+                    if (mouseMotion && mouseCaptured) {
+                        mouseMotion = false;
+                        Pyramid.rotateAny(Vector_3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
+                        Pyramid.rotateAny(Vector_3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
                     }
 
-                    Cube.project(Coord_3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                    if (keystate[SDL_SCANCODE_W]) {
+                        Pyramid.rotateAny(Vector_3D<double>(0, 1, 0), -angleMult);
+                    } else if (keystate[SDL_SCANCODE_S]) {
+                        Pyramid.rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_A]) {
+                        Pyramid.rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                    } else if (keystate[SDL_SCANCODE_D]) {
+                        Pyramid.rotateAny(Vector_3D<double>(0, 0, 1), -angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_Q]) {
+                        Pyramid.rotateAny(Vector_3D<double>(1, 0, 0), -angleMult);
+                    } else if (keystate[SDL_SCANCODE_E]) {
+                        Pyramid.rotateAny(Vector_3D<double>(1, 0, 0), angleMult);
+                    }
+                    // Move the cube in the four 2d-directions w/ arrow keys
+                    if (keystate[SDL_SCANCODE_UP]) {
+                        Pyramid.moveZ(cubeMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_DOWN]) {
+                        Pyramid.moveZ(-cubeMoveSpeed);
+                    }
+                    if (keystate[SDL_SCANCODE_LEFT]) {
+                        Pyramid.moveY(-cubeMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_RIGHT]) {
+                        Pyramid.moveY(cubeMoveSpeed);
+                    }
+                    Pyramid.project(Coord_3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
                     break;
             }
 
@@ -339,14 +401,19 @@ int main(int argc, char* args[]) {
             case 1:
                 for (int i = 0; i < fovAngle / 2 + 1; i++) {
                     mouseAngleOffset = i * M_PI / 180;
-                    Window.drawLine(fellaX, fellaY, fellaX + (dmx != 0 ? lineMag * std::cos(mouseAngle + mouseAngleOffset) : 0), fellaY + lineMag * (dmx != 0 ? std::sin(mouseAngle + mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
-                    Window.drawLine(fellaX, fellaY, fellaX + (dmx != 0 ? lineMag * std::cos(mouseAngle - mouseAngleOffset) : 0), fellaY + lineMag * (dmx != 0 ? std::sin(mouseAngle - mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
+                    Window.drawLine(fellaPos.getY(), fellaPos.getZ(), fellaPos.getY() + (dmx != 0 ? fellaView.getMag() * std::cos(mouseAngle + mouseAngleOffset) : 0), fellaPos.getZ() + fellaView.getMag() * (dmx != 0 ? std::sin(mouseAngle + mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
+                    Window.drawLine(fellaPos.getY(), fellaPos.getZ(), fellaPos.getY() + (dmx != 0 ? fellaView.getMag() * std::cos(mouseAngle - mouseAngleOffset) : 0), fellaPos.getZ() + fellaView.getMag() * (dmx != 0 ? std::sin(mouseAngle - mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
                 }
-                Window.fillCircle(fellaX, fellaY, 25, DefaultColors[COLOR_MAROON]);
-                Window.drawCircle(fellaX, fellaY, 25, DefaultColors[COLOR_RED]);
+                Window.fillCircle(fellaPos.getY(), fellaPos.getZ(), 25, DefaultColors[COLOR_MAROON]);
+                Window.drawCircle(fellaPos.getY(), fellaPos.getZ(), 25, DefaultColors[COLOR_RED]);
                 break;
             case 2:
-                Cube.display(Window);
+                for (unsigned char i = 0; i < Cubes.size(); i++) {
+                    Cubes[i].display(Window, DefaultColors[5 + i]);
+                }
+                break;
+            case 3:
+                Pyramid.display(Window);
                 break;
         }
 

@@ -143,7 +143,7 @@ template <typename ArithType> class WireFrame {
 
         void display(RenderWindow &window, Color color = DefaultColors[COLOR_WHITE]) {
             for (unsigned int i = 0; i < Pairs.size(); i++) {
-                window.drawLine(Origin.getY() + Points[Pairs[i].first][2].getY(), Origin.getZ() + Points[Pairs[i].first][2].getZ(), Origin.getY() + Points[Pairs[i].second][2].getY(), Origin.getZ() + Points[Pairs[i].second][2].getZ());
+                window.drawLine(Origin.getY() + Points[Pairs[i].first][2].getY(), Origin.getZ() + Points[Pairs[i].first][2].getZ(), Origin.getY() + Points[Pairs[i].second][2].getY(), Origin.getZ() + Points[Pairs[i].second][2].getZ(), color);
             }
         }
 };
