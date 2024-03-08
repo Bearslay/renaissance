@@ -357,6 +357,9 @@ template <typename ArithType> class Vector_3D {
         double getTheta() const {return T;}
         double getPhi() const {return P;}
 
+        Vector_3D<ArithType> sToUnitVector() const {return Vector_3D<ArithType>(1, T, P);}
+        Vector_3D<ArithType> rToUnitVector() const {return Vector_3D<ArithType>(X / M, Y / M, Z / M);}
+
         Vector_3D<ArithType> setX(ArithType x) {
             Vector_3D<ArithType> output = Vector_3D<ArithType>(X, Y, Z);
             X = x;

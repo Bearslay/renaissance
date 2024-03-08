@@ -23,9 +23,7 @@ RenderWindow::~RenderWindow() {
     SDL_DestroyWindow(Window);
 }
 
-void RenderWindow::updateDims() {
-    SDL_GetWindowSize(Window, &Width, &Height);
-}
+void RenderWindow::updateDims() {SDL_GetWindowSize(Window, &Width, &Height);}
 
 int RenderWindow::getRefreshRate() {
     SDL_DisplayMode mode;
@@ -33,13 +31,9 @@ int RenderWindow::getRefreshRate() {
     return mode.refresh_rate;
 }
 
-void RenderWindow::centerMouse() {
-    SDL_WarpMouseInWindow(Window, Width / 2, Height / 2);
-}
+void RenderWindow::centerMouse() {SDL_WarpMouseInWindow(Window, Width / 2, Height / 2);}
 
-void RenderWindow::changeTitle(const char* newTitle) {
-    SDL_SetWindowTitle(Window, newTitle);
-}
+void RenderWindow::changeTitle(const char* newTitle) {SDL_SetWindowTitle(Window, newTitle);}
 
 bool RenderWindow::toggleFullscreen(bool trueFullscreen) {
     bool output = IsFullscreen;
@@ -66,23 +60,26 @@ void RenderWindow::clear(Color color) {
     SDL_RenderClear(Renderer);
 }
 
-void RenderWindow::show() {
-    SDL_RenderPresent(Renderer);
-}
+void RenderWindow::show() {SDL_RenderPresent(Renderer);}
 
 void RenderWindow::drawLine(int x1, int y1, int x2, int y2, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
-
     SDL_RenderDrawLine(Renderer, x1, y1, x2, y2);
 }
 
 void RenderWindow::drawPixel(int x, int y, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
-
     SDL_RenderDrawPoint(Renderer, x, y);
 }
 
 void RenderWindow::drawRectangle(int x, int y, int width, int height, Color color) {
+    SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
+
+    SDL_Rect rectangle = {x, y, width, height};
+    SDL_RenderDrawRect(Renderer, &rectangle);
+}
+
+void RenderWindow::fillRectangle(int x, int y, int width, int height, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
 
     SDL_Rect rectangle = {x, y, width, height};

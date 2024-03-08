@@ -8,6 +8,7 @@
 #include "RenderWindow.hpp"
 #include "General.hpp"
 #include "astr.hpp"
+#include "WireFrame.hpp"
 
 double hireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 
@@ -81,24 +82,26 @@ int main(int argc, char* args[]) {
     // NON-BOILER-PLATE
     //
 
-    unsigned char mode = 0;
-    const char* titles[2] = {"le windo - cube", "le windo - fella"};
+    unsigned char mode = 0, maxMode = 2;
+    const char* titles[maxMode] = {"le windo - cube", "le windo - fella", "le windo - wireframe"};
 
-    std::vector<std::pair<unsigned char, unsigned char>> pairs = {
+    std::vector<std::pair<unsigned int, unsigned int>> pairs = {
         {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}
     };
-    std::vector<Coord_3D<int>> points = {
-        Coord_3D<int>(-100, -100,  100),
-        Coord_3D<int>(-100,  100,  100),
-        Coord_3D<int>( 100,  100,  100),
-        Coord_3D<int>( 100, -100,  100),
-        Coord_3D<int>(-100, -100, -100),
-        Coord_3D<int>(-100,  100, -100),
-        Coord_3D<int>( 100,  100, -100),
-        Coord_3D<int>( 100, -100, -100)
+    std::vector<Coord_3D<double>> points = {
+        Coord_3D<double>(-100, -100,  100),
+        Coord_3D<double>(-100,  100,  100),
+        Coord_3D<double>( 100,  100,  100),
+        Coord_3D<double>( 100, -100,  100),
+        Coord_3D<double>(-100, -100, -100),
+        Coord_3D<double>(-100,  100, -100),
+        Coord_3D<double>( 100,  100, -100),
+        Coord_3D<double>( 100, -100, -100)
     };
 
-    std::vector<Coord_3D<int>> pointsNow, projected;
+    WireFrame<double> Cube = WireFrame<double>(Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), points, pairs);
+
+    std::vector<Coord_3D<double>> pointsNow, projected;
     for (unsigned char i = 0; i < points.size(); i++) {
         pointsNow.emplace_back(points[i]);
         projected.emplace_back();
@@ -155,7 +158,7 @@ int main(int argc, char* args[]) {
                         mode = mode == 0 ? 0 : mode - 1;
                         Window.changeTitle(titles[mode]);
                     } else if (keystate[SDL_SCANCODE_X]) {
-                        mode = mode == 1 ? 1 : mode + 1;
+                        mode = mode == maxMode ? maxMode : mode + 1;
                         Window.changeTitle(titles[mode]);
                     }
                     // Toggle fullscreen
@@ -236,12 +239,12 @@ int main(int argc, char* args[]) {
 
                     // Rotate the 3d cube based on angles and then project the new cube onto the 2d screen for actual rendering
                     for (unsigned char i = 0; i < points.size(); i++) {
-                        pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 1, 0), points[i], ay);
-                        pointsNow[i] = rotateCoord_3D(Vector_3D<int>(0, 0, 1), pointsNow[i], az);
-                        pointsNow[i] = rotateCoord_3D(Vector_3D<int>(1, 0, 0), pointsNow[i], ax);
+                        pointsNow[i] = rotateCoord_3D(Vector_3D<double>(0, 1, 0), points[i], ay);
+                        pointsNow[i] = rotateCoord_3D(Vector_3D<double>(0, 0, 1), pointsNow[i], az);
+                        pointsNow[i] = rotateCoord_3D(Vector_3D<double>(1, 0, 0), pointsNow[i], ax);
                     }
                     for (unsigned char i = 0; i < points.size(); i++) {
-                        projected[i] = projectCoord<int>(pointsNow[i] + Coord_3D<int>(0, px - Window.getWidth() / 2, py - Window.getHeight() / 2), focalLength);
+                        projected[i] = projectCoord<double>(pointsNow[i] + Coord_3D<double>(0, px - Window.getWidth() / 2, py - Window.getHeight() / 2), focalLength);
                     }
                     break;
                 case 1:
@@ -268,7 +271,51 @@ int main(int argc, char* args[]) {
                         }
                     }
                     lineMag = dmx / std::cos(mouseAngle);
+                    break;
+                case 2:
+                    // Change the angles of the cube based on mouse movement/keyboard input
+                    if (mouseMotion && mouseCaptured) {
+                        mouseMotion = false;
+                        az -= mouseX * sensitivity * angleMult;
+                        ay += mouseY * sensitivity * angleMult;
+                        
+                        Cube.rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
+                        Cube.rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_W]) {
+                        Cube.rotateAny(Vector_3D<double>(0, 1, 0), -angleMult);
+                    } else if (keystate[SDL_SCANCODE_S]) {
+                        Cube.rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_A]) {
+                        Cube.rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                    } else if (keystate[SDL_SCANCODE_D]) {
+                        Cube.rotateAny(Vector_3D<double>(0, 0, 1), -angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_Q]) {
+                        Cube.rotateAny(Vector_3D<double>(1, 0, 0), -angleMult);
+                    } else if (keystate[SDL_SCANCODE_E]) {
+                        Cube.rotateAny(Vector_3D<double>(1, 0, 0), angleMult);
+                    }
+                    // Get further away from or closer to the cube
+                    if (keystate[SDL_SCANCODE_1]) {
+                        focalLength--;
+                    } else if (keystate[SDL_SCANCODE_2]) {
+                        focalLength++;
+                    }
+                    // Move the cube in the four 2d-directions w/ arrow keys
+                    if (keystate[SDL_SCANCODE_UP]) {
+                        Cube.moveZ(cubeMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_DOWN]) {
+                        Cube.moveZ(-cubeMoveSpeed);
+                    }
+                    if (keystate[SDL_SCANCODE_LEFT]) {
+                        Cube.moveY(-cubeMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_RIGHT]) {
+                        Cube.moveY(cubeMoveSpeed);
+                    }
 
+                    Cube.project(Coord_3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
                     break;
             }
 
@@ -297,6 +344,9 @@ int main(int argc, char* args[]) {
                 }
                 Window.fillCircle(fellaX, fellaY, 25, DefaultColors[COLOR_MAROON]);
                 Window.drawCircle(fellaX, fellaY, 25, DefaultColors[COLOR_RED]);
+                break;
+            case 2:
+                Cube.display(Window);
                 break;
         }
 
