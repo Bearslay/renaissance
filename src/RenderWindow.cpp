@@ -4,7 +4,7 @@
 #include <string>
 
 #include "RenderWindow.hpp"
-#include "General.hpp"
+#include "SDLColor.hpp"
 #include "astr.hpp"
 
 RenderWindow::RenderWindow(const char* title, int width, int height) : Window(NULL), Renderer(NULL), Width(width), Height(height) {

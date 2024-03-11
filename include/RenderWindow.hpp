@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "General.hpp"
+#include "SDLColor.hpp"
 #include "astr.hpp"
 
 class RenderWindow {

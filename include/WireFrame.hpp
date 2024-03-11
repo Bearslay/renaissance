@@ -7,14 +7,16 @@
 #include <string>
 #include <vector>
 
+#include "MathCoord.hpp"
+#include "MathVector.hpp"
 #include "RenderWindow.hpp"
-#include "General.hpp"
+#include "SDLColor.hpp"
 #include "astr.hpp"
 
 template <typename ArithType> class WireFrame {
     private:
-        Coord_3D<ArithType> Origin = Coord_3D<ArithType>(0, 0, 0);
-        std::vector<std::vector<Coord_3D<ArithType>>> Points;
+        Coord3D<ArithType> Origin = Coord3D<ArithType>(0, 0, 0);
+        std::vector<std::vector<Coord3D<ArithType>>> Points;
         std::vector<std::pair<unsigned int, unsigned int>> Pairs;
 
         double LastFocalLength = 0;
@@ -23,7 +25,7 @@ template <typename ArithType> class WireFrame {
         double LastAngleZ = 0;
 
     public:
-        WireFrame(Coord_3D<ArithType> origin, std::vector<Coord_3D<ArithType>> points, std::vector<std::pair<unsigned int, unsigned int>> pairs) {
+        WireFrame(Coord3D<ArithType> origin, std::vector<Coord3D<ArithType>> points, std::vector<std::pair<unsigned int, unsigned int>> pairs) {
             static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
 
             Origin = origin;
@@ -44,62 +46,62 @@ template <typename ArithType> class WireFrame {
                 Pairs.emplace_back(pairs[i]);
             }
         }
-        WireFrame(Coord_3D<ArithType> origin, std::vector<Coord_3D<ArithType>> points) {WireFrame(origin, points, {});}
-        WireFrame(Coord_3D<ArithType> origin) {WireFrame(origin, {}, {});}
-        WireFrame(const WireFrame &wireframe) {
-            Origin = wireframe.Origin;
-            Points = wireframe.Points;
-            Pairs = wireframe.Pairs;
+        WireFrame(Coord3D<ArithType> origin, std::vector<Coord3D<ArithType>> points) {WireFrame(origin, points, {});}
+        WireFrame(Coord3D<ArithType> origin) {WireFrame(origin, {}, {});}
+        WireFrame(const WireFrame &WireFrame) {
+            Origin = WireFrame.Origin;
+            Points = WireFrame.Points;
+            Pairs = WireFrame.Pairs;
             
-            LastFocalLength = wireframe.LastFocalLength;
-            LastAngleX = wireframe.LastAngleX;
-            LastAngleY = wireframe.LastAngleY;
-            LastAngleZ = wireframe.LastAngleZ;
+            LastFocalLength = WireFrame.LastFocalLength;
+            LastAngleX = WireFrame.LastAngleX;
+            LastAngleY = WireFrame.LastAngleY;
+            LastAngleZ = WireFrame.LastAngleZ;
         }
         WireFrame() {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
 
-        Coord_3D<ArithType> getBasePoint(unsigned int point) {
-            if (point < 0 || point >= Points.size()) {return Coord_3D<ArithType>(0, 0, 0);}
+        Coord3D<ArithType> getBasePoint(unsigned int point) {
+            if (point < 0 || point >= Points.size()) {return Coord3D<ArithType>(0, 0, 0);}
             return Points[point][0];
         }
-        Coord_3D<ArithType> getRotatedPoint(unsigned int point) {
-            if (point < 0 || point >= Points.size()) {return Coord_3D<ArithType>(0, 0, 0);}
+        Coord3D<ArithType> getRotatedPoint(unsigned int point) {
+            if (point < 0 || point >= Points.size()) {return Coord3D<ArithType>(0, 0, 0);}
             return Points[point][1];
         }
-        Coord_3D<ArithType> getProjectedPoint(unsigned int point) {
-            if (point < 0 || point >= Points.size()) {return Coord_3D<ArithType>(0, 0, 0);}
+        Coord3D<ArithType> getProjectedPoint(unsigned int point) {
+            if (point < 0 || point >= Points.size()) {return Coord3D<ArithType>(0, 0, 0);}
             return Points[point][2];
         }
-        Coord_3D<ArithType> getOrigin() {return Origin;}
+        Coord3D<ArithType> getOrigin() {return Origin;}
         ArithType getPosX() {return Origin.getX();}
         ArithType getPosY() {return Origin.getY();}
         ArithType getPosZ() {return Origin.getZ();}
 
-        Coord_3D<ArithType> teleport(Coord_3D<ArithType> point) {
-            Coord_3D<ArithType> output = Origin;
+        Coord3D<ArithType> teleport(const Coord3D<ArithType> &point) {
+            Coord3D<ArithType> output = Origin;
             Origin = point;
             return output;
         }
         ArithType moveX(ArithType amount) {
             ArithType output = Origin.getX();
-            Origin += Coord_3D<ArithType>(amount, 0, 0);
+            Origin += Coord3D<ArithType>(amount, 0, 0);
             return output;
         }
         ArithType moveY(ArithType amount) {
             ArithType output = Origin.getY();
-            Origin += Coord_3D<ArithType>(0, amount, 0);
+            Origin += Coord3D<ArithType>(0, amount, 0);
             return output;
         }
         ArithType moveZ(ArithType amount) {
             ArithType output = Origin.getZ();
-            Origin -= Coord_3D<ArithType>(0, 0, amount);
+            Origin -= Coord3D<ArithType>(0, 0, amount);
             return output;
         }
 
-        void rotateAny(const Vector_3D<ArithType> &rotationAxis, double theta, bool degrees = true) {
+        void rotateOriginAny(const Vector3D<ArithType> &rotationAxis, double theta, bool degrees = true) {
             if (degrees) {theta *= M_PI / 180;}
 
-            const Vector_3D<ArithType> axis = rotationAxis.rToUnitVector();
+            const Vector3D<ArithType> axis = rotationAxis.rToUnitVector();
             const ArithType x = axis.getX();
             const ArithType y = axis.getY();
             const ArithType z = axis.getZ();
@@ -123,16 +125,16 @@ template <typename ArithType> class WireFrame {
                     }
                 }
 
-                if (std::is_floating_point<ArithType>::value) {Points[i][1] = Coord_3D<ArithType>(rotated[0], rotated[1], rotated[2]);}
-                else {Points[i][1] = Coord_3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));}
+                if (std::is_floating_point<ArithType>::value) {Points[i][1] = Coord3D<ArithType>(rotated[0], rotated[1], rotated[2]);}
+                else {Points[i][1] = Coord3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));}
             }
         }
 
-        void project(const Coord_3D<ArithType> &cameraPos) {
+        void project(const Coord3D<ArithType> &cameraPos) {
             const double focalLength = cameraPos.getX();
 
             for (unsigned int i = 0; i < Points.size(); i++) {
-                const Coord_3D<ArithType> point = Origin + Points[i][1] - Coord_3D<ArithType>(0, cameraPos.getY(), cameraPos.getZ());
+                const Coord3D<ArithType> point = Origin + Points[i][1] - Coord3D<ArithType>(0, cameraPos.getY(), cameraPos.getZ());
 
                 if (focalLength + point.getX() == 0) {continue;}
 

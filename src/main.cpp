@@ -5,20 +5,22 @@
 #include <vector>
 #include <cmath>
 
+#include "MathCoord.hpp"
+#include "MathVector.hpp"
 #include "RenderWindow.hpp"
-#include "General.hpp"
-#include "astr.hpp"
 #include "WireFrame.hpp"
+#include "SDLColor.hpp"
+#include "astr.hpp"
 
 double hireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 
-template <typename ArithType> Coord_3D<ArithType> projectCoord(const Coord_3D<ArithType> &coord, double focalLength) {
+template <typename ArithType> Coord3D<ArithType> projectCoord(const Coord3D<ArithType> &coord, double focalLength) {
     static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
 
     // Protect from a floating-point exception, even though a projection doesn't occur
     if (focalLength + coord.getX() == 0) {return coord;}
 
-    Coord_3D<ArithType> output;
+    Coord3D<ArithType> output;
 
     output.setY((focalLength * coord.getY()) / (focalLength + coord.getX()));
     output.setZ((focalLength * coord.getZ()) / (focalLength + coord.getX()));
@@ -26,7 +28,7 @@ template <typename ArithType> Coord_3D<ArithType> projectCoord(const Coord_3D<Ar
     return output;
 }
 
-template <typename ArithType> Coord_3D<ArithType> rotateCoord_3D(const Vector_3D<ArithType> &axis, const Coord_3D<ArithType> &coord, double theta, bool degrees = true) {
+template <typename ArithType> Coord3D<ArithType> rotateCoord3D(const Vector3D<ArithType> &axis, const Coord3D<ArithType> &coord, double theta, bool degrees = true) {
     static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
 
     // Convert the angle to radians if needed
@@ -51,10 +53,10 @@ template <typename ArithType> Coord_3D<ArithType> rotateCoord_3D(const Vector_3D
     }
 
     if (std::is_floating_point<ArithType>::value) {
-        return Coord_3D<ArithType>(rotated[0], rotated[1], rotated[2]);
+        return Coord3D<ArithType>(rotated[0], rotated[1], rotated[2]);
     }
     
-    return Coord_3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));
+    return Coord3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));
 }
 
 int main(int argc, char* args[]) {
@@ -66,6 +68,7 @@ int main(int argc, char* args[]) {
     else {std::cout << "SDL2_image successfully initialized\n";}
 
     RenderWindow Window("le windo - cube", 1280, 720);
+    // RenderWindow AltWindow("da weendu", 640, 640);
     SDL_Event event;
     const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
@@ -85,59 +88,55 @@ int main(int argc, char* args[]) {
     unsigned char mode = 0, maxMode = 3;
     const char* titles[maxMode] = {"le windo - cube", "le windo - fella", "le windo - wireframe", "le windo - pyramid"};
 
-    std::vector<std::pair<unsigned int, unsigned int>> pairs = {
-        {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}
+    std::vector<std::pair<unsigned int, unsigned int>> pairs = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+    std::vector<Coord3D<double>> points = {
+        Coord3D<double>( 100, -100, -100),
+        Coord3D<double>( 100,  100, -100),
+        Coord3D<double>(-100,  100, -100),
+        Coord3D<double>(-100, -100, -100),
+        Coord3D<double>( 100, -100,  100),
+        Coord3D<double>( 100,  100,  100),
+        Coord3D<double>(-100,  100,  100),
+        Coord3D<double>(-100, -100,  100)
     };
-    std::vector<Coord_3D<double>> points = {
-        Coord_3D<double>(-100, -100,  100),
-        Coord_3D<double>(-100,  100,  100),
-        Coord_3D<double>( 100,  100,  100),
-        Coord_3D<double>( 100, -100,  100),
-        Coord_3D<double>(-100, -100, -100),
-        Coord_3D<double>(-100,  100, -100),
-        Coord_3D<double>( 100,  100, -100),
-        Coord_3D<double>( 100, -100, -100)
-    };
-    std::vector<Coord_3D<double>> translatedPoints = points;
-
-    std::vector<std::pair<unsigned int, unsigned int>> pyramidPairs = {
-        {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4}
-    };
-    std::vector<Coord_3D<double>> pyramidPoints = {
-        Coord_3D<double>(-100, -100, -100),
-        Coord_3D<double>(-100, 100, -100),
-        Coord_3D<double>(100, 100, -100),
-        Coord_3D<double>(100, -100, -100),
-        Coord_3D<double>(0, 0, 100)
-    };
-    WireFrame<double> Pyramid = WireFrame<double>(Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), pyramidPoints, pyramidPairs);
+    std::vector<Coord3D<double>> translatedPoints = points;
 
     std::vector<WireFrame<double>> Cubes;
     for (unsigned char i = 0; i < 10; i++) {
         for (unsigned char j = 0; j < points.size(); j++) {
-            translatedPoints[j] = points[j] + Coord_3D<double>(0, 200 * i, 0);
+            translatedPoints[j].setY(translatedPoints[j].getY() + 200);
         }
-        Cubes.emplace_back(WireFrame<double>(Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), translatedPoints, pairs));
+        Cubes.emplace_back(WireFrame<double>(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), translatedPoints, pairs));
     }
 
-    std::vector<Coord_3D<double>> pointsNow, projected;
+    std::vector<std::pair<unsigned int, unsigned int>> pyramidPairs = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4}};
+    std::vector<Coord3D<double>> pyramidPoints = {
+        Coord3D<double>( 100, -100,  100),
+        Coord3D<double>( 100,  100,  100),
+        Coord3D<double>(-100,  100,  100),
+        Coord3D<double>(-100, -100,  100),
+        Coord3D<double>(   0,    0, -100)
+    };
+    WireFrame<double> Pyramid(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), pyramidPoints, pyramidPairs);
+
+    std::vector<Coord3D<double>> pointsNow, projected;
     for (unsigned char i = 0; i < points.size(); i++) {
         pointsNow.emplace_back(points[i]);
         projected.emplace_back();
     }
 
-    double focalLength = 1000;
+    double focalLength = 2500;
     double ax = 0, ay = 0, az = 0;
     double angleMult = 0.2;
     double cubeMoveSpeed = 0.25;
     double px = Window.getWidth() / 2, py = Window.getHeight() / 2;
 
-    Coord_3D<double> fellaPos = Coord_3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2);
-    Vector_3D<int> fellaView = Vector_3D<int>(0, 0, 0);
+    Coord2D<double> fellaPos(Window.getWidth() / 2, Window.getHeight() / 2);
+    Vector2D<int> fellaView(0, 0);
     double fellaMoveSpeed = 0.25;
-    int mousePosX = 0, mousePosY = 0, dmx = 0, dmy = 0;
-    int lineMag = 0;
-    double mouseAngle = 0, mouseAngleOffset = 0;
+    int mousePosX = 0, mousePosY = 0;
+
+    double mouseAngleOffset = 0;
     int fovAngle = 30;
 
     bool mouseMotion = false;
@@ -188,8 +187,6 @@ int main(int argc, char* args[]) {
                 }
 
                 SDL_GetMouseState(&mousePosX, &mousePosY);
-                fellaView.setY(mousePosX);
-                fellaView.setZ(mousePosY);
 
                 switch (mode) {
                     case 0:
@@ -263,64 +260,54 @@ int main(int argc, char* args[]) {
 
                     // Rotate the 3d cube based on angles and then project the new cube onto the 2d screen for actual rendering
                     for (unsigned char i = 0; i < points.size(); i++) {
-                        pointsNow[i] = rotateCoord_3D(Vector_3D<double>(0, 1, 0), points[i], ay);
-                        pointsNow[i] = rotateCoord_3D(Vector_3D<double>(0, 0, 1), pointsNow[i], az);
-                        pointsNow[i] = rotateCoord_3D(Vector_3D<double>(1, 0, 0), pointsNow[i], ax);
+                        pointsNow[i] = rotateCoord3D(Vector3D<double>(0, 1, 0), points[i], ay);
+                        pointsNow[i] = rotateCoord3D(Vector3D<double>(0, 0, 1), pointsNow[i], az);
+                        pointsNow[i] = rotateCoord3D(Vector3D<double>(1, 0, 0), pointsNow[i], ax);
                     }
                     for (unsigned char i = 0; i < points.size(); i++) {
-                        projected[i] = projectCoord<double>(pointsNow[i] + Coord_3D<double>(0, px - Window.getWidth() / 2, py - Window.getHeight() / 2), focalLength);
+                        projected[i] = projectCoord<double>(pointsNow[i] + Coord3D<double>(0, px - Window.getWidth() / 2, py - Window.getHeight() / 2), focalLength);
                     }
                     break;
                 case 1:
                     if (keystate[SDL_SCANCODE_W]) {
-                        fellaPos.setZ(fellaPos.getZ() - fellaMoveSpeed);
-                    } else if (keystate[SDL_SCANCODE_S]) {
-                        fellaPos.setZ(fellaPos.getZ() + fellaMoveSpeed);
-                    }
-                    if (keystate[SDL_SCANCODE_A]) {
                         fellaPos.setY(fellaPos.getY() - fellaMoveSpeed);
-                    } else if (keystate[SDL_SCANCODE_D]) {
+                    } else if (keystate[SDL_SCANCODE_S]) {
                         fellaPos.setY(fellaPos.getY() + fellaMoveSpeed);
                     }
-
-                    dmx = fellaView.getY() - fellaPos.getY();
-                    dmy = fellaView.getZ() - fellaPos.getZ();
-                    if (dmx != 0) {
-                        fellaView.setTheta(std::atan2(dmy, dmx));
-                    } else {
-                        if (dmy > 0) {
-                            fellaView.setTheta(90);
-                        } else {
-                            fellaView.setTheta(270);
-                        }
+                    if (keystate[SDL_SCANCODE_A]) {
+                        fellaPos.setX(fellaPos.getX() - fellaMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_D]) {
+                        fellaPos.setX(fellaPos.getX() + fellaMoveSpeed);
                     }
-                    fellaView.setMag(dmx / std::cos(fellaView.getTheta()));
+
+                    fellaView.setX(mousePosX - fellaPos.getX());
+                    fellaView.setY(mousePosY - fellaPos.getY());
                     break;
                 case 2:
                     // Change the angles of the cube based on mouse movement/keyboard input
                     if (mouseMotion && mouseCaptured) {
                         mouseMotion = false;
                         for (unsigned char i = 0; i < Cubes.size(); i++) {
-                            Cubes[i].rotateAny(Vector_3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
-                            Cubes[i].rotateAny(Vector_3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
                         }
                     }
 
                     for (unsigned char i = 0; i < Cubes.size(); i++) {
                         if (keystate[SDL_SCANCODE_W]) {
-                            Cubes[i].rotateAny(Vector_3D<double>(0, 1, 0), -angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(0, 1, 0), -angleMult);
                         } else if (keystate[SDL_SCANCODE_S]) {
-                            Cubes[i].rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(0, 1, 0), angleMult);
                         }
                         if (keystate[SDL_SCANCODE_A]) {
-                            Cubes[i].rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(0, 0, 1), angleMult);
                         } else if (keystate[SDL_SCANCODE_D]) {
-                            Cubes[i].rotateAny(Vector_3D<double>(0, 0, 1), -angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(0, 0, 1), -angleMult);
                         }
                         if (keystate[SDL_SCANCODE_Q]) {
-                            Cubes[i].rotateAny(Vector_3D<double>(1, 0, 0), -angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(1, 0, 0), -angleMult);
                         } else if (keystate[SDL_SCANCODE_E]) {
-                            Cubes[i].rotateAny(Vector_3D<double>(1, 0, 0), angleMult);
+                            Cubes[i].rotateOriginAny(Vector3D<double>(1, 0, 0), angleMult);
                         }
                         // Move the cube in the four 2d-directions w/ arrow keys
                         if (keystate[SDL_SCANCODE_UP]) {
@@ -334,7 +321,7 @@ int main(int argc, char* args[]) {
                             Cubes[i].moveY(cubeMoveSpeed);
                         }
                     
-                        Cubes[i].project(Coord_3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                        Cubes[i].project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
                     }
                     // Get further away from or closer to the cube
                     if (keystate[SDL_SCANCODE_1]) {
@@ -347,24 +334,24 @@ int main(int argc, char* args[]) {
                     // Change the angles of the cube based on mouse movement/keyboard input
                     if (mouseMotion && mouseCaptured) {
                         mouseMotion = false;
-                        Pyramid.rotateAny(Vector_3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
-                        Pyramid.rotateAny(Vector_3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
                     }
 
                     if (keystate[SDL_SCANCODE_W]) {
-                        Pyramid.rotateAny(Vector_3D<double>(0, 1, 0), -angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(0, 1, 0), -angleMult);
                     } else if (keystate[SDL_SCANCODE_S]) {
-                        Pyramid.rotateAny(Vector_3D<double>(0, 1, 0), angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(0, 1, 0), angleMult);
                     }
                     if (keystate[SDL_SCANCODE_A]) {
-                        Pyramid.rotateAny(Vector_3D<double>(0, 0, 1), angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(0, 0, 1), angleMult);
                     } else if (keystate[SDL_SCANCODE_D]) {
-                        Pyramid.rotateAny(Vector_3D<double>(0, 0, 1), -angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(0, 0, 1), -angleMult);
                     }
                     if (keystate[SDL_SCANCODE_Q]) {
-                        Pyramid.rotateAny(Vector_3D<double>(1, 0, 0), -angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(1, 0, 0), -angleMult);
                     } else if (keystate[SDL_SCANCODE_E]) {
-                        Pyramid.rotateAny(Vector_3D<double>(1, 0, 0), angleMult);
+                        Pyramid.rotateOriginAny(Vector3D<double>(1, 0, 0), angleMult);
                     }
                     // Move the cube in the four 2d-directions w/ arrow keys
                     if (keystate[SDL_SCANCODE_UP]) {
@@ -377,7 +364,7 @@ int main(int argc, char* args[]) {
                     } else if (keystate[SDL_SCANCODE_RIGHT]) {
                         Pyramid.moveY(cubeMoveSpeed);
                     }
-                    Pyramid.project(Coord_3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                    Pyramid.project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
                     break;
             }
 
@@ -401,11 +388,11 @@ int main(int argc, char* args[]) {
             case 1:
                 for (int i = 0; i < fovAngle / 2 + 1; i++) {
                     mouseAngleOffset = i * M_PI / 180;
-                    Window.drawLine(fellaPos.getY(), fellaPos.getZ(), fellaPos.getY() + (dmx != 0 ? fellaView.getMag() * std::cos(mouseAngle + mouseAngleOffset) : 0), fellaPos.getZ() + fellaView.getMag() * (dmx != 0 ? std::sin(mouseAngle + mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
-                    Window.drawLine(fellaPos.getY(), fellaPos.getZ(), fellaPos.getY() + (dmx != 0 ? fellaView.getMag() * std::cos(mouseAngle - mouseAngleOffset) : 0), fellaPos.getZ() + fellaView.getMag() * (dmx != 0 ? std::sin(mouseAngle - mouseAngleOffset) : (dmy > 0 ? 1 : -1)), DefaultColors[COLOR_LIME]);
+                    Window.drawLine(fellaPos.getX(), fellaPos.getY(), fellaPos.getX() + fellaView.getMag() * std::cos(fellaView.getAngle(false) + mouseAngleOffset), fellaPos.getY() + fellaView.getMag() * std::sin(fellaView.getAngle(false) + mouseAngleOffset), DefaultColors[COLOR_LIME]);
+                    Window.drawLine(fellaPos.getX(), fellaPos.getY(), fellaPos.getX() + fellaView.getMag() * std::cos(fellaView.getAngle(false) - mouseAngleOffset), fellaPos.getY() + fellaView.getMag() * std::sin(fellaView.getAngle(false) - mouseAngleOffset), DefaultColors[COLOR_LIME]);
                 }
-                Window.fillCircle(fellaPos.getY(), fellaPos.getZ(), 25, DefaultColors[COLOR_MAROON]);
-                Window.drawCircle(fellaPos.getY(), fellaPos.getZ(), 25, DefaultColors[COLOR_RED]);
+                Window.fillCircle(fellaPos.getX(), fellaPos.getY(), 25, DefaultColors[COLOR_MAROON]);
+                Window.drawCircle(fellaPos.getX(), fellaPos.getY(), 25, DefaultColors[COLOR_RED]);
                 break;
             case 2:
                 for (unsigned char i = 0; i < Cubes.size(); i++) {
