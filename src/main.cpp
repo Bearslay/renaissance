@@ -154,9 +154,7 @@ int main(int argc, char* args[]) {
 
         while (accumulator >= dt) {
             while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) {
-                    running = false;
-                }
+                if (event.type == SDL_QUIT) {running = false;}
 
                 // Placing things here will add a small delay between repeats, so is better for keybinds that do a toggle rather than increment
                 if (event.type == SDL_KEYDOWN) {
@@ -190,6 +188,7 @@ int main(int argc, char* args[]) {
 
                 switch (mode) {
                     case 0:
+                    case 1:
                     case 2:
                     case 3:
                         // Detect mouse movement and translate that into a variable that can be used to capture the speed of the mouse
@@ -269,6 +268,11 @@ int main(int argc, char* args[]) {
                     }
                     break;
                 case 1:
+                    if (mouseCaptured) {
+                        mouseMotion = false;
+                        fellaView.setX(mousePosX - fellaPos.getX());
+                        fellaView.setY(mousePosY - fellaPos.getY());
+                    }
                     if (keystate[SDL_SCANCODE_W]) {
                         fellaPos.setY(fellaPos.getY() - fellaMoveSpeed);
                     } else if (keystate[SDL_SCANCODE_S]) {
@@ -279,9 +283,19 @@ int main(int argc, char* args[]) {
                     } else if (keystate[SDL_SCANCODE_D]) {
                         fellaPos.setX(fellaPos.getX() + fellaMoveSpeed);
                     }
-
-                    fellaView.setX(mousePosX - fellaPos.getX());
-                    fellaView.setY(mousePosY - fellaPos.getY());
+                    if (keystate[SDL_SCANCODE_LEFT]) {
+                        fellaView.setAngle(fellaView.getAngle() - 0.25);
+                    } else if (keystate[SDL_SCANCODE_RIGHT]) {
+                        fellaView.setAngle(fellaView.getAngle() + 0.25);
+                    }
+                    if (keystate[SDL_SCANCODE_UP]) {
+                        fellaView.setMag(fellaView.getMag() + 1);
+                    } else if (keystate[SDL_SCANCODE_DOWN]) {
+                        fellaView.setMag(fellaView.getMag() - 1);
+                        if (fellaView.getMag() <= 0) {
+                            fellaView.setMag(1);
+                        }
+                    }
                     break;
                 case 2:
                     // Change the angles of the cube based on mouse movement/keyboard input
