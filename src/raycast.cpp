@@ -17,9 +17,7 @@
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 
-template <typename InArithType, typename OutArithType> OutArithType mapVal(InArithType input, InArithType inMin, InArithType inMax, InArithType outMin, InArithType outMax) {
-    return (OutArithType)((input - inMin) * (outMax - outMax) / (inMax - inMin) + outMin);
-}
+template <typename ArithType> ArithType mapVal(ArithType input, ArithType inMin, ArithType inMax, ArithType outMin, ArithType outMax) {return outMin + (input - inMin) * (outMax - outMin) / (inMax - inMin);}
 
 int main() {
     std::cout << "\n";
@@ -68,7 +66,7 @@ int main() {
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
-    Ray2D<double> player(Coord2D<double>(45, 45), Vector2D<double>(0, 150));
+    Ray2D<double> player(Coord2D<double>(45, 45), Vector2D<double>(0, 500));
     double movespeed = 0.075;
     double lookspeed = 0.2;
     double zoomspeed = 0.1;
@@ -235,12 +233,13 @@ int main() {
             if ((intersection = player.getIntersection(segments)).valid()) {
                 Layout.drawLine(player.getPosX(), player.getPosY(), intersection.getX(), intersection.getY(), DefaultColors[COLOR_LIME]);
 
-                int distance = std::sqrt(std::pow(player.getPosX() - intersection.getX(), 2) + std::pow(player.getPosY() - intersection.getY(), 2));
-                // distance *= std::cos(player.getViewAngle(false));
-                unsigned char rectBrightness = mapVal<int, unsigned char>(distance, 0, (int)player.getViewMag(), 255, 0);
-                int rectHeight = mapVal<int, int>(distance, 0, (int)player.getViewMag(), View.getHeight(), 0);
-                // unsigned char rectBrightness = 255;
-                View.fillRectangle(i * rectWidth, View.getHeight() / 2 - rectHeight / 2, rectWidth, rectHeight, {255, 255, 255, rectBrightness});
+                Vector2D<double> projection(std::fabs(player.getPosX() - intersection.getX()), std::fabs(player.getPosY() - intersection.getY()));
+                int distance = projection.getMag();
+                distance *= std::cos(projection.getAngle(false));
+
+                int rectBrightness = mapVal<int>(distance, 0, (int)player.getViewMag(), 255, 0);
+                int rectHeight = mapVal<int>(distance, 0, (int)player.getViewMag(), View.getHeight(), 0);
+                View.fillRectangle(i * rectWidth, View.getHeight() / 2 + rectHeight / 2, rectWidth, rectHeight, {(unsigned char)rectBrightness, (unsigned char)rectBrightness, (unsigned char)rectBrightness, 255});
             }
             // If the current ray doesn't hit a wall
             else {
