@@ -84,7 +84,7 @@ template <typename ArithType> class Vector2D {
         }
         Vector2D<ArithType> setAngle(double theta, bool degrees = true) {
             Vector2D<ArithType> output(M, T, false);
-            T = theta * (degrees ? M_PI / 180 : 1);
+            T = std::fmod(theta * (degrees ? M_PI / 180 : 1), 2 * M_PI);
             calcCartesian();
             return output;
         }

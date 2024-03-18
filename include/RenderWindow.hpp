@@ -34,6 +34,7 @@ class RenderWindow {
         void show();
 
         void drawLine(int x1, int y1, int x2, int y2, Color color = DefaultColors[COLOR_WHITE]);
+        // void drawLineWeight(int x1, int y1, int x2, int y2, int weight, Color color = DefaultColors[COLOR_WHITE]);
         void drawPixel(int x, int y, Color color = DefaultColors[COLOR_WHITE]);
 
         void drawRectangle(int x, int y, int width, int height, Color color = DefaultColors[COLOR_WHITE]);

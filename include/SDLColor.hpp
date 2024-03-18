@@ -2,7 +2,6 @@
 #define SDLCOLOR
 
 #include <SDL2/SDL.h>
-#include <vector>
 
 #define COLOR_BLACK 0
 #define COLOR_WHITE 1
@@ -22,7 +21,7 @@
 #define COLOR_PURPLE 15
 
 struct Color {Uint8 r = 0, g = 0, b = 0, a = SDL_ALPHA_OPAQUE;};
-const std::vector<Color> DefaultColors = {
+const Color DefaultColors[16] = {
     {0, 0, 0, SDL_ALPHA_OPAQUE},
     {255, 255, 255, SDL_ALPHA_OPAQUE},
     {170, 170, 170, SDL_ALPHA_OPAQUE},

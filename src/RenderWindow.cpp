@@ -64,25 +64,32 @@ void RenderWindow::show() {SDL_RenderPresent(Renderer);}
 
 void RenderWindow::drawLine(int x1, int y1, int x2, int y2, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderDrawLine(Renderer, x1, y1, x2, y2);
+    SDL_RenderDrawLine(Renderer, x1, Height - y1, x2, Height - y2);
 }
+
+// void RenderWindow::drawLineWeight(int x1, int y1, int x2, int y2, int weight, Color color) {
+//     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
+//     SDL_RenderSetScale(Renderer, weight, weight);
+//     SDL_RenderDrawLine(Renderer, x1 / weight, y1 / weight, x2 / weight, y2 / weight);
+//     SDL_RenderSetScale(Renderer, 1, 1);
+// }
 
 void RenderWindow::drawPixel(int x, int y, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderDrawPoint(Renderer, x, y);
+    SDL_RenderDrawPoint(Renderer, x, Height - y);
 }
 
 void RenderWindow::drawRectangle(int x, int y, int width, int height, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
 
-    SDL_Rect rectangle = {x, y, width, height};
+    SDL_Rect rectangle = {x, Height - y, width, height};
     SDL_RenderDrawRect(Renderer, &rectangle);
 }
 
 void RenderWindow::fillRectangle(int x, int y, int width, int height, Color color) {
     SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
 
-    SDL_Rect rectangle = {x, y, width, height};
+    SDL_Rect rectangle = {x, Height - y, width, height};
     SDL_RenderFillRect(Renderer, &rectangle);
 }
 
@@ -97,14 +104,14 @@ void RenderWindow::drawCircle(int x, int y, int radius, Color color) {
     int error = tx - diameter;
 
     while (ox >= oy) {
-        SDL_RenderDrawPoint(Renderer, x + ox, y - oy);
-        SDL_RenderDrawPoint(Renderer, x + ox, y + oy);
-        SDL_RenderDrawPoint(Renderer, x - ox, y - oy);
-        SDL_RenderDrawPoint(Renderer, x - ox, y + oy);
-        SDL_RenderDrawPoint(Renderer, x + oy, y - ox);
-        SDL_RenderDrawPoint(Renderer, x + oy, y + ox);
-        SDL_RenderDrawPoint(Renderer, x - oy, y - ox);
-        SDL_RenderDrawPoint(Renderer, x - oy, y + ox);
+        SDL_RenderDrawPoint(Renderer, x + ox, Height - y - oy);
+        SDL_RenderDrawPoint(Renderer, x + ox, Height - y + oy);
+        SDL_RenderDrawPoint(Renderer, x - ox, Height - y - oy);
+        SDL_RenderDrawPoint(Renderer, x - ox, Height - y + oy);
+        SDL_RenderDrawPoint(Renderer, x + oy, Height - y - ox);
+        SDL_RenderDrawPoint(Renderer, x + oy, Height - y + ox);
+        SDL_RenderDrawPoint(Renderer, x - oy, Height - y - ox);
+        SDL_RenderDrawPoint(Renderer, x - oy, Height - y + ox);
 
         if (error <= 0) {
             oy++;
@@ -128,10 +135,10 @@ void RenderWindow::fillCircle(int x, int y, int radius, Color color) {
     int error = radius - 1;
 
     while (oy >= ox) {
-        SDL_RenderDrawLine(Renderer, x - oy, y + ox, x + oy, y + ox);
-        SDL_RenderDrawLine(Renderer, x - ox, y + oy, x + ox, y + oy);
-        SDL_RenderDrawLine(Renderer, x - ox, y - oy, x + ox, y - oy);
-        SDL_RenderDrawLine(Renderer, x - oy, y - ox, x + oy, y - ox);
+        SDL_RenderDrawLine(Renderer, x - oy, Height - y + ox, x + oy, Height - y + ox);
+        SDL_RenderDrawLine(Renderer, x - ox, Height - y + oy, x + ox, Height - y + oy);
+        SDL_RenderDrawLine(Renderer, x - ox, Height - y - oy, x + ox, Height - y - oy);
+        SDL_RenderDrawLine(Renderer, x - oy, Height - y - ox, x + oy, Height - y - ox);
 
         if (error >= ox * 2) {
             error -= ox * 2 + 1;

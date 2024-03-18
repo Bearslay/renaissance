@@ -32,6 +32,8 @@ template <typename ArithType> class Coord2D {
             Y = coord.Y;
         }
 
+        bool valid() const {return !(std::isnan(X) && std::isnan(Y));}
+
         ArithType getX() const {return X;}
         ArithType getY() const {return Y;}
         Coord2D<ArithType> setX(ArithType x) {
