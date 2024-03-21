@@ -1,0 +1,8 @@
+# Binary outputs
+bin/
+
+# All object files
+*.o
+
+# vscode settings that no one needs
+.vscode/
