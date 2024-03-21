@@ -128,7 +128,7 @@ template <typename ArithType> class Coord2D {
         }
         unsigned char setRelationMetric(unsigned char metric = COORD_RELATE_COMMON) {
             unsigned char output = RelationMetric;
-            RelationMetric = (5 + metric % 5) % 5;
+            if (metric > 4 || metric < 0) {RelationMetric = (5 + metric % 5) % 5;}
             return output;
         }
         unsigned char getRelationMetric() const {return RelationMetric;}

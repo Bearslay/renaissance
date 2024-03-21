@@ -85,8 +85,8 @@ int main(int argc, char* args[]) {
     // NON-BOILER-PLATE
     //
 
-    unsigned char mode = 0, maxMode = 3;
-    const char* titles[maxMode] = {"le windo - cube", "le windo - fella", "le windo - wireframe", "le windo - pyramid"};
+    unsigned char mode = 0, maxMode = 4;
+    const char* titles[maxMode] = {"le windo - cube", "le windo - fella", "le windo - wireframe", "le windo - pyramid", "le window - tile"};
 
     std::vector<std::pair<unsigned int, unsigned int>> pairs = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
     std::vector<Coord3D<double>> points = {
@@ -118,6 +118,31 @@ int main(int argc, char* args[]) {
         Coord3D<double>(   0,    0, -100)
     };
     WireFrame<double> Pyramid(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), pyramidPoints, pyramidPairs);
+
+    std::vector<std::pair<unsigned int, unsigned int>> tilePairs = {
+        // Tile outline
+        {0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 0},
+        // Plateau
+        {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 6},
+        {0, 6}, {1, 7}, {2, 8}, {3, 9},
+    };
+    std::vector<Coord3D<double>> tilePoints = {
+        // Tile outline
+        Coord3D<double>(      0,  100, -50),
+        Coord3D<double>(-86.603,   50, -50),
+        Coord3D<double>(-86.603,  -50, -50),
+        Coord3D<double>(      0, -100, -50),
+        Coord3D<double>( 86.603,  -50, -50),
+        Coord3D<double>( 86.603,   50, -50),
+        // Plateau
+        Coord3D<double>(    -20,    45, -25),
+        Coord3D<double>(-58.971,  22.5, -25),
+        Coord3D<double>(-58.971, -22.5, -25),
+        Coord3D<double>(    -20,   -45, -25),
+        Coord3D<double>( 18.971, -22.5, -25),
+        Coord3D<double>( 18.971,  22.5, -25),
+    };
+    WireFrame<double> Tile(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), tilePoints, tilePairs);
 
     std::vector<Coord3D<double>> pointsNow, projected;
     for (unsigned char i = 0; i < points.size(); i++) {
@@ -186,23 +211,15 @@ int main(int argc, char* args[]) {
 
                 SDL_GetMouseState(&mousePosX, &mousePosY);
 
-                switch (mode) {
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                        // Detect mouse movement and translate that into a variable that can be used to capture the speed of the mouse
-                        if (event.type == SDL_MOUSEMOTION) {
-                            mouseMotion = true;
-                            if (!mouseFirst) {
-                                mouseX = event.motion.xrel;
-                                mouseY = event.motion.yrel;
-                            } else {
-                                mouseFirst = false;
-                                mouseX = mouseY = 0;
-                            }
-                        }
-                        break;
+                if (event.type == SDL_MOUSEMOTION) {
+                    mouseMotion = true;
+                    if (!mouseFirst) {
+                        mouseX = event.motion.xrel;
+                        mouseY = event.motion.yrel;
+                    } else {
+                        mouseFirst = false;
+                        mouseX = mouseY = 0;
+                    }
                 }
             }
             // Keybind to leave window/program (outside of a quit event like mod+shift+q or alt+f4)
@@ -380,6 +397,42 @@ int main(int argc, char* args[]) {
                     }
                     Pyramid.project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
                     break;
+                case 4:
+                    // Change the angles of the cube based on mouse movement/keyboard input
+                    if (mouseMotion && mouseCaptured) {
+                        mouseMotion = false;
+                        Tile.rotateOriginAny(Vector3D<double>(0, 1, 0), mouseY * sensitivity * angleMult);
+                        Tile.rotateOriginAny(Vector3D<double>(0, 0, 1), -mouseX * sensitivity * angleMult);
+                    }
+
+                    if (keystate[SDL_SCANCODE_W]) {
+                        Tile.rotateOriginAny(Vector3D<double>(0, 1, 0), -angleMult);
+                    } else if (keystate[SDL_SCANCODE_S]) {
+                        Tile.rotateOriginAny(Vector3D<double>(0, 1, 0), angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_A]) {
+                        Tile.rotateOriginAny(Vector3D<double>(0, 0, 1), angleMult);
+                    } else if (keystate[SDL_SCANCODE_D]) {
+                        Tile.rotateOriginAny(Vector3D<double>(0, 0, 1), -angleMult);
+                    }
+                    if (keystate[SDL_SCANCODE_Q]) {
+                        Tile.rotateOriginAny(Vector3D<double>(1, 0, 0), -angleMult);
+                    } else if (keystate[SDL_SCANCODE_E]) {
+                        Tile.rotateOriginAny(Vector3D<double>(1, 0, 0), angleMult);
+                    }
+                    // Move the cube in the four 2d-directions w/ arrow keys
+                    if (keystate[SDL_SCANCODE_UP]) {
+                        Tile.moveZ(cubeMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_DOWN]) {
+                        Tile.moveZ(-cubeMoveSpeed);
+                    }
+                    if (keystate[SDL_SCANCODE_LEFT]) {
+                        Tile.moveY(-cubeMoveSpeed);
+                    } else if (keystate[SDL_SCANCODE_RIGHT]) {
+                        Tile.moveY(cubeMoveSpeed);
+                    }
+                    Tile.project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                    break;
             }
 
             t += dt;
@@ -415,6 +468,9 @@ int main(int argc, char* args[]) {
                 break;
             case 3:
                 Pyramid.display(Window);
+                break;
+            case 4:
+                Tile.display(Window, DefaultColors[COLOR_RED]);
                 break;
         }
 
