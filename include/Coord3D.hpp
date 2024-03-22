@@ -34,10 +34,10 @@ template <typename ArithType> class Coord3D {
             Z = z;
         }
         Coord3D(const Coord3D<ArithType> &coord) {
-            X = coord.X;
-            Y = coord.Y;
-            Z = coord.Z;
-            RelationMetric = coord.RelationMetric;
+            X = coord.getX();
+            Y = coord.getY();
+            Z = coord.getZ();
+            RelationMetric = coord.getRelationMetric();
         }
 
         ArithType getX() const {return X;}
@@ -67,9 +67,9 @@ template <typename ArithType> class Coord3D {
         std::string toString() {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z) + ")";}
 
         void operator = (const Coord3D<ArithType> &coord) {
-            X = coord.X;
-            Y = coord.Y;
-            Z = coord.Z;
+            X = coord.getX();
+            Y = coord.getY();
+            Z = coord.getZ();
             RelationMetric = coord.RelationMetric;
         }
         Coord3D<ArithType> operator ! () const {return Coord3D<ArithType>(-X, -Y, -Z);}
@@ -77,17 +77,17 @@ template <typename ArithType> class Coord3D {
             switch (RelationMetric) {
                 default:
                 case COORD_RELATE_COMMON:
-                    return X == coord.X && Y == coord.Y && Z == coord.Z;
+                    return X == coord.getX() && Y == coord.getY() && Z == coord.getZ();
                 case COORD_RELATE_EUCLID:
                     return distEuclid() == coord.distEuclid();
                 case COORD_RELATE_TAXICAB:
                     return distTaxi() == coord.distTaxi();
                 case COORD_RELATE_XCOORD:
-                    return X == coord.X;
+                    return X == coord.getX();
                 case COORD_RELATE_YCOORD:
-                    return Y == coord.Y;
+                    return Y == coord.getY();
                 case COORD_RELATE_ZCOORD:
-                    return Z == coord.Z;
+                    return Z == coord.getZ();
             }
         }
         bool operator != (const Coord3D<ArithType> &coord) const {return !(Coord3D<ArithType>(X, Y, Z) == coord);}
@@ -100,11 +100,11 @@ template <typename ArithType> class Coord3D {
                 case COORD_RELATE_EUCLID:
                     return euclideanDistance() < coord.euclideanDistance();
                 case COORD_RELATE_XCOORD:
-                    return X < coord.X;
+                    return X < coord.getX();
                 case COORD_RELATE_YCOORD:
-                    return Y < coord.Y;
+                    return Y < coord.getY();
                 case COORD_RELATE_ZCOORD:
-                    return Z < coord.Z;
+                    return Z < coord.getZ();
             }
         }
         bool operator <= (const Coord3D<ArithType> &coord) const {
@@ -116,11 +116,11 @@ template <typename ArithType> class Coord3D {
                 case COORD_RELATE_EUCLID:
                     return euclideanDistance() <= coord.euclideanDistance();
                 case COORD_RELATE_XCOORD:
-                    return X <= coord.X;
+                    return X <= coord.getX();
                 case COORD_RELATE_YCOORD:
-                    return Y <= coord.Y;
+                    return Y <= coord.getY();
                 case COORD_RELATE_ZCOORD:
-                    return Z <= coord.Z;
+                    return Z <= coord.getZ();
             }
         }
         bool operator > (const Coord3D<ArithType> &coord) const {
@@ -132,11 +132,11 @@ template <typename ArithType> class Coord3D {
                 case COORD_RELATE_EUCLID:
                     return euclideanDistance() > coord.euclideanDistance();
                 case COORD_RELATE_XCOORD:
-                    return X > coord.X;
+                    return X > coord.getX();
                 case COORD_RELATE_YCOORD:
-                    return Y > coord.Y;
+                    return Y > coord.getY();
                 case COORD_RELATE_ZCOORD:
-                    return Z > coord.Z;
+                    return Z > coord.getZ();
             }
         }
         bool operator >= (const Coord3D<ArithType> &coord) const {
@@ -148,26 +148,26 @@ template <typename ArithType> class Coord3D {
                 case COORD_RELATE_EUCLID:
                     return euclideanDistance() >= coord.euclideanDistance();
                 case COORD_RELATE_XCOORD:
-                    return X >= coord.X;
+                    return X >= coord.getX();
                 case COORD_RELATE_YCOORD:
-                    return Y >= coord.Y;
+                    return Y >= coord.getY();
                 case COORD_RELATE_ZCOORD:
-                    return Z >= coord.Z;
+                    return Z >= coord.getZ();
             }
         }
 
         Coord3D<ArithType> operator += (const Coord3D<ArithType> &coord) {
             Coord3D<ArithType> output(X, Y, Z);
-            X += coord.X;
-            Y += coord.Y;
-            Z += coord.Z;
+            X += coord.getX();
+            Y += coord.getY();
+            Z += coord.getZ();
             return output;
         }
         Coord3D<ArithType> operator -= (const Coord3D<ArithType> &coord) {
             Coord3D<ArithType> output(X, Y, Z);
-            X -= coord.X;
-            Y -= coord.Y;
-            Z -= coord.Z;
+            X -= coord.getX();
+            Y -= coord.getY();
+            Z -= coord.getZ();
             return output;
         }
         Coord3D<ArithType> operator *= (const ArithType &scalar) {
@@ -177,15 +177,15 @@ template <typename ArithType> class Coord3D {
             Z *= scalar;
             return output;
         }
-        Coord3D<ArithType> operator + (const Coord3D<ArithType> &coord) const {return Coord3D<ArithType>(X + coord.X, Y + coord.Y, Z + coord.Z);}
-        Coord3D<ArithType> operator - (const Coord3D<ArithType> &coord) const {return Coord3D<ArithType>(X - coord.X, Y - coord.Y, Z - coord.Z);}
+        Coord3D<ArithType> operator + (const Coord3D<ArithType> &coord) const {return Coord3D<ArithType>(X + coord.getX(), Y + coord.getY(), Z + coord.getZ());}
+        Coord3D<ArithType> operator - (const Coord3D<ArithType> &coord) const {return Coord3D<ArithType>(X - coord.getX(), Y - coord.getY(), Z - coord.getZ());}
         Coord3D<ArithType> operator * (const ArithType &scalar) const {return Coord3D<ArithType>(X * scalar, Y * scalar, Z * scalar);}
 
         ArithType distEuclid(const Coord3D<ArithType> &coord = Coord3D<ArithType>(0, 0, 0)) const {
-            double distance = std::sqrt(std::pow(X - coord.X, 2) + std::pow(Y - coord.Y, 2) + std::pow(Z - coord.Z, 2));
+            double distance = std::sqrt(std::pow(X - coord.getX(), 2) + std::pow(Y - coord.getY(), 2) + std::pow(Z - coord.getZ(), 2));
             return std::is_integral<ArithType>::value ? std::round(distance) : distance;
         }
-        ArithType distTaxi(const Coord3D<ArithType> &coord = Coord3D<ArithType>(0, 0, 0)) const {return std::fabs(X - coord.X) + std::fabs(Y - coord.Y) + std::fabs(Z - coord.Z);}
+        ArithType distTaxi(const Coord3D<ArithType> &coord = Coord3D<ArithType>(0, 0, 0)) const {return std::fabs(X - coord.getX()) + std::fabs(Y - coord.getY()) + std::fabs(Z - coord.getZ());}
 };
 
 #endif /* COORD3D */
