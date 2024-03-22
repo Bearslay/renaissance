@@ -124,7 +124,7 @@ int main(int argc, char* args[]) {
         {0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 0},
         // Plateau
         {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 6},
-        {0, 6}, {1, 7}, {2, 8}, {3, 9},
+        {5, 11}, {0, 6}, {1, 7}, {2, 8},
     };
     std::vector<Coord3D<double>> tilePoints = {
         // Tile outline
@@ -135,12 +135,12 @@ int main(int argc, char* args[]) {
         Coord3D<double>( 86.603,  -50, -50),
         Coord3D<double>( 86.603,   50, -50),
         // Plateau
-        Coord3D<double>(    -20,    45, -25),
-        Coord3D<double>(-58.971,  22.5, -25),
-        Coord3D<double>(-58.971, -22.5, -25),
-        Coord3D<double>(    -20,   -45, -25),
-        Coord3D<double>( 18.971, -22.5, -25),
-        Coord3D<double>( 18.971,  22.5, -25),
+        Coord3D<double>(    -20,    65, -25),
+        Coord3D<double>(-58.971,  42.5, -25),
+        Coord3D<double>(-58.971,  -2.5, -25),
+        Coord3D<double>(    -20,   -25, -25),
+        Coord3D<double>( 18.971,  -2.5, -25),
+        Coord3D<double>( 18.971,  42.5, -25),
     };
     WireFrame<double> Tile(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), tilePoints, tilePairs);
 

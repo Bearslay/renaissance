@@ -37,11 +37,13 @@ template <typename ArithType> class Coord3D {
             X = coord.X;
             Y = coord.Y;
             Z = coord.Z;
+            RelationMetric = coord.RelationMetric;
         }
 
         ArithType getX() const {return X;}
         ArithType getY() const {return Y;}
         ArithType getZ() const {return Z;}
+        unsigned char getRelationMetric() const {return RelationMetric;}
         Coord3D<ArithType> setX(const ArithType &x) {
             Coord3D<ArithType> output(X, Y, Z);
             X = x;
@@ -57,12 +59,18 @@ template <typename ArithType> class Coord3D {
             Z = z;
             return output;
         }
+        unsigned char setRelationMetric(const unsigned char &metric = COORD_RELATE_COMMON) {
+            unsigned char output = RelationMetric;
+            if (metric > 5 || metric < 0) {RelationMetric = (6 + metric % 6) % 6;}
+            return output;
+        }
         std::string toString() {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z) + ")";}
 
         void operator = (const Coord3D<ArithType> &coord) {
             X = coord.X;
             Y = coord.Y;
             Z = coord.Z;
+            RelationMetric = coord.RelationMetric;
         }
         Coord3D<ArithType> operator ! () const {return Coord3D<ArithType>(-X, -Y, -Z);}
         bool operator == (const Coord3D<ArithType> &coord) const {
@@ -147,12 +155,6 @@ template <typename ArithType> class Coord3D {
                     return Z >= coord.Z;
             }
         }
-        unsigned char setRelationMetric(const unsigned char &metric = COORD_RELATE_COMMON) {
-            unsigned char output = RelationMetric;
-            if (metric > 5 || metric < 0) {RelationMetric = (6 + metric % 6) % 6;}
-            return output;
-        }
-        unsigned char getRelationMetric() const {return RelationMetric;}
 
         Coord3D<ArithType> operator += (const Coord3D<ArithType> &coord) {
             Coord3D<ArithType> output(X, Y, Z);

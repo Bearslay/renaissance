@@ -29,10 +29,12 @@ template <typename ArithType> class Coord2D {
         Coord2D(const Coord2D<ArithType> &coord) {
             X = coord.X;
             Y = coord.Y;
+            RelationMetric = coord.RelationMetric;
         }
 
         ArithType getX() const {return X;}
         ArithType getY() const {return Y;}
+        unsigned char getRelationMetric() const {return RelationMetric;}
         Coord2D<ArithType> setX(const ArithType &x) {
             Coord2D<ArithType> output(X, Y);
             X = x;
@@ -43,11 +45,17 @@ template <typename ArithType> class Coord2D {
             Y = y;
             return output;
         }
+        unsigned char setRelationMetric(const unsigned char &metric = COORD_RELATE_COMMON) {
+            unsigned char output = RelationMetric;
+            if (metric > 4 || metric < 0) {RelationMetric = (5 + metric % 5) % 5;}
+            return output;
+        }
         std::string toString() {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ")";}
 
         void operator = (const Coord2D<ArithType> &coord) {
             setX(coord.X);
             setY(coord.Y);
+            setRelationMetric(coord.RelationMetric);
         }
         Coord2D<ArithType> operator ! () const {return Coord2D<ArithType>(-X, -Y);}
         bool operator == (const Coord2D<ArithType> &coord) const {
@@ -122,12 +130,6 @@ template <typename ArithType> class Coord2D {
                     return Y >= coord.Y;
             }
         }
-        unsigned char setRelationMetric(const unsigned char &metric = COORD_RELATE_COMMON) {
-            unsigned char output = RelationMetric;
-            if (metric > 4 || metric < 0) {RelationMetric = (5 + metric % 5) % 5;}
-            return output;
-        }
-        unsigned char getRelationMetric() const {return RelationMetric;}
 
         Coord2D<ArithType> operator += (const Coord2D<ArithType> &coord) {
             Coord2D<ArithType> output(X, Y);
