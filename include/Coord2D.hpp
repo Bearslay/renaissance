@@ -15,50 +15,108 @@
 
 template <typename ArithType> class Coord2D {
     private:
-        ArithType X = 0;
-        ArithType Y = 0;
-        unsigned char RelationMetric = COORD_RELATE_COMMON;
+        ArithType X;
+        ArithType Y;
+
+        static unsigned char RelationMetric;
+        static Coord2D<ArithType> ReferencePoint;
 
     public:
-        Coord2D() {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
-        Coord2D(const ArithType &x, const ArithType &y) {
-            static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-            X = x;
-            Y = y;
+        Coord2D() : X(0), Y(0) {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
+        Coord2D(const ArithType &x, const ArithType &y) : X(x), Y(y) {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
+        Coord2D(const Coord2D<ArithType> &coord) : X(coord.getX()), Y(coord.getY()) {}
+
+        static unsigned char getRelationMetric() {return RelationMetric;}
+        static unsigned char setRelationMetric(const unsigned char &metric = COORD_RELATE_COMMON) {
+            unsigned char output = RelationMetric;
+            RelationMetric = (metric > 4 || metric < 0) ? COORD_RELATE_COMMON : metric;
+            return output;
         }
-        Coord2D(const Coord2D<ArithType> &coord) {
-            X = coord.getX();
-            Y = coord.getY();
-            RelationMetric = coord.getRelationMetric();
+        static Coord2D<ArithType> getReferencePoint() {return ReferencePoint;}
+        static Coord2D<ArithType> setReferencePoint(const Coord2D<ArithType> &coord = Coord2D<ArithType>(0, 0)) {
+            Coord2D<ArithType> output(ReferencePoint.getX(), ReferencePoint.getY());
+            ReferencePoint = coord;
+            return output;
         }
+        static Coord2D<ArithType> setReferencePoint(const ArithType &x, const ArithType &y) {return setReferencePoint(Coord2D<ArithType>(x, y));}
 
         ArithType getX() const {return X;}
-        ArithType getY() const {return Y;}
-        unsigned char getRelationMetric() const {return RelationMetric;}
-        Coord2D<ArithType> setX(const ArithType &x) {
-            Coord2D<ArithType> output(X, Y);
+        ArithType setX(const ArithType &x) {
+            ArithType output = X;
             X = x;
             return output;
         }
-        Coord2D<ArithType> setY(const ArithType &y) {
-            Coord2D<ArithType> output(X, Y);
+        ArithType moveX(const ArithType &amount) {
+            ArithType output = X;
+            X += amount;
+            return output;
+        }
+
+        ArithType getY() const {return Y;}
+        ArithType setY(const ArithType &y) {
+            ArithType output = Y;
             Y = y;
             return output;
         }
-        unsigned char setRelationMetric(const unsigned char &metric = COORD_RELATE_COMMON) {
-            unsigned char output = RelationMetric;
-            if (metric > 4 || metric < 0) {RelationMetric = (5 + metric % 5) % 5;}
+        ArithType moveY(const ArithType &amount) {
+            ArithType output = Y;
+            Y += amount;
             return output;
         }
-        std::string toString() {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ")";}
 
-        void operator = (const Coord2D<ArithType> &coord) {
+        Coord2D<ArithType> reflectX() {
+            Coord2D<ArithType> output = *this;
+            Y = -Y;
+            return output;
+        }
+        Coord2D<ArithType> reflectY() {
+            Coord2D<ArithType> output = *this;
+            X = -X;
+            return output;
+        }
+        // TODO: Add a reflection for any line
+        Coord2D<ArithType> stretchX(const ArithType &scalar) {
+            Coord2D<ArithType> output = *this;
+            X *= scalar;
+            return output;
+        }
+        Coord2D<ArithType> shrinkX(const ArithType &scalar) {
+            Coord2D<ArithType> output = *this;
+            X /= scalar;
+            return output;
+        }
+        Coord2D<ArithType> stretchY(const ArithType &scalar) {
+            Coord2D<ArithType> output = *this;
+            Y *= scalar;
+            return output;
+        }
+        Coord2D<ArithType> shrinkY(const ArithType &scalar) {
+            Coord2D<ArithType> output = *this;
+            Y /= scalar;
+            return output;
+        }
+        // TODO: Add a stretch along any line
+
+        Coord2D<ArithType> rotate(const Coord2D<ArithType> &pivot, double angle = M_PI_2) {
+            Coord2D<ArithType> output = *this;
+            double s = std::sin(angle);
+            double c = std::cos(angle);
+            X -= pivot.getX();
+            Y -= pivot.getY();
+            X = X * c - Y * s + pivot.getX();
+            Y = X * s + Y * c + pivot.getY();
+            return output;
+        }
+        Coord2D<ArithType> rotate(double angle = M_PI_2) {return rotate(ReferencePoint, angle);}
+
+        void operator= (const Coord2D<ArithType> &coord) {
             setX(coord.getX());
             setY(coord.getY());
-            setRelationMetric(coord.RelationMetric);
         }
-        Coord2D<ArithType> operator ! () const {return Coord2D<ArithType>(-X, -Y);}
-        bool operator == (const Coord2D<ArithType> &coord) const {
+        Coord2D<ArithType> operator! () const {return Coord2D<ArithType>(-X, -Y);}
+        std::string toString() const {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ")";}
+
+        bool operator== (const Coord2D<ArithType> &coord) const {
             switch (RelationMetric) {
                 default:
                 case COORD_RELATE_COMMON:
@@ -73,91 +131,88 @@ template <typename ArithType> class Coord2D {
                     return Y == coord.getY();
             }
         }
-        bool operator != (const Coord2D<ArithType> &coord) const {return !(Coord2D<ArithType>(X, Y) == coord);}
-        bool operator < (const Coord2D<ArithType> &coord) const {
+        bool operator!= (const Coord2D<ArithType> &coord) const {return !(*this == coord);}
+        bool operator< (const Coord2D<ArithType> &coord) const {
             switch (RelationMetric) {
                 default:
                 case COORD_RELATE_COMMON:
                 case COORD_RELATE_TAXICAB:
-                    return taxicabDistance() < coord.taxicabDistance();
+                    return distTaxi() < coord.distTaxi();
                 case COORD_RELATE_EUCLID:
-                    return euclideanDistance() < coord.euclideanDistance();
+                    return distEuclid() < coord.distEuclid();
                 case COORD_RELATE_XCOORD:
                     return X < coord.getX();
                 case COORD_RELATE_YCOORD:
                     return Y < coord.getY();
             }
         }
-        bool operator <= (const Coord2D<ArithType> &coord) const {
-            switch (RelationMetric) {
-                default:
-                case COORD_RELATE_COMMON:
-                case COORD_RELATE_TAXICAB:
-                    return taxicabDistance() <= coord.taxicabDistance();
-                case COORD_RELATE_EUCLID:
-                    return euclideanDistance() <= coord.euclideanDistance();
-                case COORD_RELATE_XCOORD:
-                    return X <= coord.getX();
-                case COORD_RELATE_YCOORD:
-                    return Y <= coord.getY();
-            }
-        }
-        bool operator > (const Coord2D<ArithType> &coord) const {
-            switch (RelationMetric) {
-                default:
-                case COORD_RELATE_COMMON:
-                case COORD_RELATE_TAXICAB:
-                    return taxicabDistance() > coord.taxicabDistance();
-                case COORD_RELATE_EUCLID:
-                    return euclideanDistance() > coord.euclideanDistance();
-                case COORD_RELATE_XCOORD:
-                    return X > coord.getX();
-                case COORD_RELATE_YCOORD:
-                    return Y > coord.getY();
-            }
-        }
-        bool operator >= (const Coord2D<ArithType> &coord) const {
-            switch (RelationMetric) {
-                default:
-                case COORD_RELATE_COMMON:
-                case COORD_RELATE_TAXICAB:
-                    return taxicabDistance() >= coord.taxicabDistance();
-                case COORD_RELATE_EUCLID:
-                    return euclideanDistance() >= coord.euclideanDistance();
-                case COORD_RELATE_XCOORD:
-                    return X >= coord.getX();
-                case COORD_RELATE_YCOORD:
-                    return Y >= coord.getY();
-            }
-        }
+        bool operator> (const Coord2D<ArithType> &coord) const {return coord < *this;}
+        bool operator<= (const Coord2D<ArithType> &coord) const {return !(*this > coord);}
+        bool operator>= (const Coord2D<ArithType> &coord) const {return !(*this < coord);}
 
-        Coord2D<ArithType> operator += (const Coord2D<ArithType> &coord) {
-            Coord2D<ArithType> output(X, Y);
+        bool equal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {
+            unsigned char original = setRelationMetric(metric);
+            bool output = (*this == coord);
+            setRelationMetric(original);
+            return output;
+        }
+        bool notequal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {return !equals(coord, metric);}
+        bool less(const Coord2D<ArithType> &coord, const unsigned char &metric) const {
+            unsigned char original = setRelationMetric(metric);
+            bool output = (*this < coord);
+            setRelationMetric(original);
+            return output;
+        }
+        bool greater(const Coord2D<ArithType> &coord, const unsigned char &metric) const {
+            unsigned char original = setRelationMetric(metric);
+            bool output = (*this > coord);
+            setRelationMetric(original);
+            return output;
+        }
+        bool lessequal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {return !greater(coord, metric);}
+        bool greaterequal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {return !less(coord, metric);}
+
+        Coord2D<ArithType>& operator+= (const Coord2D<ArithType> &coord) {
             X += coord.getX();
             Y += coord.getY();
-            return output;
+            return *this;
         }
-        Coord2D<ArithType> operator -= (const Coord2D<ArithType> &coord) {
-            Coord2D<ArithType> output(X, Y);
+        Coord2D<ArithType>& operator-= (const Coord2D<ArithType> &coord) {
             X -= coord.getX();
             Y -= coord.getY();
-            return output;
+            return *this;
         }
-        Coord2D<ArithType> operator *= (const ArithType &scalar) {
-            Coord2D<ArithType> output(X, Y);
+        Coord2D<ArithType>& operator*= (const ArithType &scalar) {
             X *= scalar;
             Y *= scalar;
-            return output;
+            return *this;
         }
-        Coord2D<ArithType> operator + (const Coord2D<ArithType> &coord) const {return Coord2D<ArithType>(X + coord.getX(), Y + coord.getY());}
-        Coord2D<ArithType> operator - (const Coord2D<ArithType> &coord) const {return Coord2D<ArithType>(X - coord.getX(), Y - coord.getY());}
-        Coord2D<ArithType> operator * (const ArithType &scalar) const {return Coord2D<ArithType>(X * scalar, Y * scalar);}
+        Coord2D<ArithType>& operator/= (const ArithType &scalar) {
+            X /= scalar;
+            Y /= scalar;
+            return *this;
+        }
+        Coord2D<ArithType>& operator%= (const ArithType &denom) {
+            X = std::fmod(X, denom);
+            Y = std::fmod(Y, denom);
+            return *this;
+        }
+        Coord2D<ArithType> operator+ (const Coord2D<ArithType> &coord) const {return Coord2D<ArithType>(X + coord.getX(), Y + coord.getY());}
+        Coord2D<ArithType> operator- (const Coord2D<ArithType> &coord) const {return Coord2D<ArithType>(X - coord.getX(), Y - coord.getY());}
+        Coord2D<ArithType> operator* (const ArithType &scalar) const {return Coord2D<ArithType>(X * scalar, Y * scalar);}
+        Coord2D<ArithType> operator/ (const ArithType &scalar) const {return Coord2D<ArithType>(X / scalar, Y / scalar);}
+        Coord2D<ArithType> operator% (const ArithType &denom) const {return Coord2D<ArithType>(std::fmod(X, denom), std::fmod(Y, denom));}
 
-        ArithType distEuclid(const Coord2D<ArithType> &coord = Coord2D<ArithType>(0, 0)) const {
+        ArithType distEuclid(const Coord2D<ArithType> &coord) const {
             double distance = std::sqrt(std::pow(X - coord.getX(), 2) + std::pow(Y - coord.getY(), 2));
             return std::is_integral<ArithType>::value ? std::round(distance) : distance;
         }
-        ArithType distTaxi(const Coord2D<ArithType> &coord = Coord2D<ArithType>(0, 0)) const {return std::fabs(X - coord.getX()) + std::fabs(Y - coord.getY());}
+        ArithType distEuclid() const {return distEuclid(ReferencePoint);}
+        ArithType distTaxi(const Coord2D<ArithType> &coord) const {return std::fabs(X - coord.getX()) + std::fabs(Y - coord.getY());}
+        ArithType distTaxi() const {return distTaxi(ReferencePoint);}
 };
+
+template <typename ArithType> unsigned char Coord2D<ArithType>::RelationMetric = COORD_RELATE_COMMON;
+template <typename ArithType> Coord2D<ArithType> Coord2D<ArithType>::ReferencePoint = Coord2D<ArithType>(0, 0);
 
 #endif /* COORD2D */
