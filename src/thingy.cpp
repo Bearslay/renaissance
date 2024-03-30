@@ -6,6 +6,25 @@
 #include "Coord2D.hpp"
 #include "RenderWindow.hpp"
 
+class TextureP {
+    private:
+        SDL_Texture* Texture;
+        SDL_Point Center;
+        SDL_Rect Frame;
+        Uint8 RedMod = 255;
+        Uint8 GreenMod = 255;
+        Uint8 BlueMod = 255;
+        Uint8 Opacity = 255;
+
+    public:
+        TextureP() : Texture(NULL), Center({}), Frame({}) {}
+        TextureP(SDL_Texture* texture, SDL_Point center, SDL_Rect frame) : Texture(texture), Center(center), Frame(frame) {}
+        TextureP(SDL_Texture* texture, SDL_Rect frame) : Texture(texture), Center({frame.w / 2, frame.h / 2}), Frame(frame) {}
+        TextureP(SDL_Texture* texture, SDL_Point dims) : Texture(texture), Center({dims.x / 2, dims.y / 2}), Frame({0, 0, dims.x, dims.y}) {}
+
+
+};
+
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main() {
     std::cout << "\n";
