@@ -2,28 +2,13 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
+#include <vector>
 
 #include "Coord2D.hpp"
+#include "Texture.hpp"
 #include "RenderWindow.hpp"
 
-class TextureP {
-    private:
-        SDL_Texture* Texture;
-        SDL_Point Center;
-        SDL_Rect Frame;
-        Uint8 RedMod = 255;
-        Uint8 GreenMod = 255;
-        Uint8 BlueMod = 255;
-        Uint8 Opacity = 255;
-
-    public:
-        TextureP() : Texture(NULL), Center({}), Frame({}) {}
-        TextureP(SDL_Texture* texture, SDL_Point center, SDL_Rect frame) : Texture(texture), Center(center), Frame(frame) {}
-        TextureP(SDL_Texture* texture, SDL_Rect frame) : Texture(texture), Center({frame.w / 2, frame.h / 2}), Frame(frame) {}
-        TextureP(SDL_Texture* texture, SDL_Point dims) : Texture(texture), Center({dims.x / 2, dims.y / 2}), Frame({0, 0, dims.x, dims.y}) {}
-
-
-};
+#define DIAGMULT 0.707106781
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main() {
@@ -38,7 +23,7 @@ int main() {
     SDL_Event event;
     const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
-    double t = 0.0;
+    long double t = 0.0;
     double dt = 0.01;
     int startTicks = 0, frameTicks = 0;
     double currentTime = HireTime_Sec();
@@ -46,10 +31,20 @@ int main() {
     double frameTime = 0.0;
     double accumulator = 0.0;
 
-    SDL_Texture * texture = Window.loadTexture("dev/thingy/gfx/arrow.png");
-    // SDL_SetTextureColorMod(texture, 255, 0, 255);
-    // SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-    // SDL_SetTextureAlphaMod(texture, 63);
+    struct {
+        int exit = SDL_SCANCODE_ESCAPE;
+        int moveForwards = SDL_SCANCODE_W;
+        int moveBackwards = SDL_SCANCODE_S;
+        int strafeLeft = SDL_SCANCODE_A;
+        int strafeRight = SDL_SCANCODE_D;
+    } keybinds;
+
+    Texture texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), {16, 16}, {0, 0, 64, 64});
+    Coord2D<double> pos = {(double)(Window.getWidth() / 2), (double)(Window.getHeight() / 2)};
+    SDL_Rect dst = {(int)pos.getX(), (int)pos.getY(), 32, 32};
+
+    SDL_Point MousePos;
+    double movespeed = 0.25;
 
     bool running = true;
     while (running) {
@@ -62,15 +57,52 @@ int main() {
         while (accumulator >= dt) {
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT) {running = false;}
+                SDL_GetMouseState(&MousePos.x, &MousePos.y);
+                MousePos.y = Window.getHeight() - MousePos.y;
             }
             if (keystate[SDL_SCANCODE_ESCAPE]) {running = false;}
+
+            texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()) * 180 / M_PI);
+
+            if (keystate[keybinds.moveForwards] && !keystate[keybinds.moveBackwards]) {
+                if (!keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
+                    pos.moveY(movespeed);
+                } else {
+                    if (keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
+                        pos.moveX(-movespeed * DIAGMULT);
+                        pos.moveY(movespeed * DIAGMULT);
+                    } else if (!keystate[keybinds.strafeLeft] && keystate[keybinds.strafeRight]) {
+                        pos.moveX(movespeed * DIAGMULT);
+                        pos.moveY(movespeed * DIAGMULT);
+                    }
+                }
+            } else if (!keystate[keybinds.moveForwards] && keystate[keybinds.moveBackwards]) {
+                if (!keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
+                    pos.moveY(-movespeed);
+                } else {
+                    if (keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
+                        pos.moveX(-movespeed * DIAGMULT);
+                        pos.moveY(-movespeed * DIAGMULT);
+                    } else if (!keystate[keybinds.strafeLeft] && keystate[keybinds.strafeRight]) {
+                        pos.moveX(movespeed * DIAGMULT);
+                        pos.moveY(-movespeed * DIAGMULT);
+                    }
+                }
+            } else if (!keystate[keybinds.moveForwards] && !keystate[keybinds.moveBackwards]) {
+                if (keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
+                    pos.moveX(-movespeed);
+                } else if (!keystate[keybinds.strafeLeft] && keystate[keybinds.strafeRight]) {
+                    pos.moveX(movespeed);
+                }
+            }
+            dst = {(int)pos.getX(), (int)pos.getY(), 32, 32};
 
             t += dt;
             accumulator -= dt;
         }
 
         Window.clear();
-        Window.renderTexture(texture, {0, 0, 64, 64}, {64, 64, 64, 64}, -90, {32, 32}, SDL_FLIP_NONE);
+        Window.renderTexture(texture, dst);
         Window.show();
 
         frameTicks = SDL_GetTicks() - startTicks;

@@ -1,27 +1,9 @@
-#ifndef SDLCOLOR
-#define SDLCOLOR
+#ifndef DEFAULTCOLORS
+#define DEFAULTCOLORS
 
 #include <SDL2/SDL.h>
 
-#define COLOR_BLACK 0
-#define COLOR_WHITE 1
-#define COLOR_LIGHT_GRAY 2
-#define COLOR_DARK_GRAY 3
-#define COLOR_BROWN 4
-#define COLOR_RED 5
-#define COLOR_MAROON 6
-#define COLOR_ORANGE 7
-#define COLOR_YELLOW 8
-#define COLOR_LIME 9
-#define COLOR_GREEN 10
-#define COLOR_CYAN 11
-#define COLOR_TEAL 12
-#define COLOR_BLUE 13
-#define COLOR_MAGENTA 14
-#define COLOR_PURPLE 15
-
-struct Color {Uint8 r = 0, g = 0, b = 0, a = SDL_ALPHA_OPAQUE;};
-const Color DefaultColors[16] = {
+const SDL_Color DefaultColors[16] = {
     {0, 0, 0, SDL_ALPHA_OPAQUE},
     {255, 255, 255, SDL_ALPHA_OPAQUE},
     {170, 170, 170, SDL_ALPHA_OPAQUE},
@@ -40,4 +22,23 @@ const Color DefaultColors[16] = {
     {115, 0, 115, SDL_ALPHA_OPAQUE}
 };
 
-#endif /* SDLCOLOR */
+typedef enum {
+    COLOR_BLACK = 0,
+    COLOR_WHITE = 1,
+    COLOR_LIGHT_GRAY = 2,
+    COLOR_DARK_GRAY = 3,
+    COLOR_BROWN = 4,
+    COLOR_RED = 5,
+    COLOR_MAROON = 6,
+    COLOR_ORANGE = 7,
+    COLOR_YELLOW = 8,
+    COLOR_LIME = 9,
+    COLOR_GREEN = 10,
+    COLOR_CYAN = 11,
+    COLOR_TEAL = 12,
+    COLOR_BLUE = 13,
+    COLOR_MAGENTA = 14,
+    COLOR_PURPLE = 15
+} DefaultColorNames;
+
+#endif /* DEFAULTCOLORS */

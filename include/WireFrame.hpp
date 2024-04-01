@@ -10,7 +10,7 @@
 #include "MathCoord.hpp"
 #include "MathVector.hpp"
 #include "RenderWindow.hpp"
-#include "SDLColor.hpp"
+#include "DefaultColors.hpp"
 #include "astr.hpp"
 
 template <typename ArithType> class WireFrame {

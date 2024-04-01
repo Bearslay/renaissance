@@ -9,7 +9,7 @@
 #include "MathVector.hpp"
 #include "RenderWindow.hpp"
 #include "WireFrame.hpp"
-#include "SDLColor.hpp"
+#include "DefaultColors.hpp"
 #include "astr.hpp"
 
 double hireTime_Sec() {return SDL_GetTicks() * 0.01f;}

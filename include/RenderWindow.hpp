@@ -6,8 +6,8 @@
 #include <iostream>
 #include <string>
 
-#include "SDLColor.hpp"
-#include "astr.hpp"
+#include "DefaultColors.hpp"
+#include "Texture.hpp"
 
 class RenderWindow {
     private:
@@ -42,7 +42,7 @@ class RenderWindow {
         int getWidth() {return Width;}
         int getHeight() {return Height;}
 
-        void clear(Color color = DefaultColors[COLOR_BLACK]) {
+        void clear(SDL_Color color = DefaultColors[COLOR_BLACK]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_RenderClear(Renderer);
         }
@@ -64,28 +64,28 @@ class RenderWindow {
             return output;
         }        
 
-        void drawPixel(int x, int y, Color color = DefaultColors[COLOR_WHITE]) {
+        void drawPixel(int x, int y, SDL_Color color = DefaultColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_RenderDrawPoint(Renderer, x, Height - y);
         }
-        void drawLine(int x1, int y1, int x2, int y2, Color color = DefaultColors[COLOR_WHITE]) {
+        void drawLine(int x1, int y1, int x2, int y2, SDL_Color color = DefaultColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_RenderDrawLine(Renderer, x1, Height - y1, x2, Height - y2);
         }
-        void drawRectangle(int x, int y, int width, int height, Color color = DefaultColors[COLOR_WHITE]) {
+        void drawRectangle(int x, int y, int width, int height, SDL_Color color = DefaultColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_Rect rectangle = {x, Height - y, width, height};
             SDL_RenderDrawRect(Renderer, &rectangle);
         }
-        void fillRectangle(int x, int y, int width, int height, Color color = DefaultColors[COLOR_WHITE]) {
+        void fillRectangle(int x, int y, int width, int height, SDL_Color color = DefaultColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_Rect rectangle = {x, Height - y, width, height};
             SDL_RenderFillRect(Renderer, &rectangle);
         }
-        void drawCircle(int x, int y, int radius, Color color = DefaultColors[COLOR_WHITE]) {
+        void drawCircle(int x, int y, int radius, SDL_Color color = DefaultColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
 
-            int diameter = radius * 2;
+            const int diameter = radius * 2;
             int ox = radius - 1;
             int oy = 0;
             int tx = 1;
@@ -115,7 +115,7 @@ class RenderWindow {
                 }
             }
         }
-        void fillCircle(int x, int y, int radius, Color color = DefaultColors[COLOR_WHITE]) {
+        void fillCircle(int x, int y, int radius, SDL_Color color = DefaultColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
 
             int ox = 0;
@@ -150,8 +150,20 @@ class RenderWindow {
             return texture;
         }
 
-        void renderTexture(SDL_Texture* texture, SDL_Rect src, SDL_Rect dst, double angle, SDL_Point center, SDL_RendererFlip flip) {
+        void renderTexture(SDL_Texture* texture, const SDL_Rect &src, const SDL_Rect &dst, const double &angle, const SDL_Point &center, const SDL_RendererFlip &flip) {
             SDL_RenderCopyEx(Renderer, texture, &src, &dst, angle, &center, flip);
+        }
+        void renderTexture(const Texture &texture, const SDL_Rect &dst) {
+            const SDL_Rect source = texture.getFrame();
+            const SDL_Rect destination = {dst.x, Height - dst.y, dst.w, dst.h};
+            const SDL_Point center = texture.getCenter();
+            SDL_RenderCopyEx(Renderer, texture.getTexture(), &source, &destination, texture.getAngle(), &center, texture.getFlip());
+        }
+        void renderTexture(const Texture &texture, const SDL_Point &pos) {
+            const SDL_Rect src = texture.getFrame();
+            const SDL_Rect dst = {pos.x - texture.getFrame().w / 2, Height - pos.y - texture.getFrame().h / 2, texture.getFrame().w, texture.getFrame().h};
+            const SDL_Point center = texture.getCenter();
+            SDL_RenderCopyEx(Renderer, texture.getTexture(), &src, &dst, texture.getAngle(), &center, texture.getFlip());
         }
 };
 

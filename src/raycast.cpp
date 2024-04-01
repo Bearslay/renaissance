@@ -10,7 +10,7 @@
 #include "RenderWindow.hpp"
 #include "Ray2D.hpp"
 #include "LineSeg2D.hpp"
-#include "SDLColor.hpp"
+#include "DefaultColors.hpp"
 #include "astr.hpp"
 
 #define DIAGMULT 0.707106781
