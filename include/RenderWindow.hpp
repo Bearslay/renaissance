@@ -157,13 +157,13 @@ class RenderWindow {
             const SDL_Rect source = texture.getFrame();
             const SDL_Rect destination = {dst.x - dst.w / 2, Height - dst.y - dst.h / 2, dst.w, dst.h};
             const SDL_Point center = texture.getCenter();
-            SDL_RenderCopyEx(Renderer, texture.getTexture(), &source, &destination, -texture.getAngle(), &center, texture.getFlip());
+            SDL_RenderCopyEx(Renderer, texture.getTexture(), &source, &destination, -texture.getAngle() * 180 / M_PI, &center, texture.getFlip());
         }
         void renderTexture(const Texture &texture, const SDL_Point &pos) {
             const SDL_Rect src = texture.getFrame();
             const SDL_Rect dst = {pos.x - texture.getFrame().w / 2, Height - pos.y - texture.getFrame().h / 2, texture.getFrame().w, texture.getFrame().h};
             const SDL_Point center = texture.getCenter();
-            SDL_RenderCopyEx(Renderer, texture.getTexture(), &src, &dst, -texture.getAngle(), &center, texture.getFlip());
+            SDL_RenderCopyEx(Renderer, texture.getTexture(), &src, &dst, -texture.getAngle() * 180 / M_PI, &center, texture.getFlip());
         }
 };
 
