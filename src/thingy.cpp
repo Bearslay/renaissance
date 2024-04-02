@@ -8,38 +8,38 @@
 #include "Texture.hpp"
 #include "RenderWindow.hpp"
 
-template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Uint8 *keystate, const Coord2D<ArithType> &pos, const ArithType &speed, const int &forwards = SDL_SCANCODE_W, const int &backwards = SDL_SCANCODE_S, const int &left = SDL_SCANCODE_A, const int &right = SDL_SCANCODE_D) {
+template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Coord2D<ArithType> &pos, const ArithType &speed, const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
     const double diagMult = 0.707106781;
     Coord2D<ArithType> output = pos;
 
-    if (keystate[forwards] && !keystate[backwards]) {
-        if (!keystate[left] && !keystate[right]) {
+    if (forwards && !backwards) {
+        if (!left && !right) {
             output.moveY(speed);
         } else {
-            if (keystate[left] && !keystate[right]) {
+            if (left && !right) {
                 output.moveX(-speed * diagMult);
                 output.moveY(speed * diagMult);
-            } else if (!keystate[left] && keystate[right]) {
+            } else if (!left && right) {
                 output.moveX(speed * diagMult);
                 output.moveY(speed * diagMult);
             }
         }
-    } else if (!keystate[forwards] && keystate[backwards]) {
-        if (!keystate[left] && !keystate[right]) {
+    } else if (!forwards && backwards) {
+        if (!left && !right) {
             output.moveY(-speed);
         } else {
-            if (keystate[left] && !keystate[right]) {
+            if (left && !right) {
                 output.moveX(-speed * diagMult);
                 output.moveY(-speed * diagMult);
-            } else if (!keystate[left] && keystate[right]) {
+            } else if (!left && right) {
                 output.moveX(speed * diagMult);
                 output.moveY(-speed * diagMult);
             }
         }
-    } else if (!keystate[forwards] && !keystate[backwards]) {
-        if (keystate[left] && !keystate[right]) {
+    } else if (!forwards && !backwards) {
+        if (left && !right) {
             output.moveX(-speed);
-        } else if (!keystate[left] && keystate[right]) {
+        } else if (!left && right) {
             output.moveX(speed);
         }
     }
@@ -47,51 +47,51 @@ template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Uint8 *keyst
     return output;
 }
 
-template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Uint8 *keystate, const Coord2D<ArithType> &pos, const double &angle, const ArithType &speed, const int &forwards = SDL_SCANCODE_W, const int &backwards = SDL_SCANCODE_S, const int &left = SDL_SCANCODE_A, const int &right = SDL_SCANCODE_D) {
+template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Coord2D<ArithType> &pos, const double &angle, const ArithType &speed, const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
     const double diagMult = 0.707106781;
     Coord2D<ArithType> output = pos;
     const double sine = std::sin(angle);
     const double cosine = std::cos(angle);
 
-    if (keystate[forwards] && !keystate[backwards]) {
-        if (!keystate[left] && !keystate[right]) {
+    if (forwards && !backwards) {
+        if (!left && !right) {
             output.moveX(speed * cosine);
             output.moveY(speed * sine);
         } else {
-            if (keystate[left] && !keystate[right]) {
+            if (left && !right) {
                 output.moveX(speed * cosine * diagMult);
                 output.moveY(speed * sine * diagMult);
                 output.moveX(-speed * sine * diagMult);
                 output.moveY(speed * cosine * diagMult);
-            } else if (!keystate[left] && keystate[right]) {
+            } else if (!left && right) {
                 output.moveX(speed * cosine * diagMult);
                 output.moveY(speed * sine * diagMult);
                 output.moveX(speed * sine * diagMult);
                 output.moveY(-speed * cosine * diagMult);
             }
         }
-    } else if (!keystate[forwards] && keystate[backwards]) {
-        if (!keystate[left] && !keystate[right]) {
+    } else if (!forwards && backwards) {
+        if (!left && !right) {
             output.moveX(-speed * cosine);
             output.moveY(-speed * sine);
         } else {
-            if (keystate[left] && !keystate[right]) {
+            if (left && !right) {
                 output.moveX(-speed * cosine * diagMult);
                 output.moveY(-speed * sine * diagMult);
                 output.moveX(-speed * sine * diagMult);
                 output.moveY(speed * cosine * diagMult);
-            } else if (!keystate[left] && keystate[right]) {
+            } else if (!left && right) {
                 output.moveX(-speed * cosine * diagMult);
                 output.moveY(-speed * sine * diagMult);
                 output.moveX(speed * sine * diagMult);
                 output.moveY(-speed * cosine * diagMult);
             }
         }
-    } else if (!keystate[forwards] && !keystate[backwards]) {
-        if (keystate[left] && !keystate[right]) {
+    } else if (!forwards && !backwards) {
+        if (left && !right) {
             output.moveX(-speed * sine);
             output.moveY(speed * cosine);
-        } else if (!keystate[left] && keystate[right]) {
+        } else if (!left && right) {
             output.moveX(speed * sine);
             output.moveY(-speed * cosine);
         }
@@ -134,6 +134,7 @@ int main() {
     Texture texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), {dstSize.x / 2, dstSize.y / 2}, {0, 0, 64, 64});
     Coord2D<double> pos = {(double)(Window.getWidth() / 2), (double)(Window.getHeight() / 2)};
     SDL_Rect dst;
+    const double movespeed = 0.25;
 
     bool running = true;
     while (running) {
@@ -145,20 +146,32 @@ int main() {
 
         while (accumulator >= dt) {
             while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) {running = false;}
+                if (event.type == SDL_QUIT) {
+                    running = false;
+                    break;
+                }
                 SDL_GetMouseState(&MousePos.x, &MousePos.y);
                 MousePos.y = Window.getHeight() - MousePos.y;
             }
-            if (keystate[SDL_SCANCODE_ESCAPE]) {running = false;}
+            if (!running || keystate[SDL_SCANCODE_ESCAPE]) {
+                running = false;
+                break;
+            }
 
             texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()));
-            pos = basicMove_TD<double>(keystate, pos, texture.getAngle(), 0.25, keybinds.moveForwards, keybinds.moveBackwards, keybinds.strafeLeft, keybinds.strafeRight);
+            pos = basicMove_TD<double>(pos, movespeed, keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);
+            // if (dstSize.x / 2 + 4 < std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {pos = basicMove_TD<double>(pos, texture.getAngle(), movespeed, true, false, false, false);}
 
             t += dt;
             accumulator -= dt;
         }
+        if (!running) {break;}
 
         Window.clear();
+
+        if (dstSize.x / 2 + 4 >= std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {texture.setMods(DefaultColors[COLOR_YELLOW]);}
+        else {texture.setMods(DefaultColors[COLOR_RED]);}
+
         dst = {(int)pos.getX(), (int)pos.getY(), dstSize.x, dstSize.y};
         Window.renderTexture(texture, dst);
         Window.show();
@@ -170,6 +183,7 @@ int main() {
     }
 
     std::cout << "\n";
+    IMG_Quit();
     SDL_Quit();
     return 0; 
 }
