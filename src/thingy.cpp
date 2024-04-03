@@ -8,99 +8,23 @@
 #include "Texture.hpp"
 #include "RenderWindow.hpp"
 
-template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Coord2D<ArithType> &pos, const ArithType &speed, const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
-    const double diagMult = 0.707106781;
-    Coord2D<ArithType> output = pos;
-
-    if (forwards && !backwards) {
-        if (!left && !right) {
-            output.moveY(speed);
-        } else {
-            if (left && !right) {
-                output.moveX(-speed * diagMult);
-                output.moveY(speed * diagMult);
-            } else if (!left && right) {
-                output.moveX(speed * diagMult);
-                output.moveY(speed * diagMult);
-            }
-        }
-    } else if (!forwards && backwards) {
-        if (!left && !right) {
-            output.moveY(-speed);
-        } else {
-            if (left && !right) {
-                output.moveX(-speed * diagMult);
-                output.moveY(-speed * diagMult);
-            } else if (!left && right) {
-                output.moveX(speed * diagMult);
-                output.moveY(-speed * diagMult);
-            }
-        }
-    } else if (!forwards && !backwards) {
-        if (left && !right) {
-            output.moveX(-speed);
-        } else if (!left && right) {
-            output.moveX(speed);
-        }
+template <typename ArithType> double getMoveAngle(const bool &f, const bool &b, const bool &l, const bool &r) {
+    if (f && !b) {
+        if (l && !r) {return 3 * M_PI_4;}
+        if (!l && r) {return M_PI_4;}
+        return M_PI_2;
     }
-
-    return output;
+    if (!f && b) {
+        if (l && !r) {return 5 * M_PI_4;}
+        if (!l && r) {return 7 * M_PI_4;}
+        return 3 * M_PI_2;
+    }
+    if (l && !r) {return M_PI;}
+    if (!l && r) {return 0;}
+    return -1;
 }
 
-template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Coord2D<ArithType> &pos, const double &angle, const ArithType &speed, const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
-    const double diagMult = 0.707106781;
-    Coord2D<ArithType> output = pos;
-    const double sine = std::sin(angle);
-    const double cosine = std::cos(angle);
-
-    if (forwards && !backwards) {
-        if (!left && !right) {
-            output.moveX(speed * cosine);
-            output.moveY(speed * sine);
-        } else {
-            if (left && !right) {
-                output.moveX(speed * cosine * diagMult);
-                output.moveY(speed * sine * diagMult);
-                output.moveX(-speed * sine * diagMult);
-                output.moveY(speed * cosine * diagMult);
-            } else if (!left && right) {
-                output.moveX(speed * cosine * diagMult);
-                output.moveY(speed * sine * diagMult);
-                output.moveX(speed * sine * diagMult);
-                output.moveY(-speed * cosine * diagMult);
-            }
-        }
-    } else if (!forwards && backwards) {
-        if (!left && !right) {
-            output.moveX(-speed * cosine);
-            output.moveY(-speed * sine);
-        } else {
-            if (left && !right) {
-                output.moveX(-speed * cosine * diagMult);
-                output.moveY(-speed * sine * diagMult);
-                output.moveX(-speed * sine * diagMult);
-                output.moveY(speed * cosine * diagMult);
-            } else if (!left && right) {
-                output.moveX(-speed * cosine * diagMult);
-                output.moveY(-speed * sine * diagMult);
-                output.moveX(speed * sine * diagMult);
-                output.moveY(-speed * cosine * diagMult);
-            }
-        }
-    } else if (!forwards && !backwards) {
-        if (left && !right) {
-            output.moveX(-speed * sine);
-            output.moveY(speed * cosine);
-        } else if (!left && right) {
-            output.moveX(speed * sine);
-            output.moveY(-speed * cosine);
-        }
-    }
-
-    return output;
-}
-
-double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
+long double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main() {
     std::cout << "\n";
 
@@ -115,9 +39,9 @@ int main() {
 
     long double t = 0.0;
     double dt = 0.01;
-    int startTicks = 0, frameTicks = 0;
-    double currentTime = HireTime_Sec();
-    double newTime = 0.0;
+    Uint32 startTicks = 0, frameTicks = 0;
+    long double currentTime = HireTime_Sec();
+    long double newTime = 0.0;
     double frameTime = 0.0;
     double accumulator = 0.0;
 
@@ -131,10 +55,12 @@ int main() {
     SDL_Point MousePos;
 
     SDL_Point dstSize = {32, 32};
-    Texture texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), {dstSize.x / 2, dstSize.y / 2}, {0, 0, 64, 64});
+    Texture texture(Window.loadTexture("dev/thingy/gfx/smile.png"), {dstSize.x / 2, dstSize.y / 2}, {0, 0, 64, 64});
     Coord2D<double> pos = {(double)(Window.getWidth() / 2), (double)(Window.getHeight() / 2)};
     SDL_Rect dst;
     const double movespeed = 0.25;
+
+    Texture block(Window.loadTexture("dev/thingy/gfx/tile.png"), {0, 0, 64, 64});
 
     bool running = true;
     while (running) {
@@ -158,9 +84,15 @@ int main() {
                 break;
             }
 
-            texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()));
-            pos = basicMove_TD<double>(pos, movespeed, keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);
-            // if (dstSize.x / 2 + 4 < std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {pos = basicMove_TD<double>(pos, texture.getAngle(), movespeed, true, false, false, false);}
+            // texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()));
+            if (1) {
+                double moveAngle = getMoveAngle<double>(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);;
+                if (moveAngle >= 0) {
+                    // Add or remove adjustment for the player's angle
+                    // moveAngle += texture.getAngle() - M_PI_2;
+                    pos += Coord2D<double>(std::cos(moveAngle), std::sin(moveAngle)) * movespeed;
+                }
+            } else if (dstSize.x / 2 + 4 < std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {pos += Coord2D<double>(std::cos(texture.getAngle()), std::sin(texture.getAngle())) * movespeed;}
 
             t += dt;
             accumulator -= dt;
@@ -174,6 +106,7 @@ int main() {
 
         dst = {(int)pos.getX(), (int)pos.getY(), dstSize.x, dstSize.y};
         Window.renderTexture(texture, dst);
+        Window.renderTexture(block, {256, 256, 64, 64});
         Window.show();
 
         frameTicks = SDL_GetTicks() - startTicks;

@@ -34,7 +34,7 @@ class RenderWindow {
             SDL_DestroyWindow(Window);
         }
 
-        int getRefreshRate() {
+        unsigned int getRefreshRate() {
             SDL_DisplayMode mode;
             SDL_GetDisplayMode(SDL_GetWindowDisplayIndex(Window), 0, &mode);
             return mode.refresh_rate;
