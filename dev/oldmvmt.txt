@@ -1,0 +1,93 @@
+// If I need this code again, I don't wanna spend the time whipping the formulas back up again
+
+template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Coord2D<ArithType> &pos, const ArithType &speed, const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
+    const double diagMult = 0.707106781;
+    Coord2D<ArithType> output = pos;
+
+    if (forwards && !backwards) {
+        if (!left && !right) {
+            output.moveY(speed);
+        } else {
+            if (left && !right) {
+                output.moveX(-speed * diagMult);
+                output.moveY(speed * diagMult);
+            } else if (!left && right) {
+                output.moveX(speed * diagMult);
+                output.moveY(speed * diagMult);
+            }
+        }
+    } else if (!forwards && backwards) {
+        if (!left && !right) {
+            output.moveY(-speed);
+        } else {
+            if (left && !right) {
+                output.moveX(-speed * diagMult);
+                output.moveY(-speed * diagMult);
+            } else if (!left && right) {
+                output.moveX(speed * diagMult);
+                output.moveY(-speed * diagMult);
+            }
+        }
+    } else if (!forwards && !backwards) {
+        if (left && !right) {
+            output.moveX(-speed);
+        } else if (!left && right) {
+            output.moveX(speed);
+        }
+    }
+
+    return output;
+}
+
+template <typename ArithType> Coord2D<ArithType> basicMove_TD(const Coord2D<ArithType> &pos, const double &angle, const ArithType &speed, const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
+    const double diagMult = 0.707106781;
+    Coord2D<ArithType> output = pos;
+    const double sine = std::sin(angle);
+    const double cosine = std::cos(angle);
+
+    if (forwards && !backwards) {
+        if (!left && !right) {
+            output.moveX(speed * cosine);
+            output.moveY(speed * sine);
+        } else {
+            if (left && !right) {
+                output.moveX(speed * cosine * diagMult);
+                output.moveY(speed * sine * diagMult);
+                output.moveX(-speed * sine * diagMult);
+                output.moveY(speed * cosine * diagMult);
+            } else if (!left && right) {
+                output.moveX(speed * cosine * diagMult);
+                output.moveY(speed * sine * diagMult);
+                output.moveX(speed * sine * diagMult);
+                output.moveY(-speed * cosine * diagMult);
+            }
+        }
+    } else if (!forwards && backwards) {
+        if (!left && !right) {
+            output.moveX(-speed * cosine);
+            output.moveY(-speed * sine);
+        } else {
+            if (left && !right) {
+                output.moveX(-speed * cosine * diagMult);
+                output.moveY(-speed * sine * diagMult);
+                output.moveX(-speed * sine * diagMult);
+                output.moveY(speed * cosine * diagMult);
+            } else if (!left && right) {
+                output.moveX(-speed * cosine * diagMult);
+                output.moveY(-speed * sine * diagMult);
+                output.moveX(speed * sine * diagMult);
+                output.moveY(-speed * cosine * diagMult);
+            }
+        }
+    } else if (!forwards && !backwards) {
+        if (left && !right) {
+            output.moveX(-speed * sine);
+            output.moveY(speed * cosine);
+        } else if (!left && right) {
+            output.moveX(speed * sine);
+            output.moveY(-speed * cosine);
+        }
+    }
+
+    return output;
+}
