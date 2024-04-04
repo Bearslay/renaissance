@@ -31,7 +31,7 @@ template <typename ArithType> class Vector2D {
             X = M * std::cos(T);
             Y = M * std::sin(T);
         }
-        void calcPolar() {
+        void     calcPolar() {
             if (std::is_integral<ArithType>::value) {M = std::round(std::sqrt(X * X + Y * Y));}
             else {M = std::sqrt(X * X + Y * Y);}
             T = std::atan2(Y, X);
@@ -39,7 +39,7 @@ template <typename ArithType> class Vector2D {
 
     public:
         Vector2D() : M(1), T(0), X(1), Y(0) {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
-        Vector2D(const ArithType &mag, const double &angle) : M(mag), T(regulateAngle(angle)) {
+        Vector2D(const ArithType &mag, const double &theta) : M(mag), T(mapAngle(theta)) {
             static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
             calcCartesian();
         }
@@ -47,7 +47,7 @@ template <typename ArithType> class Vector2D {
             static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
             calcPolar();
         }
-        Vector2D(const Vector2D<ArithType> &vector) : M(vector.getMag()), T(vector.getAngle()), X(vector.getX()), Y(vector.getY()) {}
+        Vector2D(const Vector2D<ArithType> &vector) : M(vector.getMag()), T(vector.getTheta()), X(vector.getX()), Y(vector.getY()) {}
 
         static unsigned char getRelationMetric() {return RelationMetric;}
         static unsigned char setRelationMetric(const unsigned char &metric = VECTOR_RELATE_COMMON) {
@@ -55,8 +55,7 @@ template <typename ArithType> class Vector2D {
             RelationMetric = (metric > 4 || metric < 0) ? VECTOR_RELATE_COMMON : metric;
             return output;
         }
-
-        static double regulateAngle(const double &angle, const bool &useRadians = true) {
+        static double mapAngle(const double &angle, const bool &useRadians = true) {
             if (useRadians) {
                 if (angle > 0 && angle < 2 * M_PI) {return angle;}
 
@@ -73,145 +72,146 @@ template <typename ArithType> class Vector2D {
             return output;
         }
 
-        ArithType getMag() const {return M;}
-        ArithType setMag(const ArithType &mag) {
+        ArithType   getMag()                              const {return M;}
+        double    getTheta(const bool &useRadians = true) const {return useRadians ? T : T * 180 / M_PI;}
+        ArithType     getX()                              const {return X;}
+        ArithType     getY()                              const {return Y;}
+        ArithType   setMag(const ArithType &mag) {
             const ArithType output = M;
             M = mag;
             calcCartesian();
             return output;
         }
-        ArithType adjustMag(const ArithType &amount) {
+        ArithType   adjMag(const ArithType &amount) {
             const ArithType output = M;
             M += amount;
             calcCartesian();
             return output;
         }
-
-        double getAngle(const bool &useRadians = true) const {return useRadians ? T : T * 180 / M_PI;}
-        double setAngle(const double &angle) {
+        double    setTheta(const double &theta) {
             const double output = T;
-            T = regulateAngle(angle);
+            T = mapAngle(theta);
             calcCartesian();
             return output;
         }
-        double adjustAngle(const double &amount) {
+        double    adjTheta(const double &amount) {
             const double output = T;
-            T = regulateAngle(T + amount);
+            T = mapAngle(T + amount);
             calcCartesian();
             return output;
         }
-
-        ArithType getX() const {return X;}
-        ArithType setX(const ArithType &x) {
+        ArithType     setX(const ArithType &x) {
             const ArithType output = X;
             X = x;
             calcPolar();
             return output;
         }
-        ArithType adjustX(const ArithType &amount) {
+        ArithType     adjX(const ArithType &amount) {
             const ArithType output = X;
             X += amount;
             calcPolar();
             return output;
         }
-
-        ArithType getY() const {return Y;}
-        ArithType setY(const ArithType &y) {
+        ArithType     setY(const ArithType &y) {
             const ArithType output = Y;
             Y = y;
             calcPolar();
             return output;
         }
-        ArithType adjustY(const ArithType &amount) {
+        ArithType     adjY(const ArithType &amount) {
             const ArithType output = Y;
             Y += amount;
             calcPolar();
             return output;
         }
 
-        void operator= (const Vector2D<ArithType> &vector) {
+        void operator=(const Vector2D<ArithType> &vector) {
             setMag(vector.getMag());
-            setAngle(vector.getAngle());
+            setAngle(vector.getTheta());
+            calcCartesian();
         }
-        Vector2D<ArithType> operator! () const {return Vector2D<ArithType>(M, T + M_PI);}
-        std::string toString() const {return "(" + std::to_string(M) + ", " + std::to_string(T) ")";}
+        Vector2D<ArithType> operator!() const {return Vector2D<ArithType>(M, T + M_PI);}
+        std::string          toString() const {return "(" + std::to_string(M) + ", " + std::to_string(T) + ")";}
 
-        bool equal (const Vector2D<ArithType> &vector, const unsigned char &metric) const {
+        bool        equal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {
             switch (metric) {
                 default:
                 case VECTOR_RELATE_COMMON:
-                    return M == vector.getMag() && T == vector.getAngle();
+                    return M == vector.getMag() && T == vector.getTheta();
                 case VECTOR_RELATE_MAGNITUDE:
                     return M == vector.getMag();
                 case VECTOR_RELATE_ANGLE:
-                    return T == vector.getAngle();
+                    return T == vector.getTheta();
                 case VECTOR_RELATE_XCOMP:
                     return X == vector.getX();
                 case VECTOR_RELATE_YCOMP:
                     return Y == vector.getY();
             }
         }
-        bool notequal (const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !equal(vector, metric);}
-        bool less (const Vector2D<ArithType> &vector, const unsigned char &metric) const {
+        bool     notequal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !equal(vector, metric);}
+        bool         less(const Vector2D<ArithType> &vector, const unsigned char &metric) const {
             switch (metric) {
                 default:
                 case VECTOR_RELATE_COMMON:
                 case VECTOR_RELATE_MAGNITUDE:
                     return M < vector.getMag();
                 case VECTOR_RELATE_ANGLE:
-                    return T < vector.getAngle();
+                    return T < vector.getTheta();
                 case VECTOR_RELATE_XCOMP:
                     return X < vector.getX();
                 case VECTOR_RELATE_YCOMP:
                     return Y < vector.getY();
             }
         }
-        bool greater (const Vector2D<ArithType> &vector, const unsigned char &metric) const {return vector.less(*this, metric);}
-        bool lessequal (const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !greater(vector, metric);}
-        bool greaterequal (const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !less(vector, metric);}
+        bool      greater(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return vector.less(*this, metric);}
+        bool    lessequal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !greater(vector, metric);}
+        bool greaterequal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !less(vector, metric);}
+        bool   operator==(const Vector2D<ArithType> &vector) const {return        equal(vector, RelationMetric);}
+        bool   operator!=(const Vector2D<ArithType> &vector) const {return         less(vector, RelationMetric);}
+        bool    operator<(const Vector2D<ArithType> &vector) const {return         less(vector, RelationMetric);}
+        bool    operator>(const Vector2D<ArithType> &vector) const {return      greater(vector, RelationMetric);}
+        bool   operator<=(const Vector2D<ArithType> &vector) const {return    lessequal(vector, RelationMetric);}
+        bool   operator>=(const Vector2D<ArithType> &vector) const {return greaterequal(vector, RelationMetric);}
 
-        bool operator== (const Vector2D<ArithType> &vector) const {return equal(vector, RelationMetric);}
-        bool operator!= (const Vector2D<ArithType> &vector) const {return less(vector, RelationMetric);}
-        bool operator< (const Vector2D<ArithType> &vector) const {return less(vector, RelationMetric);}
-        bool operator> (const Vector2D<ArithType> &vector) const {return greater(vector, RelationMetric);}
-        bool operator<= (const Vector2D<ArithType> &vector) const {return lessequal(vector, RelationMetric);}
-        bool operator>= (const Vector2D<ArithType> &vector) const {return greaterequal(vector, RelationMetric);}
-
-        Vector2D<ArithType>& operator+= (const Vector2D<ArithType> &vector) {
+        Vector2D<ArithType>& operator+=(const Vector2D<ArithType> &vector) {
             X += vector.getX();
             Y += vector.getY();
             calcPolar();
             return *this;
         }
-        Vector2D<ArithType>& operator-= (const Vector2D<ArithType> &vector) {
+        Vector2D<ArithType>& operator-=(const Vector2D<ArithType> &vector) {
             X -= vector.getX();
             Y -= vector.getY();
             calcPolar();
             return *this;
         }
-        Vector2D<ArithType>& operator*= (const ArithType &scalar) {
+        Vector2D<ArithType>& operator*=(const ArithType &scalar) {
             X *= scalar;
             Y *= scalar;
             calcPolar();
             return *this;
         }
-        Vector2D<ArithType>& operator/= (const ArithType &scalar) {
+        Vector2D<ArithType>& operator/=(const ArithType &scalar) {
             X /= scalar;
             Y /= scalar;
             calcPolar();
             return *this;
         }
-        Vector2D<ArithType>& operator%= (const ArithType &denom) {
+        Vector2D<ArithType>& operator%=(const ArithType &denom)  {
             X = std::fmod(X, denom);
             Y = std::fmod(Y, denom);
             calcPolar();
             return *this;
         }
-        Vector2D<ArithType> operator+ (const Vector2D<ArithType> &vector) const {return Vector<ArithType>(X + vector.getX(), Y + vector.getY());}
-        Vector2D<ArithType> operator- (const Vector2D<ArithType> &vector) const {return Vector<ArithType>(X - vector.getX(), Y - vector.getY());}
-        Vector2D<ArithType> operator* (const ArithType &scalar) const {return Vector2D<ArithType>(X * scalar, Y * scalar);}
-        Vector2D<ArithType> operator/ (const ArithType &scalar) const {return Vector2D<ArithType>(X / scalar, Y / scalar);}
-        Vector2D<ArithType> operator% (const ArithType &denom) const {return Vector2D<ArithType>(std::fmod(X, denom), std::fmod(Y, denom));}
+        Vector2D<ArithType>   operator+(const Vector2D<ArithType> &vector) const {return Vector2D<ArithType>(X + vector.getX(), Y + vector.getY());}
+        Vector2D<ArithType>   operator-(const Vector2D<ArithType> &vector) const {return Vector2D<ArithType>(X - vector.getX(), Y - vector.getY());}
+        Vector2D<ArithType>   operator*(const ArithType &scalar)           const {return Vector2D<ArithType>(X * scalar, Y * scalar);}
+        Vector2D<ArithType>   operator/(const ArithType &scalar)           const {return Vector2D<ArithType>(X / scalar, Y / scalar);}
+        Vector2D<ArithType>   operator%(const ArithType &denom)            const {return Vector2D<ArithType>(std::fmod(X, denom), std::fmod(Y, denom));}
+
+        ArithType            dot(const Vector2D<ArithType> &vector) const {return X * vector.getX() + Y * vector.getY();}
+        ArithType          cross(const Vector2D<ArithType> &vector) const {return X * vector.getY() - Y * vector.getX();} 
+        Vector2D<ArithType> unit()                                  const {return Vector2D<ArithType>(1, T);}
 };
 
 template <typename ArithType> unsigned char Vector2D<ArithType>::RelationMetric = VECTOR_RELATE_COMMON;
