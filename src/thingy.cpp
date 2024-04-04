@@ -26,12 +26,8 @@ template <typename ArithType> double getMoveAngle(const bool &f, const bool &b, 
 
 long double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main() {
-    std::cout << "\n";
-
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
-    else {std::cout << "SDL2 successfully initialized\n";}
     if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
-    else {std::cout << "SDL2_image successfully initialized\n";}
 
     RenderWindow Window("Game Thing", 1280, 720);
     SDL_Event event;
@@ -39,7 +35,7 @@ int main() {
 
     long double t = 0.0;
     double dt = 0.01;
-    Uint32 startTicks = 0, frameTicks = 0;
+    int startTicks = 0, frameTicks = 0;
     long double currentTime = HireTime_Sec();
     long double newTime = 0.0;
     double frameTime = 0.0;
@@ -56,7 +52,7 @@ int main() {
 
     SDL_Point dstSize = {32, 32};
     Texture texture(Window.loadTexture("dev/thingy/gfx/smile.png"), {dstSize.x / 2, dstSize.y / 2}, {0, 0, 64, 64});
-    Coord2D<double> pos = {(double)(Window.getWidth() / 2), (double)(Window.getHeight() / 2)};
+    Coord2D<double> pos(0, 0);
     SDL_Rect dst;
     const double movespeed = 0.25;
 
@@ -72,12 +68,20 @@ int main() {
 
         while (accumulator >= dt) {
             while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) {
-                    running = false;
-                    break;
+                switch (event.type) {
+                    case SDL_QUIT:
+                        running = false;
+                        break;
+                    case SDL_MOUSEMOTION:
+                        SDL_GetMouseState(&MousePos.x, &MousePos.y);
+                        MousePos.x = MousePos.x - Window.getW_2();
+                        MousePos.y = Window.getH() - MousePos.y - Window.getH_2();
+                        break;
+                    case SDL_WINDOWEVENT:
+                        Window.handleEvent(event.window);
+                        break;
                 }
-                SDL_GetMouseState(&MousePos.x, &MousePos.y);
-                MousePos.y = Window.getHeight() - MousePos.y;
+                if (!running) {break;}
             }
             if (!running || keystate[SDL_SCANCODE_ESCAPE]) {
                 running = false;
@@ -86,7 +90,7 @@ int main() {
 
             // texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()));
             if (1) {
-                double moveAngle = getMoveAngle<double>(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);;
+                double moveAngle = getMoveAngle<double>(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);
                 if (moveAngle >= 0) {
                     // Add or remove adjustment for the player's angle
                     // moveAngle += texture.getAngle() - M_PI_2;
@@ -106,7 +110,8 @@ int main() {
 
         dst = {(int)pos.getX(), (int)pos.getY(), dstSize.x, dstSize.y};
         Window.renderTexture(texture, dst);
-        Window.renderTexture(block, {256, 256, 64, 64});
+        Window.renderTexture(block, {0, 0, 64, 64});
+        
         Window.show();
 
         frameTicks = SDL_GetTicks() - startTicks;
@@ -114,8 +119,6 @@ int main() {
             SDL_Delay(1000 / Window.getRefreshRate() - frameTicks);
         }
     }
-
-    std::cout << "\n";
     IMG_Quit();
     SDL_Quit();
     return 0; 
