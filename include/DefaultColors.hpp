@@ -39,6 +39,6 @@ typedef enum {
     COLOR_BLUE = 13,
     COLOR_MAGENTA = 14,
     COLOR_PURPLE = 15
-} DefaultColorNames;
+} DefaultColorsNames;
 
 #endif /* DEFAULTCOLORS */
