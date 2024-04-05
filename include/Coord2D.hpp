@@ -97,12 +97,14 @@ template <typename ArithType> class Coord2D {
         // TODO: Add a stretch along any line
         Coord2D<ArithType>   rotate(const Coord2D<ArithType> &pivot, const double &theta = M_PI_2) {
             const Coord2D<ArithType> output = *this;
-            double s = std::sin(theta);
-            double c = std::cos(theta);
+            const double s = std::sin(theta);
+            const double c = std::cos(theta);
             X -= pivot.getX();
             Y -= pivot.getY();
-            X = X * c - Y * s + pivot.getX();
-            Y = X * s + Y * c + pivot.getY();
+            X = X * c - Y * s;
+            Y = X * s + Y * c;
+            X += pivot.getX();
+            Y += pivot.getY();
             return output;
         }
         Coord2D<ArithType>   rotate(const double &theta = M_PI_2) {return rotate(ReferencePoint, theta);}
@@ -148,7 +150,7 @@ template <typename ArithType> class Coord2D {
         bool    lessequal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {return !greater(coord, metric);}
         bool greaterequal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {return !less(coord, metric);}
         bool   operator==(const Coord2D<ArithType> &coord) const {return        equal(coord, RelationMetric);}
-        bool   operator!=(const Coord2D<ArithType> &coord) const {return         less(coord, RelationMetric);}
+        bool   operator!=(const Coord2D<ArithType> &coord) const {return     notequal(coord, RelationMetric);}
         bool    operator<(const Coord2D<ArithType> &coord) const {return         less(coord, RelationMetric);}
         bool    operator>(const Coord2D<ArithType> &coord) const {return      greater(coord, RelationMetric);}
         bool   operator<=(const Coord2D<ArithType> &coord) const {return    lessequal(coord, RelationMetric);}

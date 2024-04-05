@@ -214,7 +214,7 @@ template <typename ArithType> class Vector3D {
         bool    lessequal(const Vector3D<ArithType> &vector, const unsigned char &metric) const {return !greater(vector, metric);}
         bool greaterequal(const Vector3D<ArithType> &vector, const unsigned char &metric) const {return !less(vector, metric);}
         bool   operator==(const Vector3D<ArithType> &vector) const {return        equal(vector, RelationMetric);}
-        bool   operator!=(const Vector3D<ArithType> &vector) const {return         less(vector, RelationMetric);}
+        bool   operator!=(const Vector3D<ArithType> &vector) const {return     notequal(vector, RelationMetric);}
         bool    operator<(const Vector3D<ArithType> &vector) const {return         less(vector, RelationMetric);}
         bool    operator>(const Vector3D<ArithType> &vector) const {return      greater(vector, RelationMetric);}
         bool   operator<=(const Vector3D<ArithType> &vector) const {return    lessequal(vector, RelationMetric);}

@@ -88,15 +88,25 @@ int main() {
                 break;
             }
 
+            const double distFromMouse = std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()));
             // texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()));
             if (1) {
                 double moveAngle = getMoveAngle<double>(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);
                 if (moveAngle >= 0) {
-                    // Add or remove adjustment for the player's angle
                     // moveAngle += texture.getAngle() - M_PI_2;
                     pos += Coord2D<double>(std::cos(moveAngle), std::sin(moveAngle)) * movespeed;
                 }
-            } else if (dstSize.x / 2 + 4 < std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {pos += Coord2D<double>(std::cos(texture.getAngle()), std::sin(texture.getAngle())) * movespeed;}
+            } else if (dstSize.x / 2 + 4 < distFromMouse) {pos += Coord2D<double>(std::cos(texture.getAngle()), std::sin(texture.getAngle())) * movespeed;}
+
+            if (keystate[SDL_SCANCODE_RIGHT]) {
+                pos.rotate(-movespeed / pos.distEuclid());
+            } else if (keystate[SDL_SCANCODE_LEFT]) {
+                pos.rotate(movespeed / pos.distEuclid());
+            } else if (keystate[SDL_SCANCODE_UP]) {
+                pos.rotate(Coord2D<double>(MousePos.x, MousePos.y), -movespeed / distFromMouse);
+            } else if (keystate[SDL_SCANCODE_DOWN]) {
+                pos.rotate(Coord2D<double>(MousePos.x, MousePos.y), movespeed / distFromMouse);
+            }
 
             t += dt;
             accumulator -= dt;
@@ -109,6 +119,8 @@ int main() {
         else {texture.setMods(DefaultColors[COLOR_RED]);}
 
         dst = {(int)pos.getX(), (int)pos.getY(), dstSize.x, dstSize.y};
+        Window.drawCircle(0, 0, pos.distEuclid(), keystate[SDL_SCANCODE_LEFT] || keystate[SDL_SCANCODE_RIGHT] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
+        Window.drawCircle(MousePos.x, MousePos.y, std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY())), keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_DOWN] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
         Window.renderTexture(texture, dst);
         Window.renderTexture(block, {0, 0, 64, 64});
         
