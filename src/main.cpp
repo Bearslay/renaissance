@@ -5,8 +5,10 @@
 #include <vector>
 #include <cmath>
 
-#include "MathCoord.hpp"
-#include "MathVector.hpp"
+#include "Coord2D.hpp"
+#include "Coord3D.hpp"
+#include "Vector2D.hpp"
+#include "Vector3D.hpp"
 #include "RenderWindow.hpp"
 #include "WireFrame.hpp"
 #include "DefaultColors.hpp"
@@ -60,12 +62,8 @@ template <typename ArithType> Coord3D<ArithType> rotateCoord3D(const Vector3D<Ar
 }
 
 int main(int argc, char* args[]) {
-    std::cout << "\n";
-
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
-    else {std::cout << "SDL2 successfully initialized\n";}
     if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
-    else {std::cout << "SDL2_image successfully initialized\n";}
 
     RenderWindow Window("le windo - cube", 1280, 720);
     // RenderWindow AltWindow("da weendu", 640, 640);
@@ -106,7 +104,7 @@ int main(int argc, char* args[]) {
         for (unsigned char j = 0; j < points.size(); j++) {
             translatedPoints[j].setY(translatedPoints[j].getY() + 200);
         }
-        Cubes.emplace_back(WireFrame<double>(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), translatedPoints, pairs));
+        Cubes.emplace_back(WireFrame<double>(Coord3D<double>(0, 0, 0), translatedPoints, pairs));
     }
 
     std::vector<std::pair<unsigned int, unsigned int>> pyramidPairs = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4}};
@@ -117,7 +115,7 @@ int main(int argc, char* args[]) {
         Coord3D<double>(-100, -100,  100),
         Coord3D<double>(   0,    0, -100)
     };
-    WireFrame<double> Pyramid(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), pyramidPoints, pyramidPairs);
+    WireFrame<double> Pyramid(Coord3D<double>(0, 0, 0), pyramidPoints, pyramidPairs);
 
     std::vector<std::pair<unsigned int, unsigned int>> tilePairs = {
         // Tile outline
@@ -142,7 +140,7 @@ int main(int argc, char* args[]) {
         Coord3D<double>( 18.971,  -2.5, -25),
         Coord3D<double>( 18.971,  42.5, -25),
     };
-    WireFrame<double> Tile(Coord3D<double>(0, Window.getWidth() / 2, Window.getHeight() / 2), tilePoints, tilePairs);
+    WireFrame<double> Tile(Coord3D<double>(0, 0, 0), tilePoints, tilePairs);
 
     std::vector<Coord3D<double>> pointsNow, projected;
     for (unsigned char i = 0; i < points.size(); i++) {
@@ -154,9 +152,9 @@ int main(int argc, char* args[]) {
     double ax = 0, ay = 0, az = 0;
     double angleMult = 0.2;
     double cubeMoveSpeed = 0.25;
-    double px = Window.getWidth() / 2, py = Window.getHeight() / 2;
+    double px = 0, py = 0;
 
-    Coord2D<double> fellaPos(Window.getWidth() / 2, Window.getHeight() / 2);
+    Coord2D<double> fellaPos(0, 0);
     Vector2D<int> fellaView(0, 0);
     double fellaMoveSpeed = 0.25;
     int mousePosX = 0, mousePosY = 0;
@@ -198,10 +196,10 @@ int main(int argc, char* args[]) {
                     // Change the mode
                     if (keystate[SDL_SCANCODE_Z]) {
                         mode = mode == 0 ? 0 : mode - 1;
-                        Window.changeTitle(titles[mode]);
+                        Window.setTitle(titles[mode]);
                     } else if (keystate[SDL_SCANCODE_X]) {
                         mode = mode == maxMode ? maxMode : mode + 1;
-                        Window.changeTitle(titles[mode]);
+                        Window.setTitle(titles[mode]);
                     }
                     // Toggle fullscreen
                     if (keystate[SDL_SCANCODE_F11]) {
@@ -281,7 +279,7 @@ int main(int argc, char* args[]) {
                         pointsNow[i] = rotateCoord3D(Vector3D<double>(1, 0, 0), pointsNow[i], ax);
                     }
                     for (unsigned char i = 0; i < points.size(); i++) {
-                        projected[i] = projectCoord<double>(pointsNow[i] + Coord3D<double>(0, px - Window.getWidth() / 2, py - Window.getHeight() / 2), focalLength);
+                        projected[i] = projectCoord<double>(pointsNow[i] + Coord3D<double>(0, px, py), focalLength);
                     }
                     break;
                 case 1:
@@ -352,7 +350,7 @@ int main(int argc, char* args[]) {
                             Cubes[i].moveY(cubeMoveSpeed);
                         }
                     
-                        Cubes[i].project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                        Cubes[i].project(Coord3D<double>(focalLength, Window.getW() / 2, Window.getH() / 2));
                     }
                     // Get further away from or closer to the cube
                     if (keystate[SDL_SCANCODE_1]) {
@@ -395,7 +393,7 @@ int main(int argc, char* args[]) {
                     } else if (keystate[SDL_SCANCODE_RIGHT]) {
                         Pyramid.moveY(cubeMoveSpeed);
                     }
-                    Pyramid.project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                    Pyramid.project(Coord3D<double>(focalLength, Window.getW() / 2, Window.getH() / 2));
                     break;
                 case 4:
                     // Change the angles of the cube based on mouse movement/keyboard input
@@ -431,7 +429,7 @@ int main(int argc, char* args[]) {
                     } else if (keystate[SDL_SCANCODE_RIGHT]) {
                         Tile.moveY(cubeMoveSpeed);
                     }
-                    Tile.project(Coord3D<double>(focalLength, Window.getWidth() / 2, Window.getHeight() / 2));
+                    Tile.project(Coord3D<double>(focalLength, Window.getW() / 2, Window.getH() / 2));
                     break;
             }
 
@@ -484,7 +482,7 @@ int main(int argc, char* args[]) {
         }
     }
 
-    std::cout << "\n";
+    IMG_Quit();
     SDL_Quit();
     return 0;    
 }

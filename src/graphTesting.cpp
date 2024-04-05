@@ -21,7 +21,7 @@ int main() {
             case 0:
                 c1.setRelationMetric(COORD_RELATE_TAXICAB);
                 c1.setReferencePoint(1, 0);
-                c2.moveY(-1);
+                c2.adjY(-1);
                 break;
             case 1:
                 c1 *= 3;

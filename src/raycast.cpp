@@ -5,8 +5,8 @@
 #include <vector>
 #include <cmath>
 
-#include "MathCoord.hpp"
-#include "MathVector.hpp"
+#include "Coord2D.hpp"
+#include "Vector2D.hpp"
 #include "RenderWindow.hpp"
 #include "Ray2D.hpp"
 #include "LineSeg2D.hpp"
