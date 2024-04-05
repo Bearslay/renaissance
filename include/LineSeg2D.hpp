@@ -1,7 +1,7 @@
 #ifndef LINESEG
 #define LINESEG
 
-#include "MathCoord.hpp"
+#include "Coord2D.hpp"
 
 template <typename ArithType> class LineSeg2D {
     private:

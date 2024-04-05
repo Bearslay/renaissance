@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "MathCoord.hpp"
-#include "MathVector.hpp"
+#include "Coord3D.hpp"
+#include "Vector3D.hpp"
 #include "RenderWindow.hpp"
 #include "DefaultColors.hpp"
 #include "astr.hpp"
@@ -101,7 +101,7 @@ template <typename ArithType> class WireFrame {
         void rotateOriginAny(const Vector3D<ArithType> &rotationAxis, double theta, bool degrees = true) {
             if (degrees) {theta *= M_PI / 180;}
 
-            const Vector3D<ArithType> axis = rotationAxis.rToUnitVector();
+            const Vector3D<ArithType> axis = rotationAxis.unit();
             const ArithType x = axis.getX();
             const ArithType y = axis.getY();
             const ArithType z = axis.getZ();
@@ -145,7 +145,7 @@ template <typename ArithType> class WireFrame {
             }
         }
 
-        void display(RenderWindow &window, Color color = DefaultColors[COLOR_WHITE]) {
+        void display(RenderWindow &window, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
             for (unsigned int i = 0; i < Pairs.size(); i++) {
                 window.drawLine(Origin.getY() + Points[Pairs[i].first][2].getY(), Origin.getZ() + Points[Pairs[i].first][2].getZ(), Origin.getY() + Points[Pairs[i].second][2].getY(), Origin.getZ() + Points[Pairs[i].second][2].getZ(), color);
             }
