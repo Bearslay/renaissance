@@ -7,27 +7,28 @@
 #include "DefaultColors.hpp"
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
-int main() {
+int main(int argc, char* args[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
     // if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
     // if (!TTF_Init()) {std::cout << "Error initializing SDL2_ttf\nERROR: " << SDL_GetError() << "\n";}
 
     RenderWindow Window("window", 1280, 720);
-    SDL_Event event;
-    const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+    SDL_Event Event;
+    const Uint8 *Keystate = SDL_GetKeyboardState(NULL);
 
     struct {
         SDL_Point Pos = {0, 0};
         SDL_Point Rel = {0, 0};
-        double Sensitivity = 1;
+        double Sensitivity = 10;
 
         bool Motion = false;
-        bool First = true;
+        bool Released = true;
         bool Captured = false;
     } MouseInfo;
 
     struct {
-        int ToggleCapture = SDL_SCANCODE_GRAVE;
+        int Quit = SDL_SCANCODE_ESCAPE;
+        int ToggleCapture = SDL_SCANCODE_F1;
     } Keybinds;
 
     long double t = 0.0;
@@ -48,8 +49,8 @@ int main() {
         accumulator += frameTime;
 
         while (accumulator >= dt) {
-            while (SDL_PollEvent(&event)) {
-                switch (event.type) {
+            while (SDL_PollEvent(&Event)) {
+                switch (Event.type) {
                     case SDL_QUIT:
                         running = false;
                         break;
@@ -59,32 +60,42 @@ int main() {
                         MouseInfo.Pos.x = MouseInfo.Pos.x - Window.getW_2();
                         MouseInfo.Pos.y = Window.getH() - MouseInfo.Pos.y - Window.getH_2();
 
-                        if (!MouseInfo.First) {
-                            MouseInfo.Rel.x = event.motion.xrel;
-                            MouseInfo.Rel.y = event.motion.yrel;
+                        if (!MouseInfo.Released) {
+                            MouseInfo.Rel.x = Event.motion.xrel;
+                            MouseInfo.Rel.y = -Event.motion.yrel;
                         } else {
-                            MouseInfo.First = false;
+                            MouseInfo.Released = false;
                             MouseInfo.Rel = {0, 0};
                         }
                         break;
                     case SDL_KEYDOWN:
-                        if (keystate[Keybinds.ToggleCapture]) {
-
+                        if (Keystate[Keybinds.ToggleCapture]) {
+                            MouseInfo.Captured = !MouseInfo.Captured;
+                            if (MouseInfo.Captured) {
+                                SDL_SetRelativeMouseMode(SDL_TRUE);
+                                MouseInfo.Released = true;
+                                MouseInfo.Rel = {0, 0};
+                            } else {
+                                SDL_SetRelativeMouseMode(SDL_FALSE);
+                                Window.centerMouse();
+                                MouseInfo.Pos = {0, 0};
+                            }
                         }
                         break;
                     case SDL_WINDOWEVENT:
-                        Window.handleEvent(event.window);
+                        Window.handleEvent(Event.window);
                         break;
                 }
                 if (!running) {break;}
             }
-            if (!running || keystate[SDL_SCANCODE_ESCAPE]) {
+            if (!running || Keystate[Keybinds.Quit]) {
                 running = false;
                 break;
             }
 
             t += dt;
             accumulator -= dt;
+            MouseInfo.Motion = false;
         }
         if (!running) {break;}
 
