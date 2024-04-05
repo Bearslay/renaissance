@@ -98,14 +98,19 @@ int main() {
                 }
             } else if (dstSize.x / 2 + 4 < distFromMouse) {pos += Coord2D<double>(std::cos(texture.getAngle()), std::sin(texture.getAngle())) * movespeed;}
 
-            if (keystate[SDL_SCANCODE_RIGHT]) {
-                pos.rotate(-movespeed / pos.distEuclid());
-            } else if (keystate[SDL_SCANCODE_LEFT]) {
-                pos.rotate(movespeed / pos.distEuclid());
-            } else if (keystate[SDL_SCANCODE_UP]) {
-                pos.rotate(Coord2D<double>(MousePos.x, MousePos.y), -movespeed / distFromMouse);
-            } else if (keystate[SDL_SCANCODE_DOWN]) {
-                pos.rotate(Coord2D<double>(MousePos.x, MousePos.y), movespeed / distFromMouse);
+            if (pos.distEuclid() > 0) {
+                if (keystate[SDL_SCANCODE_RIGHT]) {
+                    pos.rotate(-movespeed / pos.distEuclid());
+                } else if (keystate[SDL_SCANCODE_LEFT]) {
+                    pos.rotate(movespeed / pos.distEuclid());
+                }
+            }
+            if (distFromMouse > 0) {
+                if (keystate[SDL_SCANCODE_UP]) {
+                    pos.rotate(Coord2D<double>(MousePos.x, MousePos.y), -movespeed / distFromMouse);
+                } else if (keystate[SDL_SCANCODE_DOWN]) {
+                    pos.rotate(Coord2D<double>(MousePos.x, MousePos.y), movespeed / distFromMouse);
+                }
             }
 
             t += dt;
