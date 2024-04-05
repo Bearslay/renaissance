@@ -2,6 +2,8 @@
 #define VECTOR3D
 
 #include <cmath>
+#include <vector>
+#include <utility>
 #include <string>
 
 #ifndef VECTOR2D_RELATIONS
@@ -45,13 +47,13 @@ template <typename ArithType> class Vector3D {
             const double m = std::sqrt(X * X + Y * Y + Z * Z);
             if (std::is_integral<ArithType>::value) {M = std::round(m);}
             else {M = m;}
-            T = std::acos(Z / m);
-            P = std::acos(X / std::sqrt(X * X + Y * Y));
+            T = std::atan2(Z, X);
+            P = std::atan2(Y, X);
         }
 
     public:
         Vector3D() : M(1), T(0), P(0), X(1), Y(0), Z(0) {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
-        Vector3D(const ArithType &mag, const double &theta, const double &phi) : M(mag), T(mapAngle(theta)), P(mapAngle(phi)) {
+        Vector3D(const ArithType &mag, const double &theta, const double &phi, const bool &useRadians) : M(mag), T(mapAngle(theta, useRadians)), P(mapAngle(phi, useRadians)) {
             static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
             calcCartesian();
         }
@@ -156,7 +158,7 @@ template <typename ArithType> class Vector3D {
             calcSpherical();
             return output;
         }
-        ArithType     adjY(const ArithType &amount) {
+        ArithType     adjZ(const ArithType &amount) {
             const ArithType output = Z;
             Z += amount;
             calcSpherical();
@@ -169,8 +171,10 @@ template <typename ArithType> class Vector3D {
             setPhi(vector.getPhi());
             calcCartesian();
         }
-        Vector3D<ArithType> operator!() const {return Vector3D<ArithType>(M, T + M_PI, P + M_PI);}
-        std::string          toString() const {return "(" + std::to_string(M) + ", " + std::to_string(T) + ", " + std::to_string(P) + ")";}
+        Vector3D<ArithType>                       operator!() const {return Vector3D<ArithType>(M, T + M_PI, P + M_PI);}
+        std::string                                toString() const {return "(" + std::to_string(M) + ", " + std::to_string(T) + ", " + std::to_string(P) + ")";}
+        std::vector<ArithType>                     toVector() const {return {X, Y, Z};}
+        std::pair<ArithType, std::vector<double>>    toPair() const {return {M, {T, P}};}
 
         bool        equal(const Vector3D<ArithType> &vector, const unsigned char &metric) const {
             switch (metric) {

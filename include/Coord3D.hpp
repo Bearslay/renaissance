@@ -2,6 +2,7 @@
 #define COORD3D
 
 #include <cmath>
+#include <vector>
 #include <string>
 
 #ifndef COORD2D_RELATIONS
@@ -127,6 +128,33 @@ template <typename ArithType> class Coord3D {
             return output;
         }
         // TODO: Add a stretch along any line
+        Coord3D<ArithType>  rotateX(const Coord3D<ArithType> &pivot, const double &angle) {
+            const Coord3D<ArithType> output = *this;
+            const double s = std::sin(angle);
+            const double c = std::cos(angle);
+            Y = (Y - pivot.getY()) * c - (Z - pivot.getZ()) * s + pivot.getY();
+            Z = (Y - pivot.getY()) * s + (Z - pivot.getZ()) * c + pivot.getZ();
+            return output;
+        }
+        Coord3D<ArithType>  rotateX(const double &angle) const {return rotateX(ReferencePoint, angle);}
+        Coord3D<ArithType>  rotateY(const Coord3D<ArithType> &pivot, const double &angle) {
+            const Coord3D<ArithType> output = *this;
+            const double s = std::sin(angle);
+            const double c = std::cos(angle);
+            X = (X - pivot.getX()) * c - (Z - pivot.getZ()) * s + pivot.getX();
+            Z = (X - pivot.getX()) * s + (Z - pivot.getZ()) * c + pivot.getZ();
+            return output;
+        }
+        Coord3D<ArithType>  rotateY(const double &angle) const {return rotateY(ReferencePoint, angle);}
+        Coord3D<ArithType>  rotateZ(const Coord3D<ArithType> &pivot, const double &angle) {
+            const Coord3D<ArithType> output = *this;
+            const double s = std::sin(angle);
+            const double c = std::cos(angle);
+            X = (X - pivot.getx()) * c - (Y - pivot.gety()) * s + pivot.getX();
+            Y = (X - pivot.getX()) * s + (Y - pivot.getY()) * c + pivot.getY();
+            return output;
+        }
+        Coord3D<ArithType>  rotateZ(const double &angle) const {return rotateZ(ReferencePoint, angle);}
         Coord3D<ArithType>   rotate(const Coord3D<ArithType> &pivot, const double &theta = M_PI_2, const double &phi = 0) {
             const Coord3D<ArithType> output = *this;
             const double st = std::sin(theta);
@@ -135,8 +163,12 @@ template <typename ArithType> class Coord3D {
             const double cp = std::cos(phi);
             X -= pivot.getX();
             Y -= pivot.getY();
-            X = X * ct - Y * st + pivot.getX();
-            Y = X * st + Y * ct + pivot.getY();
+            Z -= pivot.getZ();
+            X = X * ct - Z * st;
+            Z = X * st + Z * ct;
+            X += pivot.getX();
+            Y += pivot.getY();
+            Z += pivot.getZ();
             return output;
         }
         Coord3D<ArithType>   rotate(const double &theta = M_PI_2) {return rotate(ReferencePoint, theta);}
@@ -146,8 +178,9 @@ template <typename ArithType> class Coord3D {
             setY(coord.getY());
             setZ(coord.getZ());
         }
-        Coord3D<ArithType> operator!() const {return Coord3D<ArithType>(-X, -Y, -Z);}
-        std::string         toString() const {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z) + ")";}
+        Coord3D<ArithType>     operator!() const {return Coord3D<ArithType>(-X, -Y, -Z);}
+        std::string             toString() const {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z) + ")";}
+        std::vector<ArithType>  toVector() const {return {X, Y, Z};}
 
         bool        equal(const Coord3D<ArithType> &coord, const unsigned char &metric) const {
             switch (metric) {

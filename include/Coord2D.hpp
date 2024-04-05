@@ -2,6 +2,7 @@
 #define COORD2D
 
 #include <cmath>
+#include <vector>
 #include <string>
 
 #ifndef COORD2D_RELATIONS
@@ -95,26 +96,38 @@ template <typename ArithType> class Coord2D {
             return output;
         }
         // TODO: Add a stretch along any line
-        Coord2D<ArithType>   rotate(const Coord2D<ArithType> &pivot, const double &theta = M_PI_2) {
+        Coord2D<ArithType>   rotate(const Coord2D<ArithType> &pivot, const double &angle) {
             const Coord2D<ArithType> output = *this;
-            const double s = std::sin(theta);
-            const double c = std::cos(theta);
-            X -= pivot.getX();
-            Y -= pivot.getY();
-            X = X * c - Y * s;
-            Y = X * s + Y * c;
-            X += pivot.getX();
-            Y += pivot.getY();
+            const double s = std::sin(angle);
+            const double c = std::cos(angle);
+            X = (X - pivot.getX()) * c - (Y - pivot.getY()) * s + pivot.getX();
+            Y = (X - pivot.getX()) * s + (Y - pivot.getY()) * c + pivot.getY();
             return output;
         }
-        Coord2D<ArithType>   rotate(const double &theta = M_PI_2) {return rotate(ReferencePoint, theta);}
+        Coord2D<ArithType>   rotate(const double &angle) {return rotate(ReferencePoint, angle);}
+
+        static std::vector<Coord2D<ArithType>> rotatePoints(const std::vector<Coord2D<ArithType>> &points, const Coord2D<ArithType> &pivot, const double &angle) {
+            const double s = std::sin(angle);
+            const double c = std::cos(angle);
+            std::vector<Coord2D<ArithType>> output;
+            Coord2D<ArithType> point;
+            for (unsigned long i = 0; i < points.size(); i++) {
+                point = points.at(i);
+                point.setX((point.getX() - pivot.getX()) * c - (point.getY() - pivot.getY()) * s + pivot.getX());
+                point.setX((point.getX() - pivot.getX()) * s + (point.getY() - pivot.getY()) * c + pivot.getY());
+                output.emplace_back(point);
+            }
+            return output;
+        }
+        static std::vector<Coord2D<ArithType>> rotatePoints(const std::vector<Coord2D<ArithType>> &points, const double &angle) {return rotatePoints(points, Coord2D<ArithType>(0, 0), angle);}
 
         void operator=(const Coord2D<ArithType> &coord) {
             setX(coord.getX());
             setY(coord.getY());
         }
-        Coord2D<ArithType> operator!() const {return Coord2D<ArithType>(-X, -Y);}
-        std::string         toString() const {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ")";}
+        Coord2D<ArithType>     operator!() const {return Coord2D<ArithType>(-X, -Y);}
+        std::string             toString() const {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ")";}
+        std::vector<ArithType>   toVector() const {return {X, Y};}
 
         bool        equal(const Coord2D<ArithType> &coord, const unsigned char &metric) const {
             switch (metric) {
