@@ -10,6 +10,10 @@
 #include "Coord3D.hpp"
 #include "Vector3D.hpp"
 
+#define EULER_ROLL 0
+#define EULER_PITCH 1
+#define EULER_YAW 2
+
 template <typename ArithType> class WireFrame {
     private:
         Coord3D<ArithType> Origin = Coord3D<ArithType>(0, 0, 0);
@@ -19,6 +23,47 @@ template <typename ArithType> class WireFrame {
         std::vector<std::pair<unsigned long, unsigned long>> Pairs;
 
         Vector3D<ArithType> Direction = Vector3D<ArithType>(1, 0, 0);
+
+        void eulerRotate(const unsigned char &name, const double &angle) {
+            const ArithType x, y, z;
+            switch (name) {
+                default:
+                case EULER_ROLL:
+                    x = Direction.getX();
+                    y = Direction.getY();
+                    z = Direction.getZ();
+                    break;
+                case EULER_PITCH:
+                    x = Direction.getY();
+                    y = Direction.getX();
+                    z = Direction.getZ();
+                case EULER_YAW:
+                    x = Direction.getZ();
+                    y = Direction.getY();
+                    z = Direction.getX();
+            }
+
+            const double s = std::sin(angle);
+            const double c = std::cos(angle);
+            const std::vector<std::vector<double>> R = {
+                {c + x * x * (1 - c), x * y * (1 - c) - z * s, x * z * (1 - c) + y * s},
+                {y * x * (1 - c) + z * s, c + y * y * (1 - c), y * z * (1 - c) - x * s},
+                {z * x * (1 - c) - y * s, z * y * (1 - c) + x * s, c + z * z * (1 - c)}
+            };
+
+            for (unsigned long i = 0; i < BasePoints.size(); i++) {
+                const std::vector<ArithType> original = AlteredPoints[i].toVector();
+                std::vector<double> rotated = {0, 0, 0};
+                for (unsigned char j = 0; j < 3; j++) {
+                    for (unsigned char k = 0; k < 3; k++) {
+                        rotated[j] += original[k] * R[j][k];
+                    }
+                }
+
+                if (std::is_floating_point<ArithType>::value) {AlteredPoints = Coord3D<ArithType>(rotated[0], rotated[1], rotated[2]);}
+                else {AlteredPoints = Coord3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));}
+            }
+        }
 
     public:
         WireFrame(const Coord3D<ArithType> &origin, const std::vector<Coord3D<ArithType>> &points, const std::vector<std::pair<unsigned long, unsigned long>> &pairs) : Origin(origin) {
@@ -42,7 +87,7 @@ template <typename ArithType> class WireFrame {
         }
         WireFrame() {static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");}
 
-        Coord3D<ArithType> getPos() const {return Origin;}
+        Coord3D<ArithType> getPos() const {return Origin;} 
         ArithType            getX() const {return Origin.getX();}
         ArithType            getY() const {return Origin.getY();}
         ArithType            getZ() const {return Origin.getZ();}
@@ -88,7 +133,56 @@ template <typename ArithType> class WireFrame {
             return output;
         }
 
+        void shiftPoints(const Coord3D<ArithType> &amount) {
+            for (unsigned long i = 0; i < BasePoints.size(); i++) {
+                BasePoints[i] += amount;
+            }
+        }
+        void shiftPointsX(const ArithType &amount) {
+            for (unsigned long i = 0; i < BasePoints.size(); i++) {
+                BasePoints[i].adjX(amount);
+            }
+        }
+        void shiftPointsY(const ArithType &amount) {
+            for (unsigned long i = 0; i < BasePoints.size(); i++) {
+                BasePoints[i].adjY(amount);
+            }
+        }
+        void shiftPointsZ(const ArithType &amount) {
+            for (unsigned long i = 0; i < BasePoints.size(); i++) {
+                BasePoints[i].adjZ(amount);
+            }
+        }
 
+        void  roll(                           const double &angle) {eulerRotate(EULER_ROLl , angle);}
+        void pitch(                           const double &angle) {eulerRotate(EULER_PITCH, angle);}
+        void   yaw(                           const double &angle) {eulerRotate(EULER_YAW  , angle);}
+        void euler(const unsigned char &name, const double &angle) {eulerRotate(name, angle);}
+
+        void project(const Coord3D<ArithType> &camPos) {
+            const double focalLength = camPos.getY();
+
+            for (unsigned long i = 0; i < BasePoints.size(); i++) {
+                const Coord3D<ArithType> point = Origin + AlteredPoints[i] - Coord3D<ArithType>(camPos.getX(), 0, camPos.getZ());
+            
+                if (focalLength == 0) {continue;}
+
+                ProjectedPoints[i].setX((focalLength * point.getX()) / focalLength);
+                ProjectedPoints[i].setY((focalLength * point.getZ()) / focalLength);
+            }
+        }
+
+        void draw(RenderWindow &window, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+            for (unsigned long i = 0; i < Pairs.size(); i++) {
+                window.drawLine(
+                    Origin.getX() + ProjectedPoints[Pairs[i].first ].getX(),
+                    Origin.getZ() + ProjectedPoints[Pairs[i].first ].getY(),
+                    Origin.getX() + ProjectedPoints[Pairs[i].second].getX(),
+                    Origin.getZ() + ProjectedPoints[Pairs[i].second].getY(),
+                    color
+                );
+            }
+        }
 };
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
