@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <iostream>
-#include <string>
 
 #include "DefaultColors.hpp"
 #include "Texture.hpp"
@@ -20,19 +19,21 @@ class RenderWindow {
         bool IsFullscreen = false;
 
     public:
-        RenderWindow(const std::string &title, const int &w, const int &h, Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE) : Window(NULL), Renderer(NULL), W(w), H(h), W_2(w / 2), H_2(h / 2) {
-            if ((Window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, flags)) == NULL) {std::cout << "Window \"" << title << "\" failed to initialize\nERROR: " << SDL_GetError() << "\n";}
+        RenderWindow(const char* title, const int &w, const int &h, Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE) : Window(NULL), Renderer(NULL), W(w), H(h), W_2(w / 2), H_2(h / 2) {
+            if ((Window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, flags)) == NULL) {std::cout << "Window \"" << title << "\" failed to initialize\nERROR: " << SDL_GetError() << "\n";}
             if ((Renderer = SDL_CreateRenderer(Window, -1, SDL_RENDERER_ACCELERATED)) == NULL) {std::cout << "Renderer for \"" << title << "\" failed to initialize\nERROR: " << SDL_GetError() << "\n";}
         }
         ~RenderWindow() {
             SDL_DestroyRenderer(Renderer);
             SDL_DestroyWindow(Window);
         }
+
         int getRefreshRate() const {
             SDL_DisplayMode mode;
             SDL_GetDisplayMode(SDL_GetWindowDisplayIndex(Window), 0, &mode);
             return mode.refresh_rate;
         }
+        Uint32 getWindowFlags() {return SDL_GetWindowFlags(Window);}
 
         int getW() const {return W;}
         int setW(const int &w) {
@@ -84,10 +85,10 @@ class RenderWindow {
         int getW_2() const {return W_2;}
         int getH_2() const {return H_2;}
 
-        std::string getTitle() const {return SDL_GetWindowTitle(Window);}
-        std::string setTitle(const std::string &title) {
-            const std::string output = getTitle();
-            SDL_SetWindowTitle(Window, title.c_str());
+        const char* getTitle() const {return SDL_GetWindowTitle(Window);}
+        const char* setTitle(const char* title) {
+            const char* output = getTitle();
+            SDL_SetWindowTitle(Window, title);
             return output;
         }
 
