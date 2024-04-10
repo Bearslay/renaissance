@@ -19,6 +19,22 @@ double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 
 template <typename ArithType> ArithType mapVal(ArithType input, ArithType inMin, ArithType inMax, ArithType outMin, ArithType outMax) {return outMin + (input - inMin) * (outMax - outMin) / (inMax - inMin);}
 
+template <typename ArithType> double getMoveAngle(const bool &f, const bool &b, const bool &l, const bool &r) {
+    if (f && !b) {
+        if (l && !r) {return 3 * M_PI_4;}
+        if (!l && r) {return M_PI_4;}
+        return M_PI_2;
+    }
+    if (!f && b) {
+        if (l && !r) {return 5 * M_PI_4;}
+        if (!l && r) {return 7 * M_PI_4;}
+        return 3 * M_PI_2;
+    }
+    if (l && !r) {return M_PI;}
+    if (!l && r) {return 0;}
+    return -1;
+}
+
 int main() {
     std::cout << "\n";
 
@@ -27,8 +43,8 @@ int main() {
     if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
     else {std::cout << "SDL2_image successfully initialized\n";}
 
-    RenderWindow View("raycast - view", 1280, 720);
-    RenderWindow Layout("raycast - layout", 480, 480);
+    RenderWindow View("raycast - view", 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_UTILITY);
+    RenderWindow Layout("raycast - layout", 480, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_UTILITY);
     SDL_Event event;
     const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
@@ -66,7 +82,7 @@ int main() {
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
-    Ray2D<double> player(Coord2D<double>(45, 45), Vector2D<double>(0, 500));
+    Ray2D<double> player(Coord2D<double>(-Layout.getW_2() + 45, -Layout.getH_2() + 45), Vector2D<double>(0, 500));
     double movespeed = 0.075;
     double lookspeed = 0.2;
     double zoomspeed = 0.1;
@@ -74,14 +90,14 @@ int main() {
     int unitSize = 30;
 
     int fov = 60;
-    int rectWidth = View.getWidth() / fov;
+    int rectWidth = View.getW() / fov;
 
     std::vector<LineSeg2D<double>> segments = {
         // Start with the boundary walls
-        LineSeg2D<double>(30, Layout.getHeight() - 30, Layout.getWidth() - 30, Layout.getHeight() - 30),
-        LineSeg2D<double>(30, Layout.getHeight() - 30, 30, 30),
-        LineSeg2D<double>(Layout.getWidth() - 30, 30, Layout.getWidth() - 30, Layout.getHeight() - 30),
-        LineSeg2D<double>(Layout.getWidth() - 30, 30, 30, 30)
+        LineSeg2D<double>(-Layout.getW_2() + 30, Layout.getH_2() - 30, Layout.getW_2() - 30, Layout.getH_2() - 30),
+        LineSeg2D<double>(-Layout.getW_2() + 30, Layout.getH_2() - 30, -Layout.getW_2() + 30, -Layout.getH_2() + 30),
+        LineSeg2D<double>(Layout.getW_2() - 30, -Layout.getH_2() + 30, Layout.getW_2() - 30, Layout.getH_2() - 30),
+        LineSeg2D<double>(Layout.getW_2() - 30, -Layout.getH_2() + 30, -Layout.getW_2() + 30, -Layout.getH_2() + 30)
     };
     // Create walls for the other cells, skipping walls if they neighbor another cell
     for (unsigned long i = 1; i < grid.size() - 1; i++) {
@@ -117,84 +133,10 @@ int main() {
             }
             if (keystate[keybinds.exit]) {running = false;}
 
-            if (keystate[keybinds.moveForwards] && !keystate[keybinds.moveBackwards]) {
-                if (!keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
-                    if (useAngle) {
-                        player.moveX(movespeed * std::cos(player.getViewAngle(false)));
-                        player.moveY(movespeed * std::sin(player.getViewAngle(false)));
-                    } else {
-                        player.moveUp(movespeed);
-                    }
-                } else {
-                    if (keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
-                        if (useAngle) {
-                            player.moveX(movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveX(-movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                        } else {
-                            player.moveUp(movespeed * DIAGMULT);
-                            player.moveLeft(movespeed * DIAGMULT);
-                        }
-                    } else if (!keystate[keybinds.strafeLeft] && keystate[keybinds.strafeRight]) {
-                        if (useAngle) {
-                            player.moveX(movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveX(movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(-movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                        } else {
-                            player.moveUp(movespeed * DIAGMULT);
-                            player.moveRight(movespeed * DIAGMULT);
-                        }
-                    }
-                }
-            } else if (!keystate[keybinds.moveForwards] && keystate[keybinds.moveBackwards]) {
-                if (!keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
-                    if (useAngle) {
-                        player.moveX(-movespeed * std::cos(player.getViewAngle(false)));
-                        player.moveY(-movespeed * std::sin(player.getViewAngle(false)));
-                    } else {
-                        player.moveDown(movespeed);
-                    }
-                } else {
-                    if (keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
-                        if (useAngle) {
-                            player.moveX(-movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(-movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveX(-movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                        } else {
-                            player.moveDown(movespeed * DIAGMULT);
-                            player.moveLeft(movespeed * DIAGMULT);
-                        }
-                    } else if (!keystate[keybinds.strafeLeft] && keystate[keybinds.strafeRight]) {
-                        if (useAngle) {
-                            player.moveX(-movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(-movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveX(movespeed * std::sin(player.getViewAngle(false)) * DIAGMULT);
-                            player.moveY(-movespeed * std::cos(player.getViewAngle(false)) * DIAGMULT);
-                        } else {
-                            player.moveDown(movespeed * DIAGMULT);
-                            player.moveRight(movespeed * DIAGMULT);
-                        }
-                    }
-                }
-            } else if (!keystate[keybinds.moveForwards] && !keystate[keybinds.moveBackwards]) {
-                if (keystate[keybinds.strafeLeft] && !keystate[keybinds.strafeRight]) {
-                    if (useAngle) {
-                        player.moveX(-movespeed * std::sin(player.getViewAngle(false)));
-                        player.moveY(movespeed * std::cos(player.getViewAngle(false)));
-                    } else {
-                        player.moveLeft(movespeed);
-                    }
-                } else if (!keystate[keybinds.strafeLeft] && keystate[keybinds.strafeRight]) {
-                    if (useAngle) {
-                        player.moveX(movespeed * std::sin(player.getViewAngle(false)));
-                        player.moveY(-movespeed * std::cos(player.getViewAngle(false)));
-                    } else {
-                        player.moveRight(movespeed);
-                    }
-                }
+            const double moveAngle = getMoveAngle<double>(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]) + player.getViewAngle(false) - M_PI_2;
+            if (moveAngle > 1) {
+                player.moveX(movespeed * std::cos(moveAngle));
+                player.moveY(moveAngle * std::sin(moveAngle));
             }
 
             if (keystate[SDL_SCANCODE_LEFT]) {
@@ -230,16 +172,17 @@ int main() {
         for (int i = 0; i < fov + (fov % 2 == 0 ? 1 : 0); i++) {
             player.lookCW(1);
             // If the current ray hits a wall
-            if ((intersection = player.getIntersection(segments)).valid()) {
+            intersection = player.getIntersection(segments);
+            if (!std::isnan(intersection.getX())) {
                 Layout.drawLine(player.getPosX(), player.getPosY(), intersection.getX(), intersection.getY(), DefaultColors[COLOR_LIME]);
 
                 Vector2D<double> projection(std::fabs(player.getPosX() - intersection.getX()), std::fabs(player.getPosY() - intersection.getY()));
                 int distance = projection.getMag();
                 distance *= std::cos(projection.getAngle(false));
 
-                int rectBrightness = mapVal<int>(distance, 0, (int)player.getViewMag(), 255, 0);
-                int rectHeight = mapVal<int>(distance, 0, (int)player.getViewMag(), View.getHeight(), 0);
-                View.fillRectangle(i * rectWidth, View.getHeight() / 2 + rectHeight / 2, rectWidth, rectHeight, {(unsigned char)rectBrightness, (unsigned char)rectBrightness, (unsigned char)rectBrightness, 255});
+                unsigned char rectBrightness = (unsigned char)mapVal<int>(distance, 0, (int)player.getViewMag(), 255, 0);
+                int rectHeight = mapVal<int>(distance, 0, (int)player.getViewMag(), View.getH(), 0);
+                View.fillRectangle(i * rectWidth, rectHeight / 2, rectWidth, rectHeight, {rectBrightness, rectBrightness, rectBrightness, 255});
             }
             // If the current ray doesn't hit a wall
             else {

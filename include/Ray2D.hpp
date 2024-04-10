@@ -81,7 +81,8 @@ template <typename ArithType> class Ray2D {
         }
         double setViewAngle(double angle, bool degrees = true) {
             double output = View.getAngle(degrees);
-            View.setAngle(angle, degrees);
+            if (degrees) {angle *= M_PI / 180;}
+            View.setAngle(angle);
             return output;
         }
         ArithType setViewX(ArithType x) {
@@ -104,7 +105,8 @@ template <typename ArithType> class Ray2D {
         ArithType zoomIn(ArithType amount = 1) {return changeZoom(-amount);}
         double moveView(double amount = 1, bool degrees = true) {
             double output = View.getAngle(degrees);
-            View.setAngle(output + amount, degrees);
+            if (degrees) {amount *= M_PI / 180;}
+            View.setAngle(output + amount);
             return output;
         }
         double lookCCW(double amount = 1, bool degrees = true) {return moveView(amount, degrees);}
@@ -144,7 +146,8 @@ template <typename ArithType> class Ray2D {
 
             unsigned long index = 0;
             for (unsigned long i = 0; i < lines.size(); i++) {
-                if ((current = getIntersection(lines[i])).valid()) {
+                current = getIntersection(lines[i]);
+                if (!std::isnan(current.getX())) {
                     output = current;
                     break;
                 }
@@ -154,7 +157,8 @@ template <typename ArithType> class Ray2D {
             double currentDistance = 0;
 
             for (unsigned long i = index; i < lines.size(); i++) {
-                if ((current = getIntersection(lines[i])).valid()) {
+                current = getIntersection(lines[i]);
+                if (!std::isnan(current.getX())) {
                     if ((currentDistance = std::sqrt(std::pow(current.getX() - Position.getX(), 2) + std::pow(current.getY() - Position.getY(), 2))) < minDistance) {
                         minDistance = currentDistance;
                         output = Coord2D<ArithType>(current.getX(), current.getY());
