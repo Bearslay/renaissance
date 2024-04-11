@@ -141,16 +141,18 @@ int main() {
         Window.renderTexture(texture, dst);
         Window.renderTexture(block, {0, 0, 64, 64});
 
-        int x0 = (int)pos.getX();
-        int y0 = (int)pos.getY();
-        int x1 = x0 + 1;
-        int y1 = y0;
-        for (int i = 0; i < 100; i++) {
-            y1 = quadratic<int>(-4.91, 0, y0, x1);
-            x0++;
-            x1++;
-            Window.drawLine(x0, y0, x1, y1);
-            y0 = y1;
+        double dx = 0.1;
+        double cx = 0;
+        double cy = 0;
+        double nx = 0;
+        double ny = 0;
+        double vx = 100;
+        for (double i = 0; i < (MousePos.x - pos.getX()) / vx; i += dx) {
+            nx += dx;
+            ny = quadratic<double>(-4.91, 50, 0, nx);
+            Window.drawLine(dst.x + cx * vx, dst.y + cy, dst.x + nx * vx, dst.y + ny);
+            cx = nx;
+            cy = ny;
         }
         
         Window.show();
