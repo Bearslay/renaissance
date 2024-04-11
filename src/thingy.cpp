@@ -24,6 +24,18 @@ template <typename ArithType> double getMoveAngle(const bool &f, const bool &b, 
     return -1;
 }
 
+template <typename ArithType> ArithType quadratic(const ArithType &a, const ArithType &b, const ArithType &c, const ArithType &x) {return a * x * x + b * x + c;}
+template <typename ArithType> ArithType dquadratic(const ArithType &a, const ArithType &b, const ArithType &x) {return 2 * a * x + b;}
+template <typename ArithType> ArithType euler(const ArithType &x0, const ArithType &y0, const ArithType &dx, const ArithType &x) {
+    ArithType cx = x0;
+    ArithType y = y0;
+    while (cx < x) {
+        y = y + dx * dquadratic<ArithType>(-4.91, 0, cx);
+        cx += dx;
+    }
+    return y;
+}
+
 long double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
@@ -128,6 +140,18 @@ int main() {
         Window.drawCircle(MousePos.x, MousePos.y, std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY())), keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_DOWN] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
         Window.renderTexture(texture, dst);
         Window.renderTexture(block, {0, 0, 64, 64});
+
+        int x0 = (int)pos.getX();
+        int y0 = (int)pos.getY();
+        int x1 = x0 + 1;
+        int y1 = y0;
+        for (int i = 0; i < 100; i++) {
+            y1 = quadratic<int>(-4.91, 0, y0, x1);
+            x0++;
+            x1++;
+            Window.drawLine(x0, y0, x1, y1);
+            y0 = y1;
+        }
         
         Window.show();
 
