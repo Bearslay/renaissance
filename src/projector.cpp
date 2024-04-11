@@ -24,24 +24,10 @@ template <typename ArithType> class WireFrame {
 
         Vector3D<ArithType> Direction = Vector3D<ArithType>(1, 0, 0);
 
-        void eulerRotate(const unsigned char &name, const double &angle) {
-            const ArithType x, y, z;
-            switch (name) {
-                default:
-                case EULER_ROLL:
-                    x = Direction.getX();
-                    y = Direction.getY();
-                    z = Direction.getZ();
-                    break;
-                case EULER_PITCH:
-                    x = Direction.getY();
-                    y = Direction.getX();
-                    z = Direction.getZ();
-                case EULER_YAW:
-                    x = Direction.getZ();
-                    y = Direction.getY();
-                    z = Direction.getX();
-            }
+        void eulerRotate(const double &angle) {
+            const ArithType x = Direction.getX();
+            const ArithType y = Direction.getY();
+            const ArithType z = Direction.getZ();
 
             const double s = std::sin(angle);
             const double c = std::cos(angle);
@@ -60,8 +46,8 @@ template <typename ArithType> class WireFrame {
                     }
                 }
 
-                if (std::is_floating_point<ArithType>::value) {AlteredPoints = Coord3D<ArithType>(rotated[0], rotated[1], rotated[2]);}
-                else {AlteredPoints = Coord3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));}
+                if (std::is_floating_point<ArithType>::value) {AlteredPoints[i] = Coord3D<ArithType>(rotated[0], rotated[1], rotated[2]);}
+                else {AlteredPoints[i] = Coord3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));}
             }
         }
 
@@ -154,10 +140,17 @@ template <typename ArithType> class WireFrame {
             }
         }
 
-        void  roll(                           const double &angle) {eulerRotate(EULER_ROLl , angle);}
-        void pitch(                           const double &angle) {eulerRotate(EULER_PITCH, angle);}
-        void   yaw(                           const double &angle) {eulerRotate(EULER_YAW  , angle);}
-        void euler(const unsigned char &name, const double &angle) {eulerRotate(name, angle);}
+        Coord2D<ArithType> getProjectedPoint(const unsigned long &pointIndex) const {return pointIndex > 0 && pointIndex < ProjectedPoints.size() ? ProjectedPoints.at(pointIndex) : Coord2D<ArithType>(0, 0);}
+
+        void  roll(const double &angle) {
+            eulerRotate(angle);
+        }
+        void pitch(const double &angle) {
+            eulerRotate(angle);
+        }
+        void   yaw(const double &angle) {
+            eulerRotate(angle);
+        }
 
         void project(const Coord3D<ArithType> &camPos) {
             const double focalLength = camPos.getY();
@@ -165,10 +158,10 @@ template <typename ArithType> class WireFrame {
             for (unsigned long i = 0; i < BasePoints.size(); i++) {
                 const Coord3D<ArithType> point = Origin + AlteredPoints[i] - Coord3D<ArithType>(camPos.getX(), 0, camPos.getZ());
             
-                if (focalLength == 0) {continue;}
+                if (focalLength + point.getY() == 0) {continue;}
 
-                ProjectedPoints[i].setX((focalLength * point.getX()) / focalLength);
-                ProjectedPoints[i].setY((focalLength * point.getZ()) / focalLength);
+                ProjectedPoints[i].setX((focalLength * point.getX()) / (focalLength + point.getY()));
+                ProjectedPoints[i].setY((focalLength * point.getZ()) / (focalLength + point.getY()));
             }
         }
 
@@ -216,6 +209,29 @@ int main(int argc, char* args[]) {
     long double newTime = 0.0;
     long double frameTime = 0.0;
     double accumulator = 0.0;
+
+    // std::vector<std::pair<unsigned long, unsigned long>> pairs = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+    // std::vector<Coord3D<double>> points = {
+    //     Coord3D<double>( 100, -100, -100),
+    //     Coord3D<double>( 100,  100, -100),
+    //     Coord3D<double>(-100,  100, -100),
+    //     Coord3D<double>(-100, -100, -100),
+    //     Coord3D<double>( 100, -100,  100),
+    //     Coord3D<double>( 100,  100,  100),
+    //     Coord3D<double>(-100,  100,  100),
+    //     Coord3D<double>(-100, -100,  100)
+    // };
+    std::vector<std::pair<unsigned long, unsigned long>> pairs = {{0, 1}, {0, 2}, {0, 3}};
+    std::vector<Coord3D<double>> points = {
+        Coord3D<double>(0, 0, 0),
+        Coord3D<double>(100, 0, 0),
+        Coord3D<double>(0, 100, 0),
+        Coord3D<double>(0, 0, 100)
+    };
+    WireFrame<double> wireFrame(Coord3D<double>(0, 0, 0), points, pairs);
+
+    Coord3D<double> camera(0, 500, 0);
+    const double rotateAmount = 0.001;
 
     bool running = true;
     while (running) {
@@ -270,6 +286,25 @@ int main(int argc, char* args[]) {
                 break;
             }
 
+            if (Keystate[SDL_SCANCODE_W]) {
+                wireFrame.roll(rotateAmount);
+            }
+            if (Keystate[SDL_SCANCODE_S]) {
+                wireFrame.roll(-rotateAmount);
+            }
+            if (Keystate[SDL_SCANCODE_Q]) {
+                wireFrame.pitch(rotateAmount);
+            }
+            if (Keystate[SDL_SCANCODE_E]) {
+                wireFrame.pitch(-rotateAmount);
+            }
+            if (Keystate[SDL_SCANCODE_A]) {
+                wireFrame.yaw(rotateAmount);
+            }
+            if (Keystate[SDL_SCANCODE_D]) {
+                wireFrame.yaw(-rotateAmount);
+            }
+
             t += dt;
             accumulator -= dt;
             MouseInfo.Motion = false;
@@ -277,6 +312,14 @@ int main(int argc, char* args[]) {
         if (!running) {break;}
 
         Window.clear();
+        wireFrame.project(camera);
+        wireFrame.draw(Window);
+        const Coord2D<double> xPoint = wireFrame.getProjectedPoint(1);
+        const Coord2D<double> yPoint = wireFrame.getProjectedPoint(2);
+        const Coord2D<double> zPoint = wireFrame.getProjectedPoint(3);
+        Window.fillCircle(xPoint.getX(), xPoint.getY(), 5, DefaultColors[COLOR_RED]);
+        Window.fillCircle(yPoint.getX(), yPoint.getY(), 5, DefaultColors[COLOR_BLUE]);
+        Window.fillCircle(zPoint.getX(), zPoint.getY(), 5, DefaultColors[COLOR_LIME]);
         Window.show();
 
         frameTicks = SDL_GetTicks() - startTicks;

@@ -28,3 +28,8 @@ thingy:
 	@g++ -c src/thingy.cpp -std=c++14 -m64 -g -Wall -I include
 	@g++ thingy.o -o bin/debug/thingy -lSDL2main -lSDL2 -lSDL2_image
 	@./bin/debug/thingy
+projector:
+	@mkdir bin/debug -p
+	@g++ -c src/projector.cpp -std=c++14 -m64 -g -Wall -I include
+	@g++ projector.o -o bin/debug/projector -lSDL2main -lSDL2 -lSDL2_image
+	@./bin/debug/projector
