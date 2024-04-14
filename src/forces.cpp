@@ -14,7 +14,10 @@ class PhysicsObject2D {
         Vector2D<double> Velocity = Vector2D<double>(0, 0);
         Vector2D<double> Acceleration = Vector2D<double>(0, 0);
         Vector2D<double> Force = Vector2D<double>(0, 0);
+        
         double Mass = 1;
+        double StaticFriction = 1;
+        double KineticFrication = 0.8;
 
         static double g;
         
@@ -64,8 +67,6 @@ class PhysicsObject2D {
         }
 
         void update(double dt) {
-            // Force += Vector2D<double>(0, -g) * dt;
-            // Force -= Vector2D<double>(Mass * g * 0.05, Force.getAngle() + M_PI, true);
             Acceleration = Force / Mass;
             Velocity += Acceleration * dt;
             Position.adjX(Velocity.getX() * dt);
@@ -90,10 +91,10 @@ int main(int argc, char* args[]) {
     tile.setBlending(SDL_BLENDMODE_BLEND);
     tile.setOpacity(50);
 
-    PhysicsObject2D Bird(Coord2D<double>(-544, 0));
-    SDL_Point birdPos;
-    Texture bird(Window.loadTexture("dev/thingy/gfx/smile.png"), dst);
-    bird.setMods({255, 255, 0, 255});
+    PhysicsObject2D Object(Coord2D<double>(-544, 0));
+    SDL_Point ObjectPos;
+    Texture ObjectTexture(Window.loadTexture("dev/thingy/gfx/smile.png"), dst);
+    ObjectTexture.setMods({255, 255, 0, 255});
 
     struct {
         SDL_Point Pos = {0, 0};
@@ -125,7 +126,7 @@ int main(int argc, char* args[]) {
     double accumulator = 0.0;
 
     const int unitSize = 64;
-    const double force = Bird.getg() * Bird.getM() + 10;
+    const double force = Object.getg() * Object.getM() + 10;
 
     // bool startedGame = false;
 
@@ -175,19 +176,19 @@ int main(int argc, char* args[]) {
                                     MouseInfo.Pos = {0, 0};
                                 }
                             }
-                            if (Keystate[Keybinds.Flap]) {Bird.applyForce(Vector2D<double>(0, force * 250));}
+                            if (Keystate[Keybinds.Flap]) {Object.applyForce(Vector2D<double>(0, force * 250));}
                         }
                         break;
                     case SDL_MOUSEBUTTONDOWN:
                         switch (Event.button.button) {
                             case SDL_BUTTON_LEFT:
-                                Bird.setP(Coord2D<double>((double)MouseInfo.Pos.x, (double)MouseInfo.Pos.y));
+                                Object.setP(Coord2D<double>((double)MouseInfo.Pos.x, (double)MouseInfo.Pos.y));
                                 break;
                             case SDL_BUTTON_MIDDLE:
                                 
                                 break;
                             case SDL_BUTTON_RIGHT:
-                                Bird.resetMotion();
+                                Object.resetMotion();
                                 break;
                         }
                         break;
@@ -202,25 +203,29 @@ int main(int argc, char* args[]) {
             if (!running) {break;}
             // if (Keystate[Keybinds.Flap]) {
             //     if (!startedGame) {startedGame = true;}
-            //     Bird.applyForce(Vector2D<double>(0, 0.5));
+            //     Object.applyForce(Vector2D<double>(0, 0.5));
             // }
 
             // if (startedGame) {
-            //     Bird.update(dt);
+            //     Object.update(dt);
             // }
 
-            if (Keystate[Keybinds.Up   ]) {Bird.applyForce(Vector2D<double>(     0,  force));}
-            if (Keystate[Keybinds.Down ]) {Bird.applyForce(Vector2D<double>(     0, -force));}
-            if (Keystate[Keybinds.Left ]) {Bird.applyForce(Vector2D<double>(-force,      0));}
-            if (Keystate[Keybinds.Right]) {Bird.applyForce(Vector2D<double>( force,      0));}
+            if (Keystate[Keybinds.Up   ]) {Object.applyForce(Vector2D<double>(     0,  force));}
+            if (Keystate[Keybinds.Down ]) {Object.applyForce(Vector2D<double>(     0, -force));}
+            if (Keystate[Keybinds.Left ]) {Object.applyForce(Vector2D<double>(-force,      0));}
+            if (Keystate[Keybinds.Right]) {Object.applyForce(Vector2D<double>( force,      0));}
 
-            Bird.applyForce(Vector2D<double>(0, -Bird.getg() * Bird.getM()));
-            Bird.update(dt);
+            // Force of Gravity
+            // Object.applyForce(Vector2D<double>(0, -Object.getg() * Object.getM()));
+            
+            
+            Object.update(dt);
 
-            if (Bird.getPX() - bird.getCenter().x >  Window.getW_2()) {Bird.setPX(-Window.getW_2() - bird.getCenter().x);}
-            if (Bird.getPX() + bird.getCenter().x < -Window.getW_2()) {Bird.setPX( Window.getW_2() + bird.getCenter().x);}
-            if (Bird.getPY() - bird.getCenter().y >  Window.getH_2()) {Bird.setPY(-Window.getH_2() - bird.getCenter().y);}
-            if (Bird.getPY() + bird.getCenter().y < -Window.getH_2()) {Bird.setPY( Window.getH_2() + bird.getCenter().y);}
+            // 
+            if (Object.getPX() - ObjectTexture.getCenter().x >  Window.getW_2()) {Object.setPX(-Window.getW_2() - ObjectTexture.getCenter().x);}
+            if (Object.getPX() + ObjectTexture.getCenter().x < -Window.getW_2()) {Object.setPX( Window.getW_2() + ObjectTexture.getCenter().x);}
+            if (Object.getPY() - ObjectTexture.getCenter().y >  Window.getH_2()) {Object.setPY(-Window.getH_2() - ObjectTexture.getCenter().y);}
+            if (Object.getPY() + ObjectTexture.getCenter().y < -Window.getH_2()) {Object.setPY( Window.getH_2() + ObjectTexture.getCenter().y);}
 
             t += dt;
             accumulator -= dt;
@@ -237,8 +242,8 @@ int main(int argc, char* args[]) {
             }
         }
 
-        birdPos = {(int)Bird.getPX(), (int)Bird.getPY()};
-        Window.renderTexture(bird, birdPos);
+        ObjectPos = {(int)Object.getPX(), (int)Object.getPY()};
+        Window.renderTexture(ObjectTexture, ObjectPos);
 
         Window.show();
 
