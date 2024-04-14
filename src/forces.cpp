@@ -8,6 +8,99 @@
 #include "RenderWindow.hpp"
 #include "DefaultColors.hpp"
 
+struct {
+    double g = 9.80665;
+} Constants;
+
+template <typename ArithType> std::pair<ArithType, double> makeVector(const ArithType &x, const ArithType &y, const bool &useRadians = true) {
+    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+    return {std::is_integral<ArithType>::value ? std::round(std::sqrt(x * x + y * y)) : std::sqrt(x * x + y * y), std::atan2(y, x) * (useRadians ? 1 : 180 / M_PI)};
+}
+template <typename ArithType> std::pair<ArithType, ArithType> breakVector(const ArithType &mag, const double &angle, const bool &useRadians = true) {
+    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+    if (std::is_integral<ArithType>::value) {return {std::round(mag * std::cos(angle * (useRadians ? 1 : 180 / M_PI))), std::round(mag * std::sin(angle * (useRadians ? 1 : 180 / M_PI)))};}
+    return {mag * std::cos(angle * (useRadians ? 1 : M_PI / 180)), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))};
+}
+
+namespace kmtcs {
+    template <typename ArithType> ArithType airTime(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        const double vy = mag * std::sin(angle * (useRadians ? 1 : M_PI / 180));
+        const double root = std::sqrt(vy * vy - 2 * Constants.g * dy);
+        return std::is_integral<ArithType>::value ? std::round(std::fmax((-vy + root) / -Constants.g, (-vy - root) / -Constants.g)) : std::fmax((-vy + root) / -Constants.g, (-vy - root) / -Constants.g);
+    }
+
+    template <typename ArithType> ArithType peakTime(const ArithType &mag, const double &angle, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        return std::is_integral<ArithType>::value ? std::round((mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))) / Constants.g) : ((mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))) / Constants.g);
+    }
+
+    template <typename ArithType> ArithType maxHeight(const ArithType &mag, const double &angle, const ArithType &y0, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        const double peak = peakTime<double>(mag, angle, useRadians);
+        return std::is_integral<ArithType>::value ? std::round(y0 + mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) * peak - 0.5 * Constants.g * peak * peak) : (y0 + mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) * peak - 0.5 * Constants.g * peak * peak);
+    }
+
+    template <typename ArithType> double launchAngle(const ArithType &dx, const ArithType &dy, const ArithType &mag, const bool &minimizeHeight = true, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        const double root = std::sqrt(mag * mag * mag * mag - Constants.g * (Constants.g * dx * dx + 2 * dy * mag * mag));
+        const double a1 = std::atan2(mag * mag + root, Constants.g * dx);
+        const double a2 = std::atan2(mag * mag - root, Constants.g * dx);
+        if (minimizeHeight) {
+            if (maxHeight<ArithType>(mag, a1, 0, useRadians) < maxHeight<ArithType>(mag, a2, 0, useRadians)) {return a1 * (useRadians ? 1 : 180 / M_PI);}
+            return a2 * (useRadians ? 1 : 180 / M_PI);
+        }
+        if (maxHeight<ArithType>(mag, a1, 0, useRadians) < maxHeight<ArithType>(mag, a2, 0, useRadians)) {return a2 * (useRadians ? 1 : 180 / M_PI);}
+        return a1 * (useRadians ? 1 : 180 / M_PI);
+    }
+
+    template <typename ArithType> std::pair<ArithType, double> landingVector(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        return makeVector<ArithType>(std::is_integral<ArithType>::value ? std::round(mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))) : (mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) - Constants.g * airTime<double>(mag, angle, dy, useRadians), useRadians);
+    }
+}
+
+class Projectile {
+    private:
+        Coord2D<double> Position = Coord2D<double>(0, 0);
+        Vector2D<double> Velocity = Vector2D<double>(0, 0);
+
+        double Lifetime = 10;
+    
+    public:
+        Projectile() {}
+        Projectile(const Coord2D<double> &position, const Vector2D<double> &velocity) : Position(position), Velocity(velocity) {}
+        Projectile(const Coord2D<double> &position) : Position(position) {}
+
+        Coord2D<double>   getP() const {return Position;}
+        double           getPX() const {return Position.getX();}
+        double           getPY() const {return Position.getY();}
+
+        Coord2D<double>   setP(const Coord2D<double> &position) {
+            Coord2D<double> output = Position;
+            Position = position;
+            return output;
+        }
+        double           setPX(const double &x) {return Position.setX(x);}
+        double           setPY(const double &y) {return Position.setY(y);}
+
+        Vector2D<double>  getV() const {return Velocity;}
+        double           getVX() const {return Velocity.getX();}
+        double           getVY() const {return Velocity.getY();}
+        double           getVA() const {return Velocity.getAngle();}
+
+        int update(const double &dt) {
+            Position.adjX(Velocity.getX() * dt);
+            Position.adjY(Velocity.getY() * dt);
+            Lifetime -= dt;
+
+            if (Lifetime <= 0) {
+                return 1;
+            }
+            return 0;
+        }
+};
+
 class PhysicsObject2D {
     private:
         Coord2D<double> Position = Coord2D<double>(0, 0);
@@ -15,9 +108,9 @@ class PhysicsObject2D {
         Vector2D<double> Acceleration = Vector2D<double>(0, 0);
         Vector2D<double> Force = Vector2D<double>(0, 0);
         
-        double Mass = 1;
+        double Mass = 10;
         double StaticFriction = 1;
-        double KineticFrication = 0.8;
+        double KineticFriction = 0.8;
 
         static double g;
         
@@ -67,15 +160,21 @@ class PhysicsObject2D {
         }
 
         void update(double dt) {
+            // Apply friction to object
+            if (Velocity.getMag() == 0 && Mass * g * StaticFriction < Force.getMag()) {Force.adjMag(-Mass * g * StaticFriction);}
+            else if (Velocity.getMag() > 0) {applyForce(Vector2D<double>(Mass * g * KineticFriction, Velocity.getAngle() + M_PI, true));}
+
+            // Update motion values
             Acceleration = Force / Mass;
             Velocity += Acceleration * dt;
             Position.adjX(Velocity.getX() * dt);
             Position.adjY(Velocity.getY() * dt);
+
+            // Reset force
             Force = Vector2D<double>(0, 0);
         }
 };
-
-double PhysicsObject2D::g = 1;
+double PhysicsObject2D::g = 9.80655;
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main(int argc, char* args[]) {
@@ -86,15 +185,18 @@ int main(int argc, char* args[]) {
     SDL_Event Event;
     const Uint8 *Keystate = SDL_GetKeyboardState(NULL);
 
-    SDL_Rect dst = {0, 0, 64, 64};
-    Texture tile(Window.loadTexture("dev/thingy/gfx/tile.png"), dst);
+    SDL_Rect frame = {0, 0, 64, 64};
+    Texture tile(Window.loadTexture("dev/thingy/gfx/tile.png"), frame);
     tile.setBlending(SDL_BLENDMODE_BLEND);
     tile.setOpacity(50);
 
     PhysicsObject2D Object(Coord2D<double>(-544, 0));
-    SDL_Point ObjectPos;
-    Texture ObjectTexture(Window.loadTexture("dev/thingy/gfx/smile.png"), dst);
+    Texture ObjectTexture(Window.loadTexture("dev/thingy/gfx/smile.png"), frame);
     ObjectTexture.setMods({255, 255, 0, 255});
+
+    SDL_Point dst;
+    std::vector<Projectile> projectiles;
+    std::vector<Texture> projectileTextures;
 
     struct {
         SDL_Point Pos = {0, 0};
@@ -126,9 +228,10 @@ int main(int argc, char* args[]) {
     double accumulator = 0.0;
 
     const int unitSize = 64;
-    const double force = Object.getg() * Object.getM() + 10;
-
-    // bool startedGame = false;
+    const double force = Object.getg() * Object.getM() + 50;
+    const double strength = 200;
+    double throwAngle;
+    std::pair<double, double> strengthComps;
 
     bool running = true;
     while (running) {
@@ -176,16 +279,18 @@ int main(int argc, char* args[]) {
                                     MouseInfo.Pos = {0, 0};
                                 }
                             }
-                            if (Keystate[Keybinds.Flap]) {Object.applyForce(Vector2D<double>(0, force * 250));}
+                            if (Keystate[Keybinds.Flap]) {Object.applyForce(Vector2D<double>(0, force * 500));}
                         }
                         break;
                     case SDL_MOUSEBUTTONDOWN:
                         switch (Event.button.button) {
                             case SDL_BUTTON_LEFT:
-                                Object.setP(Coord2D<double>((double)MouseInfo.Pos.x, (double)MouseInfo.Pos.y));
+                                projectiles.emplace_back(Projectile(Object.getP(), Vector2D<double>(100, std::atan2(MouseInfo.Pos.y - Object.getPY(), MouseInfo.Pos.x - Object.getPX()), true)));
+                                projectileTextures.emplace_back(Texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), frame));
+                                projectileTextures[projectileTextures.size() - 1].setAngle(projectiles.back().getVA());
                                 break;
                             case SDL_BUTTON_MIDDLE:
-                                
+                                Object.setP(Coord2D<double>((double)MouseInfo.Pos.x, (double)MouseInfo.Pos.y));
                                 break;
                             case SDL_BUTTON_RIGHT:
                                 Object.resetMotion();
@@ -201,14 +306,6 @@ int main(int argc, char* args[]) {
                 if (!running) {break;}
             }
             if (!running) {break;}
-            // if (Keystate[Keybinds.Flap]) {
-            //     if (!startedGame) {startedGame = true;}
-            //     Object.applyForce(Vector2D<double>(0, 0.5));
-            // }
-
-            // if (startedGame) {
-            //     Object.update(dt);
-            // }
 
             if (Keystate[Keybinds.Up   ]) {Object.applyForce(Vector2D<double>(     0,  force));}
             if (Keystate[Keybinds.Down ]) {Object.applyForce(Vector2D<double>(     0, -force));}
@@ -218,14 +315,25 @@ int main(int argc, char* args[]) {
             // Force of Gravity
             // Object.applyForce(Vector2D<double>(0, -Object.getg() * Object.getM()));
             
-            
             Object.update(dt);
 
-            // 
+            // Confine the fella to the screen by wrapping the edges of the screen
             if (Object.getPX() - ObjectTexture.getCenter().x >  Window.getW_2()) {Object.setPX(-Window.getW_2() - ObjectTexture.getCenter().x);}
             if (Object.getPX() + ObjectTexture.getCenter().x < -Window.getW_2()) {Object.setPX( Window.getW_2() + ObjectTexture.getCenter().x);}
             if (Object.getPY() - ObjectTexture.getCenter().y >  Window.getH_2()) {Object.setPY(-Window.getH_2() - ObjectTexture.getCenter().y);}
             if (Object.getPY() + ObjectTexture.getCenter().y < -Window.getH_2()) {Object.setPY( Window.getH_2() + ObjectTexture.getCenter().y);}
+
+            // Update the projectiles
+            if (projectiles.size() > 0) {
+                for (unsigned long i = projectiles.size() - 1; i >= 0; --i) {
+                    if (projectiles[i].update(dt) == 1) {
+                        projectiles.erase(projectiles.begin() + i);
+                        projectileTextures.erase(projectileTextures.begin() + i);
+                    }
+
+                    if (i == 0) {break;}
+                }
+            }
 
             t += dt;
             accumulator -= dt;
@@ -242,8 +350,12 @@ int main(int argc, char* args[]) {
             }
         }
 
-        ObjectPos = {(int)Object.getPX(), (int)Object.getPY()};
-        Window.renderTexture(ObjectTexture, ObjectPos);
+        dst = {(int)Object.getPX(), (int)Object.getPY()};
+        Window.renderTexture(ObjectTexture, dst);
+        for (unsigned long i = 0; i < projectiles.size(); i++) {
+            dst = {(int)projectiles.at(i).getPX(), (int)projectiles.at(i).getPY()};
+            Window.renderTexture(projectileTextures.at(i), dst);
+        }
 
         Window.show();
 
