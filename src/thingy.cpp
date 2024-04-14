@@ -8,7 +8,7 @@
 #include "Texture.hpp"
 #include "RenderWindow.hpp"
 
-template <typename ArithType> double getMoveAngle(const bool &f, const bool &b, const bool &l, const bool &r) {
+double getMoveAngle(const bool &f, const bool &b, const bool &l, const bool &r) {
     if (f && !b) {
         if (l && !r) {return 3 * M_PI_4;}
         if (!l && r) {return M_PI_4;}
@@ -24,16 +24,56 @@ template <typename ArithType> double getMoveAngle(const bool &f, const bool &b, 
     return -1;
 }
 
-template <typename ArithType> ArithType quadratic(const ArithType &a, const ArithType &b, const ArithType &c, const ArithType &x) {return a * x * x + b * x + c;}
-template <typename ArithType> ArithType dquadratic(const ArithType &a, const ArithType &b, const ArithType &x) {return 2 * a * x + b;}
-template <typename ArithType> ArithType euler(const ArithType &x0, const ArithType &y0, const ArithType &dx, const ArithType &x) {
-    ArithType cx = x0;
-    ArithType y = y0;
-    while (cx < x) {
-        y = y + dx * dquadratic<ArithType>(-4.91, 0, cx);
-        cx += dx;
+struct {
+    double g = 9.80665;
+} Constants;
+
+template <typename ArithType> std::pair<ArithType, double> makeVector(const ArithType &x, const ArithType &y, const bool &useRadians = true) {
+    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+    return {std::is_integral<ArithType>::value ? std::round(std::sqrt(x * x + y * y)) : std::sqrt(x * x + y * y), std::atan2(y, x) * (useRadians ? 1 : 180 / M_PI)};
+}
+template <typename ArithType> std::pair<ArithType, ArithType> breakVector(const ArithType &mag, const double &angle, const bool &useRadians = true) {
+    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+    if (std::is_integral<ArithType>::value) {return {std::round(mag * std::cos(angle * (useRadians ? 1 : 180 / M_PI))), std::round(mag * std::sin(angle * (useRadians ? 1 : 180 / M_PI)))};}
+    return {mag * std::cos(angle * (useRadians ? 1 : M_PI / 180)), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))};
+}
+
+namespace kmtcs {
+    template <typename ArithType> ArithType airTime(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        const double vy = mag * std::sin(angle * (useRadians ? 1 : M_PI / 180));
+        const double root = std::sqrt(vy * vy - 2 * Constants.g * dy);
+        return std::is_integral<ArithType>::value ? std::round(std::fmax((-vy + root) / -Constants.g, (-vy - root) / -Constants.g)) : std::fmax((-vy + root) / -Constants.g, (-vy - root) / -Constants.g);
     }
-    return y;
+
+    template <typename ArithType> ArithType peakTime(const ArithType &mag, const double &angle, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        return std::is_integral<ArithType>::value ? std::round((mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))) / Constants.g) : ((mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))) / Constants.g);
+    }
+
+    template <typename ArithType> ArithType maxHeight(const ArithType &mag, const double &angle, const ArithType &y0, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        const double peak = peakTime<double>(mag, angle, useRadians);
+        return std::is_integral<ArithType>::value ? std::round(y0 + mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) * peak - 0.5 * Constants.g * peak * peak) : (y0 + mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) * peak - 0.5 * Constants.g * peak * peak);
+    }
+
+    template <typename ArithType> double launchAngle(const ArithType &dx, const ArithType &dy, const ArithType &mag, const bool &minimizeHeight = true, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        const double root = std::sqrt(mag * mag * mag * mag - Constants.g * (Constants.g * dx * dx + 2 * dy * mag * mag));
+        const double a1 = std::atan2(mag * mag + root, Constants.g * dx);
+        const double a2 = std::atan2(mag * mag - root, Constants.g * dx);
+        if (minimizeHeight) {
+            if (maxHeight<ArithType>(mag, a1, 0, useRadians) < maxHeight<ArithType>(mag, a2, 0, useRadians)) {return a1 * (useRadians ? 1 : 180 / M_PI);}
+            return a2 * (useRadians ? 1 : 180 / M_PI);
+        }
+        if (maxHeight<ArithType>(mag, a1, 0, useRadians) < maxHeight<ArithType>(mag, a2, 0, useRadians)) {return a2 * (useRadians ? 1 : 180 / M_PI);}
+        return a1 * (useRadians ? 1 : 180 / M_PI);
+    }
+
+    template <typename ArithType> std::pair<ArithType, double> landingVector(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        return makeVector<ArithType>(std::is_integral<ArithType>::value ? std::round(mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))) : (mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) - Constants.g * airTime<double>(mag, angle, dy, useRadians), useRadians);
+    }
 }
 
 long double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
@@ -70,6 +110,10 @@ int main() {
 
     Texture block(Window.loadTexture("dev/thingy/gfx/tile.png"), {0, 0, 64, 64});
 
+    const double strength = 150;
+    double throwAngle;
+    std::pair<double, double> strengthComps;
+
     bool running = true;
     while (running) {
         startTicks = SDL_GetTicks();
@@ -103,7 +147,7 @@ int main() {
             const double distFromMouse = std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()));
             // texture.setAngle(std::atan2(MousePos.y - pos.getY(), MousePos.x - pos.getX()));
             if (1) {
-                double moveAngle = getMoveAngle<double>(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);
+                double moveAngle = getMoveAngle(keystate[keybinds.moveForwards], keystate[keybinds.moveBackwards], keystate[keybinds.strafeLeft], keystate[keybinds.strafeRight]);
                 if (moveAngle >= 0) {
                     // moveAngle += texture.getAngle() - M_PI_2;
                     pos += Coord2D<double>(std::cos(moveAngle), std::sin(moveAngle)) * movespeed;
@@ -136,24 +180,28 @@ int main() {
         else {texture.setMods(DefaultColors[COLOR_RED]);}
 
         dst = {(int)pos.getX(), (int)pos.getY(), dstSize.x, dstSize.y};
-        Window.drawCircle(0, 0, pos.distEuclid(), keystate[SDL_SCANCODE_LEFT] || keystate[SDL_SCANCODE_RIGHT] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
-        Window.drawCircle(MousePos.x, MousePos.y, std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY())), keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_DOWN] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
+        // Window.drawCircle(0, 0, pos.distEuclid(), keystate[SDL_SCANCODE_LEFT] || keystate[SDL_SCANCODE_RIGHT] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
+        // Window.drawCircle(MousePos.x, MousePos.y, std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY())), keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_DOWN] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
         Window.renderTexture(texture, dst);
         Window.renderTexture(block, {0, 0, 64, 64});
 
-        double dx = 0.1;
-        double cx = 0;
-        double cy = 0;
-        double nx = 0;
-        double ny = 0;
-        double vx = 100;
-        for (double i = 0; i < (MousePos.x - pos.getX()) / vx; i += dx) {
-            nx += dx;
-            ny = quadratic<double>(-4.91, 50, 0, nx);
-            Window.drawLine(dst.x + cx * vx, dst.y + cy, dst.x + nx * vx, dst.y + ny);
-            cx = nx;
-            cy = ny;
-        }
+        throwAngle = kmtcs::launchAngle<double>(MousePos.x - pos.getX(), MousePos.y - pos.getY(), strength, true);
+        if (!std::isnan(throwAngle)) {
+            strengthComps = breakVector<double>(strength, throwAngle);
+
+            double dx = 0.05;
+            double cx = 0;
+            double cy = 0;
+            double nx = 0;
+            double ny = 0;
+            for (double i = 0; i < (MousePos.x - pos.getX()) / strengthComps.first; i += dx) {
+                nx += dx;
+                ny = -0.5 * Constants.g * nx * nx + strengthComps.second * nx;
+                Window.drawLine(dst.x + cx * strengthComps.first, dst.y + cy, dst.x + nx * strengthComps.first, dst.y + ny, DefaultColors[COLOR_RED]);
+                cx = nx;
+                cy = ny;
+            }
+        }       
         
         Window.show();
 
