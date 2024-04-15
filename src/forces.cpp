@@ -12,16 +12,6 @@ struct {
     double g = 9.80665;
 } Constants;
 
-template <typename ArithType> std::pair<ArithType, double> makeVector(const ArithType &x, const ArithType &y, const bool &useRadians = true) {
-    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-    return {std::is_integral<ArithType>::value ? std::round(std::sqrt(x * x + y * y)) : std::sqrt(x * x + y * y), std::atan2(y, x) * (useRadians ? 1 : 180 / M_PI)};
-}
-template <typename ArithType> std::pair<ArithType, ArithType> breakVector(const ArithType &mag, const double &angle, const bool &useRadians = true) {
-    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-    if (std::is_integral<ArithType>::value) {return {std::round(mag * std::cos(angle * (useRadians ? 1 : 180 / M_PI))), std::round(mag * std::sin(angle * (useRadians ? 1 : 180 / M_PI)))};}
-    return {mag * std::cos(angle * (useRadians ? 1 : M_PI / 180)), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))};
-}
-
 namespace kmtcs {
     template <typename ArithType> ArithType airTime(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
         static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
@@ -54,52 +44,22 @@ namespace kmtcs {
         return a1 * (useRadians ? 1 : 180 / M_PI);
     }
 
-    template <typename ArithType> std::pair<ArithType, double> landingVector(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
+    template <typename ArithType> Vector2D<ArithType> landingVector(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
         static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return makeVector<ArithType>(std::is_integral<ArithType>::value ? std::round(mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))) : (mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) - Constants.g * airTime<double>(mag, angle, dy, useRadians), useRadians);
+        return Vector2D<ArithType>(std::is_integral<ArithType>::value ? std::round(mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))) : (mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) - Constants.g * airTime<double>(mag, angle, dy, useRadians), useRadians);
     }
 }
 
-class Projectile {
-    private:
-        Coord2D<double> Position = Coord2D<double>(0, 0);
-        Vector2D<double> Velocity = Vector2D<double>(0, 0);
-
-        double Lifetime = 10;
-    
-    public:
-        Projectile() {}
-        Projectile(const Coord2D<double> &position, const Vector2D<double> &velocity) : Position(position), Velocity(velocity) {}
-        Projectile(const Coord2D<double> &position) : Position(position) {}
-
-        Coord2D<double>   getP() const {return Position;}
-        double           getPX() const {return Position.getX();}
-        double           getPY() const {return Position.getY();}
-
-        Coord2D<double>   setP(const Coord2D<double> &position) {
-            Coord2D<double> output = Position;
-            Position = position;
-            return output;
-        }
-        double           setPX(const double &x) {return Position.setX(x);}
-        double           setPY(const double &y) {return Position.setY(y);}
-
-        Vector2D<double>  getV() const {return Velocity;}
-        double           getVX() const {return Velocity.getX();}
-        double           getVY() const {return Velocity.getY();}
-        double           getVA() const {return Velocity.getAngle();}
-
-        int update(const double &dt) {
-            Position.adjX(Velocity.getX() * dt);
-            Position.adjY(Velocity.getY() * dt);
-            Lifetime -= dt;
-
-            if (Lifetime <= 0) {
-                return 1;
-            }
-            return 0;
-        }
-};
+template <typename Type> Type generalSet(Type &thing, const Type &newVal) {
+    const Type output = thing;
+    thing = newVal;
+    return output;
+}
+template <typename Type> Type generalAdjust(Type &thing, const Type &amount) {
+    const Type output = thing;
+    thing += amount;
+    return output;
+}
 
 class PhysicsObject2D {
     private:
@@ -111,58 +71,77 @@ class PhysicsObject2D {
         double Mass = 10;
         double StaticFriction = 1;
         double KineticFriction = 0.8;
-
-        static double g;
         
     public:
         PhysicsObject2D() {}
         PhysicsObject2D(const Coord2D<double> &position) : Position(position) {}
 
-        Coord2D<double>   getP() const {return Position;}
-        double           getPX() const {return Position.getX();}
-        double           getPY() const {return Position.getY();}
+        Coord2D<double>     getP() const {return Position;}
+        double             getPx() const {return Position.getX();}
+        double             getPy() const {return Position.getY();}
+        Vector2D<double>    getV() const {return Velocity;}
+        double             getVx() const {return Velocity.getX();}
+        double             getVy() const {return Velocity.getY();}
+        double             getVa() const {return Velocity.getAngle();}
+        Vector2D<double>    getA() const {return Acceleration;}
+        double             getAx() const {return Acceleration.getX();}
+        double             getAy() const {return Acceleration.getY();}
+        double             getAa() const {return Acceleration.getAngle();}
+        Vector2D<double>    getF() const {return Force;}
+        double             getFx() const {return Force.getX();}
+        double             getFy() const {return Force.getY();}
+        double             getFa() const {return Force.getAngle();}
+        double           getMass() const {return Mass;}
+        double             getUs() const {return StaticFriction;}
+        double             getUk() const {return KineticFriction;}
 
-        Coord2D<double>   setP(const Coord2D<double> &position) {
-            Coord2D<double> output = Position;
-            Position = position;
-            return output;
-        }
-        double           setPX(const double &x) {return Position.setX(x);}
-        double           setPY(const double &y) {return Position.setY(y);}
+        Coord2D<double>     setP(const Coord2D<double> &position)      {return generalSet<Coord2D<double>>(Position, position);}
+        double             setPx(const double &x)                      {return Position.setX(x);}
+        double             setPy(const double &y)                      {return Position.setY(y);}
+        Vector2D<double>    setV(const Vector2D<double> &velocity)     {return generalSet<Vector2D<double>>(Velocity, velocity);}
+        double             setVx(const double &x)                      {return Velocity.setX(        x);}
+        double             setVy(const double &y)                      {return Velocity.setY(        y);}
+        double             setVa(const double &angle)                  {return Velocity.setAngle(angle);}
+        Vector2D<double>    setA(const Vector2D<double> &acceleration) {return generalSet<Vector2D<double>>(Acceleration, acceleration);}
+        double             setAx(const double &x)                      {return Acceleration.setX(        x);}
+        double             setAy(const double &y)                      {return Acceleration.setY(        y);}
+        double             setAa(const double &angle)                  {return Acceleration.setAngle(angle);}
+        Vector2D<double>    setF(const Vector2D<double> &force)        {return generalSet<Vector2D<double>>(Force, force);}
+        double             setFx(const double &x)                      {return Force.setX(        x);}
+        double             setFy(const double &y)                      {return Force.setY(        y);}
+        double             setFa(const double &angle)                  {return Force.setAngle(angle);}
+        double           setMass(const double &mass)                   {return generalSet<double>(           Mass,            mass);}
+        double             setUs(const double &staticFriction)         {return generalSet<double>( StaticFriction,  staticFriction);}
+        double             setUk(const double &kineticFriction)        {return generalSet<double>(KineticFriction, kineticFriction);}
 
-        Vector2D<double>  getV() const {return Velocity;}
-        double           getVX() const {return Velocity.getX();}
-        double           getVY() const {return Velocity.getY();}
-        double           getVA() const {return Velocity.getAngle();}
-
-        Vector2D<double>  getA() const {return Acceleration;}
-        double           getAX() const {return Acceleration.getX();}
-        double           getAY() const {return Acceleration.getY();}
-        double           getAA() const {return Acceleration.getAngle();}
-
-        Vector2D<double>  getF() const {return Force;}
-        double           getFX() const {return Force.getX();}
-        double           getFY() const {return Force.getY();}
-        double           getFA() const {return Force.getAngle();}
-
-        double            getM() const {return Mass;}
-        static double     getg()       {return g;}
-
-        Vector2D<double> applyForce(const Vector2D<double> &force) {
-            Vector2D<double> output = Force;
-            Force += force;
-            return output;
-        }
+        Coord2D<double>     adjP(const Coord2D<double> &amount)  {return generalAdjust<Coord2D<double>>(Position, amount);}
+        double             adjPx(const double &amount)           {return Position.adjX(amount);}
+        double             adjPy(const double &amount)           {return Position.adjY(amount);}
+        Vector2D<double>    adjV(const Vector2D<double> &amount) {return generalAdjust<Vector2D<double>>(Velocity, amount);}
+        double             adjVx(const double &amount)           {return Velocity.adjX(    amount);}
+        double             adjVy(const double &amount)           {return Velocity.adjY(    amount);}
+        double             adjVa(const double &amount)           {return Velocity.adjAngle(amount);}
+        Vector2D<double>    adjA(const Vector2D<double> &amount) {return generalAdjust<Vector2D<double>>(Acceleration, amount);}
+        double             adjAx(const double &amount)           {return Acceleration.adjX(    amount);}
+        double             adjAy(const double &amount)           {return Acceleration.adjY(    amount);}
+        double             adjAa(const double &amount)           {return Acceleration.adjAngle(amount);}
+        Vector2D<double>    adjF(const Vector2D<double> &amount) {return generalAdjust<Vector2D<double>>(Force, amount);}
+        double             adjFx(const double &amount)           {return Force.adjX(    amount);}
+        double             adjFy(const double &amount)           {return Force.adjY(    amount);}
+        double             adjFa(const double &amount)           {return Force.adjAngle(amount);}
+        double           adjMass(const double &amount)           {return generalAdjust<double>(           Mass, amount);}
+        double             adjUs(const double &amount)           {return generalAdjust<double>( StaticFriction, amount);}
+        double             adjUk(const double &amount)           {return generalAdjust<double>(KineticFriction, amount);}
 
         void resetMotion() {
             Acceleration = Vector2D<double>(0, 0);
             Velocity = Vector2D<double>(0, 0);
         }
 
-        void update(double dt) {
+        int update(double dt) {
             // Apply friction to object
-            if (Velocity.getMag() == 0 && Mass * g * StaticFriction < Force.getMag()) {Force.adjMag(-Mass * g * StaticFriction);}
-            else if (Velocity.getMag() > 0) {applyForce(Vector2D<double>(Mass * g * KineticFriction, Velocity.getAngle() + M_PI, true));}
+            if (Velocity.getMag() == 0 && Mass * Constants.g * StaticFriction < Force.getMag()) {Force.adjMag(-Mass * Constants.g * StaticFriction);}
+            else if (Velocity.getMag() > 0) {adjF(Vector2D<double>(Mass * Constants.g * KineticFriction, Velocity.getAngle() + M_PI, true));}
 
             // Update motion values
             Acceleration = Force / Mass;
@@ -172,14 +151,42 @@ class PhysicsObject2D {
 
             // Reset force
             Force = Vector2D<double>(0, 0);
+
+            return 0;
         }
 };
-double PhysicsObject2D::g = 9.80655;
+
+class Projectile2D : public PhysicsObject2D {
+    private:
+        double Lifetime = 10;
+    
+    public:
+        Projectile2D() {}
+        Projectile2D(const Coord2D<double> &position, const Vector2D<double> &velocity) {
+            PhysicsObject2D::setP(position);
+            PhysicsObject2D::setV(velocity);
+            PhysicsObject2D::setUs(0);
+            PhysicsObject2D::setUk(0);
+        }
+        Projectile2D(const Coord2D<double> &position) {Projectile2D(position, Vector2D<double>(0, 0));}
+
+        int update(const double &dt) {
+            PhysicsObject2D::update(dt);
+            Lifetime -= dt;
+
+            if (Lifetime <= 0) {
+                return 1;
+            }
+            return 0;
+        }
+};
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main(int argc, char* args[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
     if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
+
+    std::srand(time(NULL));
 
     RenderWindow Window("forces, amiright?", 1280, 768, SDL_WINDOW_SHOWN);
     SDL_Event Event;
@@ -190,12 +197,12 @@ int main(int argc, char* args[]) {
     tile.setBlending(SDL_BLENDMODE_BLEND);
     tile.setOpacity(50);
 
-    PhysicsObject2D Object(Coord2D<double>(-544, 0));
+    PhysicsObject2D Object(Coord2D<double>(0, 0));
     Texture ObjectTexture(Window.loadTexture("dev/thingy/gfx/smile.png"), frame);
     ObjectTexture.setMods({255, 255, 0, 255});
 
     SDL_Point dst;
-    std::vector<Projectile> projectiles;
+    std::vector<Projectile2D> projectiles;
     std::vector<Texture> projectileTextures;
 
     struct {
@@ -216,6 +223,7 @@ int main(int argc, char* args[]) {
         int Down = SDL_SCANCODE_S;
         int Left = SDL_SCANCODE_A;
         int Right = SDL_SCANCODE_D;
+        int ToggleAutoPilot = SDL_SCANCODE_F2;
     } Keybinds;
 
     long double t = 0.0;
@@ -228,10 +236,13 @@ int main(int argc, char* args[]) {
     double accumulator = 0.0;
 
     const int unitSize = 64;
-    const double force = Object.getg() * Object.getM() + 50;
-    const double strength = 200;
-    double throwAngle;
-    std::pair<double, double> strengthComps;
+    const double force = Constants.g * Object.getMass() + 50;
+    const double strength = 150;
+    double throwAngle = 0;
+
+    bool autoPilot = false;
+    double moveAccumulator = 0;
+    double shootAccumulator = 0;
 
     bool running = true;
     while (running) {
@@ -267,6 +278,10 @@ int main(int argc, char* args[]) {
                                 running = false;
                                 break;
                             }
+                            if (Keystate[Keybinds.ToggleAutoPilot]) {
+                                autoPilot = !autoPilot;
+                                moveAccumulator = shootAccumulator = 0;
+                            }
                             if (Keystate[Keybinds.ToggleCapture]) {
                                 MouseInfo.Captured = !MouseInfo.Captured;
                                 if (MouseInfo.Captured) {
@@ -279,15 +294,19 @@ int main(int argc, char* args[]) {
                                     MouseInfo.Pos = {0, 0};
                                 }
                             }
-                            if (Keystate[Keybinds.Flap]) {Object.applyForce(Vector2D<double>(0, force * 500));}
+                            if (Keystate[Keybinds.Flap]) {Object.adjF(Vector2D<double>(0, force * 500));}
                         }
                         break;
                     case SDL_MOUSEBUTTONDOWN:
                         switch (Event.button.button) {
                             case SDL_BUTTON_LEFT:
-                                projectiles.emplace_back(Projectile(Object.getP(), Vector2D<double>(100, std::atan2(MouseInfo.Pos.y - Object.getPY(), MouseInfo.Pos.x - Object.getPX()), true)));
+                                throwAngle = kmtcs::launchAngle(MouseInfo.Pos.x - Object.getPx(), MouseInfo.Pos.y - Object.getPy(), strength, true);
+                                if (!std::isnan(throwAngle)) {
+                                    projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, throwAngle, true)));
+                                } else {
+                                    projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, std::atan2(MouseInfo.Pos.y - Object.getPy(), MouseInfo.Pos.x - Object.getPx()), true)));
+                                }
                                 projectileTextures.emplace_back(Texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), frame));
-                                projectileTextures[projectileTextures.size() - 1].setAngle(projectiles.back().getVA());
                                 break;
                             case SDL_BUTTON_MIDDLE:
                                 Object.setP(Coord2D<double>((double)MouseInfo.Pos.x, (double)MouseInfo.Pos.y));
@@ -307,30 +326,48 @@ int main(int argc, char* args[]) {
             }
             if (!running) {break;}
 
-            if (Keystate[Keybinds.Up   ]) {Object.applyForce(Vector2D<double>(     0,  force));}
-            if (Keystate[Keybinds.Down ]) {Object.applyForce(Vector2D<double>(     0, -force));}
-            if (Keystate[Keybinds.Left ]) {Object.applyForce(Vector2D<double>(-force,      0));}
-            if (Keystate[Keybinds.Right]) {Object.applyForce(Vector2D<double>( force,      0));}
+            if (autoPilot) {
+                moveAccumulator += dt;
+                shootAccumulator += dt;
+                if (moveAccumulator >= 10) {
+                    moveAccumulator = 0;
+                    Object.adjF(Vector2D<double>(force * 350, std::rand() % 360, false));
+                }
+                if (shootAccumulator >= 1.5) {
+                    shootAccumulator = 0;
 
-            // Force of Gravity
-            // Object.applyForce(Vector2D<double>(0, -Object.getg() * Object.getM()));
-            
+                    throwAngle = kmtcs::launchAngle(MouseInfo.Pos.x - Object.getPx(), MouseInfo.Pos.y - Object.getPy(), strength, true);
+                    if (!std::isnan(throwAngle)) {
+                        projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, throwAngle, true)));
+                    } else {
+                        projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, std::atan2(MouseInfo.Pos.y - Object.getPy(), MouseInfo.Pos.x - Object.getPx()), true)));
+                    }
+                    projectileTextures.emplace_back(Texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), frame));
+                }
+            }
+
+            if (Keystate[Keybinds.Up   ]) {Object.adjF(Vector2D<double>(     0,  force));}
+            if (Keystate[Keybinds.Down ]) {Object.adjF(Vector2D<double>(     0, -force));}
+            if (Keystate[Keybinds.Left ]) {Object.adjF(Vector2D<double>(-force,      0));}
+            if (Keystate[Keybinds.Right]) {Object.adjF(Vector2D<double>( force,      0));}
+
+            // Object.adjF(Vector2D<double>(0, -Constants.g * Object.getMass()));            
             Object.update(dt);
 
             // Confine the fella to the screen by wrapping the edges of the screen
-            if (Object.getPX() - ObjectTexture.getCenter().x >  Window.getW_2()) {Object.setPX(-Window.getW_2() - ObjectTexture.getCenter().x);}
-            if (Object.getPX() + ObjectTexture.getCenter().x < -Window.getW_2()) {Object.setPX( Window.getW_2() + ObjectTexture.getCenter().x);}
-            if (Object.getPY() - ObjectTexture.getCenter().y >  Window.getH_2()) {Object.setPY(-Window.getH_2() - ObjectTexture.getCenter().y);}
-            if (Object.getPY() + ObjectTexture.getCenter().y < -Window.getH_2()) {Object.setPY( Window.getH_2() + ObjectTexture.getCenter().y);}
+            if (Object.getPx() - ObjectTexture.getCenter().x >  Window.getW_2()) {Object.setPx(-Window.getW_2() - ObjectTexture.getCenter().x);}
+            if (Object.getPx() + ObjectTexture.getCenter().x < -Window.getW_2()) {Object.setPx( Window.getW_2() + ObjectTexture.getCenter().x);}
+            if (Object.getPy() - ObjectTexture.getCenter().y >  Window.getH_2()) {Object.setPy(-Window.getH_2() - ObjectTexture.getCenter().y);}
+            if (Object.getPy() + ObjectTexture.getCenter().y < -Window.getH_2()) {Object.setPy( Window.getH_2() + ObjectTexture.getCenter().y);}
 
             // Update the projectiles
             if (projectiles.size() > 0) {
                 for (unsigned long i = projectiles.size() - 1; i >= 0; --i) {
+                    projectiles[i].adjF(Vector2D<double>(0, -Constants.g * projectiles[i].getMass()));
                     if (projectiles[i].update(dt) == 1) {
                         projectiles.erase(projectiles.begin() + i);
                         projectileTextures.erase(projectileTextures.begin() + i);
                     }
-
                     if (i == 0) {break;}
                 }
             }
@@ -350,10 +387,11 @@ int main(int argc, char* args[]) {
             }
         }
 
-        dst = {(int)Object.getPX(), (int)Object.getPY()};
+        dst = {(int)Object.getPx(), (int)Object.getPy()};
         Window.renderTexture(ObjectTexture, dst);
         for (unsigned long i = 0; i < projectiles.size(); i++) {
-            dst = {(int)projectiles.at(i).getPX(), (int)projectiles.at(i).getPY()};
+            dst = {(int)projectiles.at(i).getPx(), (int)projectiles.at(i).getPy()};
+            projectileTextures[i].setAngle(projectiles[i].getVa());
             Window.renderTexture(projectileTextures.at(i), dst);
         }
 
