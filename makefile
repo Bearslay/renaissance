@@ -3,6 +3,8 @@ default:
 	@g++ -c src/main.cpp -std=c++14 -m64 -g -Wall -I include
 	@g++ main.o -o bin/debug/main -lSDL2main -lSDL2 -lSDL2_image
 	@./bin/debug/main
+list:
+	@echo "debug/release (discontinued), raycast (discontinued), gtest (debugging), thingy, projector, forces"
 debug:
 	@mkdir bin/debug -p
 	@g++ -c src/main.cpp -std=c++14 -m64 -g -Wall -I include
