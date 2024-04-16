@@ -72,6 +72,10 @@ class PhysicsObject2D {
         double StaticFriction = 1;
         double KineticFriction = 0.8;
         
+        bool ApplyFriction = false;
+        bool ApplyGravity = false;
+        static double GravityDirection;
+
     public:
         PhysicsObject2D() {}
         PhysicsObject2D(const Coord2D<double> &position) : Position(position) {}
@@ -95,6 +99,10 @@ class PhysicsObject2D {
         double             getUs() const {return StaticFriction;}
         double             getUk() const {return KineticFriction;}
 
+        bool hasFriction() const {return ApplyFriction;}
+        bool  hasGravity() const {return ApplyGravity;}
+        static double getGravityDirection(const bool &useRadians = true) {return GravityDirection * (useRadians ? 1 : 180 / M_PI);}
+
         Coord2D<double>     setP(const Coord2D<double> &position)      {return generalSet<Coord2D<double>>(Position, position);}
         double             setPx(const double &x)                      {return Position.setX(x);}
         double             setPy(const double &y)                      {return Position.setY(y);}
@@ -113,6 +121,10 @@ class PhysicsObject2D {
         double           setMass(const double &mass)                   {return generalSet<double>(           Mass,            mass);}
         double             setUs(const double &staticFriction)         {return generalSet<double>( StaticFriction,  staticFriction);}
         double             setUk(const double &kineticFriction)        {return generalSet<double>(KineticFriction, kineticFriction);}
+
+        bool setFriction(const bool &state) {return generalSet<bool>(ApplyFriction, state);}
+        bool  setGravity(const bool &state) {return generalSet<bool>( ApplyGravity, state);}
+        static double setGravityDirection(const bool &amount) {return generalSet<double>(GravityDirection, amount);}
 
         Coord2D<double>     adjP(const Coord2D<double> &amount)  {return generalAdjust<Coord2D<double>>(Position, amount);}
         double             adjPx(const double &amount)           {return Position.adjX(amount);}
@@ -133,6 +145,10 @@ class PhysicsObject2D {
         double             adjUs(const double &amount)           {return generalAdjust<double>( StaticFriction, amount);}
         double             adjUk(const double &amount)           {return generalAdjust<double>(KineticFriction, amount);}
 
+        bool toggleFriction() {return generalSet<bool>(ApplyFriction, !ApplyFriction);}
+        bool  toggleGravity() {return generalSet<bool>( ApplyGravity,  !ApplyGravity);}
+        static double adjGravityDirection(const bool &amount) {return generalAdjust<double>(GravityDirection, amount);}
+
         void resetMotion() {
             Acceleration = Vector2D<double>(0, 0);
             Velocity = Vector2D<double>(0, 0);
@@ -140,8 +156,13 @@ class PhysicsObject2D {
 
         int update(double dt) {
             // Apply friction to object
-            if (Velocity.getMag() == 0 && Mass * Constants.g * StaticFriction < Force.getMag()) {Force.adjMag(-Mass * Constants.g * StaticFriction);}
-            else if (Velocity.getMag() > 0) {adjF(Vector2D<double>(Mass * Constants.g * KineticFriction, Velocity.getAngle() + M_PI, true));}
+            if (ApplyFriction) {
+                if (Velocity.getMag() == 0 && Mass * Constants.g * StaticFriction < Force.getMag()) {Force.adjMag(-Mass * Constants.g * StaticFriction);}
+                else if (Velocity.getMag() > 0) {adjF(Vector2D<double>(Mass * Constants.g * KineticFriction, Velocity.getAngle() + M_PI, true));}
+            }
+
+            // Apply gravity
+            if (ApplyGravity) {adjF(Vector2D<double>(Mass * Constants.g, GravityDirection, true));}
 
             // Update motion values
             Acceleration = Force / Mass;
@@ -155,20 +176,22 @@ class PhysicsObject2D {
             return 0;
         }
 };
+double PhysicsObject2D::GravityDirection = 3 * M_PI_2;
 
 class Projectile2D : public PhysicsObject2D {
     private:
-        double Lifetime = 10;
+        double Lifetime = 100;
     
     public:
-        Projectile2D() {}
         Projectile2D(const Coord2D<double> &position, const Vector2D<double> &velocity) {
             PhysicsObject2D::setP(position);
             PhysicsObject2D::setV(velocity);
             PhysicsObject2D::setUs(0);
-            PhysicsObject2D::setUk(0);
+            PhysicsObject2D::setUk(0.05);
+            PhysicsObject2D::setGravity(false);
         }
         Projectile2D(const Coord2D<double> &position) {Projectile2D(position, Vector2D<double>(0, 0));}
+        Projectile2D() {Projectile2D(Coord2D<double>(0, 0), Vector2D<double>(0, 0));}
 
         int update(const double &dt) {
             PhysicsObject2D::update(dt);
@@ -198,6 +221,7 @@ int main(int argc, char* args[]) {
     tile.setOpacity(50);
 
     PhysicsObject2D Object(Coord2D<double>(0, 0));
+    Object.toggleFriction();
     Texture ObjectTexture(Window.loadTexture("dev/thingy/gfx/smile.png"), frame);
     ObjectTexture.setMods({255, 255, 0, 255});
 
@@ -218,7 +242,7 @@ int main(int argc, char* args[]) {
     struct {
         int Quit = SDL_SCANCODE_ESCAPE;
         int ToggleCapture = SDL_SCANCODE_F1;
-        int Flap = SDL_SCANCODE_SPACE;
+        int Jump = SDL_SCANCODE_SPACE;
         int Up = SDL_SCANCODE_W;
         int Down = SDL_SCANCODE_S;
         int Left = SDL_SCANCODE_A;
@@ -280,7 +304,6 @@ int main(int argc, char* args[]) {
                             }
                             if (Keystate[Keybinds.ToggleAutoPilot]) {
                                 autoPilot = !autoPilot;
-                                moveAccumulator = shootAccumulator = 0;
                             }
                             if (Keystate[Keybinds.ToggleCapture]) {
                                 MouseInfo.Captured = !MouseInfo.Captured;
@@ -294,13 +317,14 @@ int main(int argc, char* args[]) {
                                     MouseInfo.Pos = {0, 0};
                                 }
                             }
-                            if (Keystate[Keybinds.Flap]) {Object.adjF(Vector2D<double>(0, force * 500));}
+                            if (Keystate[Keybinds.Jump]) {Object.adjF(Vector2D<double>(0, force * 500));}
                         }
                         break;
                     case SDL_MOUSEBUTTONDOWN:
                         switch (Event.button.button) {
                             case SDL_BUTTON_LEFT:
-                                throwAngle = kmtcs::launchAngle(MouseInfo.Pos.x - Object.getPx(), MouseInfo.Pos.y - Object.getPy(), strength, true);
+                                // throwAngle = kmtcs::launchAngle(MouseInfo.Pos.x - Object.getPx(), MouseInfo.Pos.y - Object.getPy(), strength, true);
+                                throwAngle = std::atan2(MouseInfo.Pos.y - Object.getPy(), MouseInfo.Pos.x - Object.getPx());
                                 if (!std::isnan(throwAngle)) {
                                     projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, throwAngle, true)));
                                 } else {
@@ -363,7 +387,6 @@ int main(int argc, char* args[]) {
             // Update the projectiles
             if (projectiles.size() > 0) {
                 for (unsigned long i = projectiles.size() - 1; i >= 0; --i) {
-                    projectiles[i].adjF(Vector2D<double>(0, -Constants.g * projectiles[i].getMass()));
                     if (projectiles[i].update(dt) == 1) {
                         projectiles.erase(projectiles.begin() + i);
                         projectileTextures.erase(projectileTextures.begin() + i);
