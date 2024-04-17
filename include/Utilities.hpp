@@ -1,6 +1,8 @@
 #ifndef UTILITIES
 #define UTILITIES
 
+#include <cmath>
+
 /* pi/8 rad or 22.5 deg */
 #define C_PI_8     0.39269908169872415481
 /* pi/6 rad or 30 deg */
@@ -127,7 +129,7 @@ namespace btils {
         static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
         const ArithType width = rangeMax - rangeMin;
         const ArithType value = input - rangeMin;
-        return (value - (floor(value / width) * width)) + rangeMin;
+        return (value - (std::floor(value / width) * width)) + rangeMin;
     }
     /** Normalize a value to a range with a minimum value of 0 (assuming the range is a loop)
      * @tparam ArithType An arithmetic data type for the input & range
@@ -136,7 +138,7 @@ namespace btils {
      * @returns A value normalized in the given range    */
     template <typename ArithType> ArithType normalize(const ArithType &input, const ArithType &max) {
         static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return input - floor(input / max) * max;
+        return input - std::floor(input / max) * max;
     }
 
     /** Convert an angle from degrees to radians
