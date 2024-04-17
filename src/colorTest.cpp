@@ -1,14 +1,12 @@
 #include "Colors.hpp"
 #include <iostream>
+#include "Utilities.hpp"
 
 int main(int argc, char** argv) {
-    ColorRGB rgb = {255, 0, 0, 255};
-    ColorHSV hsv = toHSV(rgb);
-    std::cout << (int)hsv.h << " " << (int)hsv.s << " " << (int)hsv.v << " " << (int)hsv.a << "\n";
-    std::cout << "\n";
-    for (short i = 0; i < 360; i += 10) {
-        rgb = toRGB({i, 255, 255, 255});
-        std::cout << (int)rgb.r << " " << (int)rgb.g << " " << (int)rgb.b << "\n";
+    for (double i = -C_2PI * 1.5; i <= C_2PI * 1.5; i += 0.1) {
+        std::cout << i << " - " << btils::normalizeRadian(i) << "\n";
     }
+    std::cout << btils::normalize<int>(100, 51) << "\n";
 
+    return 0;
 }
