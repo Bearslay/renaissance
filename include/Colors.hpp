@@ -1,33 +1,67 @@
 #ifndef COLORS
 #define COLORS
 
-#include <cmath>
+#include <string>
 
-struct ColorRGBA {
-    unsigned char r = 255;
-    unsigned char g = 255;
-    unsigned char b = 255;
-    unsigned char a = 255;
-};
+#include "Utilities.hpp"
 
-struct ColorHSVA {
-    short         h = 0;
-    unsigned char s = 0;
-    unsigned char v = 255;
-    unsigned char a = 255;
-};
-
-struct ColorRGB {
+struct RGBf {
     unsigned char r = 255;
     unsigned char g = 255;
     unsigned char b = 255;
 };
-
-struct ColorHSV {
+struct HSVf {
     short         h = 0;
     unsigned char s = 0;
-    unsigned char v = 255;
+    unsigned char v = 1;
 };
+
+HSVf rgb2hsv(const RGBf &rgb) {
+    const unsigned char max = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
+    if (max == 0) {return {0, 0, max};}
+    const unsigned char min = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
+
+    const unsigned char s = 255 * long(max - min) / max;
+    if (s == 0) {return {0, s, max};}
+
+    short h = 0;
+    if      (max == rgb.r) {h =       60 * (rgb.g - rgb.b) / (max - min);}
+    else if (max == rgb.g) {h = 85  + 60 * (rgb.b - rgb.r) / (max - min);}
+    else                   {h = 171 + 60 * (rgb.r - rgb.g) / (max - min);}
+
+    return {h, s, max};
+}
+
+RGBf hsv2rgb(const HSVf &hsv) {
+    if (hsv.s == 0) {return {hsv.v, hsv.v, hsv.v};}
+    
+    const unsigned char region = hsv.h / 60;
+    const unsigned char remainder = (hsv.h - (region * 60)) * 6; 
+    const unsigned char p = (hsv.v * (255 -   hsv.s))                    >> 8;
+    const unsigned char q = (hsv.v * (255 - ((hsv.s *        remainder)  >> 8))) >> 8;
+    const unsigned char t = (hsv.v * (255 - ((hsv.s * (255 - remainder)) >> 8))) >> 8;
+    
+    switch (region) {
+        case 0:
+            return {hsv.v, t, p};
+            break;
+        case 1:
+            return {q, hsv.v, p};
+            break;
+        case 2:
+            return {p, hsv.v, t};
+            break;
+        case 3:
+            return {p, q, hsv.v};
+            break;
+        case 4:
+            return {t, p, hsv.v};
+            break;
+        default:
+            return {hsv.v, p, q};
+            break;
+    }
+}
 
 class Color {
     private:
@@ -39,24 +73,65 @@ class Color {
         unsigned char V = 255;
         unsigned char A = 255;
 
-        short mapAngle(const short &angle) {
-            short output = angle;
-            while (angle < 0)   {output += 360;}
-            while (angle > 360) {output += 360;}
-            return output;
-        }
+        void calcHSV() {           
+            const unsigned char max = R > G ? (R > B ? R : B) : (G > B ? G : B);
+            if (max == 0) {
+                H = S = 0;
+                return;
+            }
+            const unsigned char min = R < G ? (R < B ? R : B) : (G < B ? G : B);
+            
+            V = max;
 
-        void calcHSV() {
+            S = 255 * long(max - min) / V;
+            if (S == 0) {
+                H = 0;
+                return;
+            }
 
+            if (max == R) {H = 60 * (G - B) / (max - min);}
+            else if (max == G) {H = 85 + 60 * (B - R) / (max - min);}
+            else {H = 171 + 60 * (R - G) / (max - min);}
         }
 
         void calcRGB() {
-
+            if (S == 0) {
+                R = G = B = V;
+                return;
+            }
+            
+            const unsigned char region = H / 60;
+            const unsigned char remainder = (H - (region * 60)) * 6; 
+            
+            const unsigned char p = (V * (255 - S)) >> 8;
+            const unsigned char q = (V * (255 - ((S * remainder) >> 8))) >> 8;
+            const unsigned char t = (V * (255 - ((S * (255 - remainder)) >> 8))) >> 8;
+            
+            switch (region) {
+                case 0:
+                    R = V; G = t; B = p;
+                    break;
+                case 1:
+                    R = q; G = V; B = p;
+                    break;
+                case 2:
+                    R = p; G = V; B = t;
+                    break;
+                case 3:
+                    R = p; G = q; B = V;
+                    break;
+                case 4:
+                    R = t; G = p; B = V;
+                    break;
+                default:
+                    R = V; G = p; B = q;
+                    break;
+            }
         }
     
     public:
         Color(const unsigned char &r, const unsigned char &g, const unsigned char &b) : R(r), G(g), B(b) {calcHSV();}
-        Color(const short &h, const unsigned char &s, const unsigned char &v) : H(mapAngle(h)), S(s), V(v) {calcRGB();}
+        Color(const short &h, const unsigned char &s, const unsigned char &v) : H(btils::normalizeDegree(h)), S(s), V(v) {calcRGB();}
 
         unsigned char getR() const {return R;}
         unsigned char getG() const {return G;}
@@ -69,31 +144,37 @@ class Color {
         unsigned char setR(const unsigned char &r) {
             const unsigned char output = R;
             R = r;
+            calcHSV();
             return output;
         }
         unsigned char setG(const unsigned char &g) {
             const unsigned char output = G;
             G = g;
+            calcHSV();
             return output;
         }
         unsigned char setB(const unsigned char &b) {
             const unsigned char output = B;
             B = b;
+            calcHSV();
             return output;
         }
         short         setH(const short         &h) {
             const short output = H;
-            H = mapAngle(h);
+            H = btils::normalizeDegree(h);
+            calcRGB();
             return output;
         }
         unsigned char setS(const unsigned char &s) {
             const unsigned char output = S;
             S = s;
+            calcRGB();
             return output;
         }
         unsigned char setV(const unsigned char &v) {
             const unsigned char output = V;
             V = v;
+            calcRGB();
             return output;
         }
         unsigned char setA(const unsigned char &a) {
@@ -105,31 +186,37 @@ class Color {
         unsigned char adjR(const unsigned char &r) {
             const unsigned char output = R;
             R += r;
+            calcHSV();
             return output;
         }
         unsigned char adjG(const unsigned char &g) {
             const unsigned char output = G;
             G += g;
+            calcHSV();
             return output;
         }
         unsigned char adjB(const unsigned char &b) {
             const unsigned char output = B;
             B += b;
+            calcHSV();
             return output;
         }
         short         adjH(const short         &h) {
             const short output = H;
-            H = mapAngle(H + h);
+            H = btils::normalizeDegree(H + h);
+            calcRGB();
             return output;
         }
         unsigned char adjS(const unsigned char &s) {
             const unsigned char output = S;
             S += s;
+            calcRGB();
             return output;
         }
         unsigned char adjV(const unsigned char &v) {
             const unsigned char output = V;
             V += v;
+            calcRGB();
             return output;
         }
         unsigned char adjA(const unsigned char &a) {
@@ -137,120 +224,9 @@ class Color {
             A += a;
             return output;
         }
+
+        std::string rgbString() const {return std::to_string(R) + ", " + std::to_string(G) + ", " + std::to_string(B);}
+        std::string hsvString() const {return std::to_string(H) + ", " + std::to_string(S) + ", " + std::to_string(V);}
 };
-
-// ColorHSV toHSV(const ColorRGB &rgb) {
-//     const unsigned char min = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
-//     const unsigned char max = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
-
-//     const double delta = (double)max / 255 - (double)min / 255;
-//     if (delta < 0.00001) {return {0, 0, max, rgb.a};}
-//     if (max == 0)        {return {0, 0, max, rgb.a};}
-
-//     double h = (rgb.r >= max ? rgb.g - rgb.b : (rgb.g >= max ? rgb.b - rgb.r : rgb.r - rgb.g)) / 255 / delta;
-    
-//     h *= 60;
-//     if (h < 0) {h += 360;}
-
-//     return {(unsigned char)(h * 255), (unsigned char)(delta * 255 / max), max, rgb.a};
-// }
-
-// ColorHSV toHSV(const ColorRGB &rgb) {
-//     ColorHSV hsv;
-//     unsigned char rgbMin, rgbMax;
-
-//     rgbMin = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
-//     rgbMax = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
-    
-//     hsv.v = rgbMax;
-//     if (hsv.v == 0)
-//     {
-//         hsv.h = 0;
-//         hsv.s = 0;
-//         return hsv;
-//     }
-
-//     hsv.s = 255 * long(rgbMax - rgbMin) / hsv.v;
-//     if (hsv.s == 0)
-//     {
-//         hsv.h = 0;
-//         return hsv;
-//     }
-
-//     if (rgbMax == rgb.r)
-//         hsv.h = 0 + 43 * (rgb.g - rgb.b) / (rgbMax - rgbMin);
-//     else if (rgbMax == rgb.g)
-//         hsv.h = 85 + 43 * (rgb.b - rgb.r) / (rgbMax - rgbMin);
-//     else
-//         hsv.h = 171 + 43 * (rgb.r - rgb.g) / (rgbMax - rgbMin);
-
-//     return hsv;
-// }
-
-// ColorRGB toRGB(const ColorHSV &hsv) {
-//     ColorRGB rgb;
-//     short region, remainder;
-//     unsigned char p, q, t;
-    
-//     if (hsv.s == 0) {
-//         rgb.r = hsv.v;
-//         rgb.g = hsv.v;
-//         rgb.b = hsv.v;
-//         return rgb;
-//     }
-    
-//     region = hsv.h / 43;
-//     remainder = (hsv.h - (region * 43)) * 6; 
-    
-//     p = (hsv.v * (255 - hsv.s)) >> 8;
-//     q = (hsv.v * (255 - ((hsv.s * remainder) >> 8))) >> 8;
-//     t = (hsv.v * (255 - ((hsv.s * (255 - remainder)) >> 8))) >> 8;
-    
-//     switch (region) {
-//         case 0:
-//             rgb.r = hsv.v;
-//             rgb.g = t;
-//             rgb.b = p;
-//             break;
-//         case 1:
-//             rgb.r = q;
-//             rgb.g = hsv.v;
-//             rgb.b = p;
-//             break;
-//         case 2:
-//             rgb.r = p;
-//             rgb.g = hsv.v;
-//             rgb.b = t;
-//             break;
-//         case 3:
-//             rgb.r = p;
-//             rgb.g = q;
-//             rgb.b = hsv.v;
-//             break;
-//         case 4:
-//             rgb.r = t;
-//             rgb.g = p;
-//             rgb.b = hsv.v;
-//             break;
-//         case 5:
-//         default:
-//             rgb.r = hsv.v;
-//             rgb.g = p;
-//             rgb.b = q;
-//             break;
-//     }
-    
-//     return rgb;
-// }
-
-ColorRGB toRGB(const ColorHSV &hsv) {
-    ColorRGB rgb;
-    double s = hsv.s / 255;
-    double v = hsv.v / 255;
-
-    const double C = v * s;
-    const double X = C * (1 - std::fabs(std::fmod((double)hsv.h / 60, 2) - 1));
-    const double m = v - C;
-}
 
 #endif /* COLORS */
