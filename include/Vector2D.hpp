@@ -137,7 +137,7 @@ template <typename ArithType> class Vector2D {
         std::vector<ArithType>        toVector() const {return {X, Y};}
         std::pair<ArithType, double>    toPair() const {return {M, A};}
 
-        bool        equal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {
+        bool        equal(const Vector2D<ArithType> &vector, const unsigned char &metric = RelationMetric) const {
             switch (metric) {
                 default:
                 case VECTOR_RELATE_COMMON:
@@ -152,8 +152,8 @@ template <typename ArithType> class Vector2D {
                     return Y == vector.getY();
             }
         }
-        bool     notequal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !equal(vector, metric);}
-        bool         less(const Vector2D<ArithType> &vector, const unsigned char &metric) const {
+        bool     notequal(const Vector2D<ArithType> &vector, const unsigned char &metric = RelationMetric) const {return !equal(vector, metric);}
+        bool         less(const Vector2D<ArithType> &vector, const unsigned char &metric = RelationMetric) const {
             switch (metric) {
                 default:
                 case VECTOR_RELATE_COMMON:
@@ -167,9 +167,9 @@ template <typename ArithType> class Vector2D {
                     return Y < vector.getY();
             }
         }
-        bool      greater(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return vector.less(*this, metric);}
-        bool    lessequal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !greater(vector, metric);}
-        bool greaterequal(const Vector2D<ArithType> &vector, const unsigned char &metric) const {return !less(vector, metric);}
+        bool      greater(const Vector2D<ArithType> &vector, const unsigned char &metric = RelationMetric) const {return vector.less(*this, metric);}
+        bool    lessequal(const Vector2D<ArithType> &vector, const unsigned char &metric = RelationMetric) const {return !greater(vector, metric);}
+        bool greaterequal(const Vector2D<ArithType> &vector, const unsigned char &metric = RelationMetric) const {return !less(vector, metric);}
         bool   operator==(const Vector2D<ArithType> &vector) const {return        equal(vector, RelationMetric);}
         bool   operator!=(const Vector2D<ArithType> &vector) const {return     notequal(vector, RelationMetric);}
         bool    operator<(const Vector2D<ArithType> &vector) const {return         less(vector, RelationMetric);}

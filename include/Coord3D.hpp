@@ -182,7 +182,7 @@ template <typename ArithType> class Coord3D {
         std::string             toString() const {return "(" + std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z) + ")";}
         std::vector<ArithType>  toVector() const {return {X, Y, Z};}
 
-        bool        equal(const Coord3D<ArithType> &coord, const unsigned char &metric) const {
+        bool        equal(const Coord3D<ArithType> &coord, const unsigned char &metric = RelationMetric) const {
             switch (metric) {
                 default:
                 case COORD_RELATE_COMMON:
@@ -199,8 +199,8 @@ template <typename ArithType> class Coord3D {
                     return Z == coord.getZ();
             }
         }
-        bool     notequal(const Coord3D<ArithType> &coord, const unsigned char &metric) const {return !equal(coord, metric);}
-        bool         less(const Coord3D<ArithType> &coord, const unsigned char &metric) const {
+        bool     notequal(const Coord3D<ArithType> &coord, const unsigned char &metric = RelationMetric) const {return !equal(coord, metric);}
+        bool         less(const Coord3D<ArithType> &coord, const unsigned char &metric = RelationMetric) const {
             switch (metric) {
                 default:
                 case COORD_RELATE_COMMON:
@@ -216,9 +216,9 @@ template <typename ArithType> class Coord3D {
                     return Z < coord.getZ();
             }
         }
-        bool      greater(const Coord3D<ArithType> &coord, const unsigned char &metric) const {return coord.less(*this, RelationMetric);}
-        bool    lessequal(const Coord3D<ArithType> &coord, const unsigned char &metric) const {return !greater(coord, metric);}
-        bool greaterequal(const Coord3D<ArithType> &coord, const unsigned char &metric) const {return !less(coord, metric);}
+        bool      greater(const Coord3D<ArithType> &coord, const unsigned char &metric = RelationMetric) const {return coord.less(*this, metric);}
+        bool    lessequal(const Coord3D<ArithType> &coord, const unsigned char &metric = RelationMetric) const {return !greater(coord, metric);}
+        bool greaterequal(const Coord3D<ArithType> &coord, const unsigned char &metric = RelationMetric) const {return !less(coord, metric);}
         bool   operator==(const Coord3D<ArithType> &coord) const {return        equal(coord, RelationMetric);}
         bool   operator!=(const Coord3D<ArithType> &coord) const {return     notequal(coord, RelationMetric);}
         bool    operator<(const Coord3D<ArithType> &coord) const {return         less(coord, RelationMetric);}
