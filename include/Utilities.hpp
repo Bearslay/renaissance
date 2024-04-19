@@ -167,6 +167,119 @@ namespace btils {
      * @param useRadians Whether to normalize to [0, 2 * pi) for radians or [0, 360) for degrees
      * @returns An angle, but in the range of either [0, 2 * pi) or [0, 360)    */
     double  normalizeAngle(const double &angle, const bool &useRadians = true) {return useRadians ? normalizeRadian(angle) : normalizeDegree(angle);}
+
+    class Percent {
+        private:
+            double Val = 0.0;
+
+            static   bool UseAllowance;
+            static double Allowance;
+
+        public:
+            Percent(const            Percent &input) : Val(input.getd()) {}
+            Percent(const        signed char &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const      unsigned char &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const       signed short &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const     unsigned short &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const         signed int &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const       unsigned int &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const        signed long &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const      unsigned long &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const   signed long long &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const unsigned long long &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const              float &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+            Percent(const             double &input) : Val(btils::normalize<double>(        input, 1.0)) {}
+            Percent(const        long double &input) : Val(btils::normalize<double>((double)input, 1.0)) {}
+
+            static double getAllowance() {return Allowance;}
+            static double setAllowance(const double &allowance) {return btils::set<double>(Allowance, allowance);}
+            static double adjAllowance(const double &   amount) {return btils::adj<double>(Allowance, amount);}
+
+            Percent              getp() const {return *this;}
+            signed char         getsc() const {return (       signed char)std::round(Val * 100.0);}
+            unsigned char       getuc() const {return (     unsigned char)std::round(Val * 100.0);}
+            signed short        getss() const {return (      signed short)std::round(Val * 100.0);}
+            unsigned short      getus() const {return (    unsigned short)std::round(Val * 100.0);}
+            signed int          getsi() const {return (        signed int)std::round(Val * 100.0);}
+            unsigned int        getui() const {return (      unsigned int)std::round(Val * 100.0);}
+            signed long         getsl() const {return (       signed long)std::round(Val * 100.0);}
+            unsigned long       getul() const {return (     unsigned long)std::round(Val * 100.0);}
+            signed long long   getsll() const {return (  signed long long)std::round(Val * 100.0);}
+            unsigned long long getull() const {return (unsigned long long)std::round(Val * 100.0);}
+            float                getf() const {return (             float)Val;}
+            double               getd() const {return                     Val;}
+            long double         getld() const {return (       long double)Val;}
+
+            Percent             set(const            Percent &val) {return btils::set<Percent>(*this, val);}
+            signed char         set(const        signed char &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            unsigned char       set(const      unsigned char &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            signed short        set(const       signed short &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            unsigned short      set(const     unsigned short &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            signed int          set(const         signed int &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            unsigned int        set(const       unsigned int &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            signed long         set(const        signed long &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            unsigned long       set(const      unsigned long &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            signed long long    set(const   signed long long &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            unsigned long long  set(const unsigned long long &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            float               set(const              float &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            double              set(const             double &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+            long double         set(const        long double &val) {return btils::set<double>(Val, btils::normalize<double>(val, 1.0));}
+
+            Percent             adj(const            Percent &val) {return set(Val +         val.getd());}
+            signed char         adj(const        signed char &val) {return set(Val + (double)val);}
+            unsigned char       adj(const      unsigned char &val) {return set(Val + (double)val);}
+            signed short        adj(const       signed short &val) {return set(Val + (double)val);}
+            unsigned short      adj(const     unsigned short &val) {return set(Val + (double)val);}
+            signed int          adj(const         signed int &val) {return set(Val + (double)val);}
+            unsigned int        adj(const       unsigned int &val) {return set(Val + (double)val);}
+            signed long         adj(const        signed long &val) {return set(Val + (double)val);}
+            unsigned long       adj(const      unsigned long &val) {return set(Val + (double)val);}
+            signed long long    adj(const   signed long long &val) {return set(Val + (double)val);}
+            unsigned long long  adj(const unsigned long long &val) {return set(Val + (double)val);}
+            float               adj(const              float &val) {return set(Val + (double)val);}
+            double              adj(const             double &val) {return set(Val +         val);}
+            long double         adj(const        long double &val) {return set(Val + (double)val);}
+
+            Percent  operator!()                       const {return Percent(1.0 - Val);}
+            bool    operator==(const Percent &percent) const {return UseAllowance ? Val <= percent.getd() + Allowance && Val >= percent.getd() - Allowance : Val == percent.getd();}
+            bool    operator!=(const Percent &percent) const {return UseAllowance ? Val >  percent.getd() + Allowance || Val <  percent.getd() - Allowance : Val != percent.getd();}
+            bool     operator<(const Percent &percent) const {return Val <  percent.getd();}
+            bool     operator>(const Percent &percent) const {return Val >  percent.getd();}
+            bool    operator<=(const Percent &percent) const {return Val <= percent.getd();}
+            bool    operator>=(const Percent &percent) const {return Val >= percent.getd();}
+
+            Percent& operator+=(const            Percent &input) {set(Val +         input.getd());    return *this;}
+            Percent& operator+=(const        signed char &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const      unsigned char &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const       signed short &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const     unsigned short &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const         signed int &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const       unsigned int &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const        signed long &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const      unsigned long &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const   signed long long &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const unsigned long long &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const              float &input) {set(Val + (double)input);           return *this;}
+            Percent& operator+=(const             double &input) {set(Val +         input);           return *this;}
+            Percent& operator+=(const        long double &input) {set(Val + (double)input);           return *this;}
+
+            Percent& operator+=(const            Percent &input) {set(Val -         input.getd());    return *this;}
+            Percent& operator+=(const        signed char &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const      unsigned char &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const       signed short &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const     unsigned short &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const         signed int &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const       unsigned int &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const        signed long &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const      unsigned long &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const   signed long long &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const unsigned long long &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const              float &input) {set(Val - (double)input);           return *this;}
+            Percent& operator+=(const             double &input) {set(Val -         input);           return *this;}
+            Percent& operator+=(const        long double &input) {set(Val - (double)input);           return *this;}
+    };
+    double Percent::Allowance = 0.00001;
+    bool Percent::UseAllowance = true;
 }
 
 #endif /* UTILITIES */
