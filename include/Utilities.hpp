@@ -242,32 +242,32 @@ namespace btils {
             /**/                          UnitInterval& operator%=(const UnitInterval &rhs) {set(std::fmod(Val,  rhs.get()));    return *this;}
             template <typename ArithType> UnitInterval& operator+=(const    ArithType &rhs) {
                 static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-                if (std::is_integral<ArithType>::value) {set(Val + ((double)rhs / 100.0));}
-                else                                    {set(Val +  (double)rhs);}
+                if   (std::is_integral<ArithType>::value) {set(Val + ((double)rhs / 100.0));}
+                else                                      {set(Val +  (double)rhs);}
                 return *this;
             }
             template <typename ArithType> UnitInterval& operator-=(const    ArithType &rhs) {
                 static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-                if (std::is_integral<ArithType>::value) {set(Val - ((double)rhs / 100.0));}
-                else                                    {set(Val -  (double)rhs);}
+                if   (std::is_integral<ArithType>::value) {set(Val - ((double)rhs / 100.0));}
+                else                                      {set(Val -  (double)rhs);}
                 return *this;
             }
             template <typename ArithType> UnitInterval& operator*=(const    ArithType &rhs) {
                 static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-                if (std::is_integral<ArithType>::value) {set(Val * ((double)rhs / 100.0));}
-                else                                    {set(Val *  (double)rhs);}
+                if   (std::is_integral<ArithType>::value) {set(Val * ((double)rhs / 100.0));}
+                else                                      {set(Val *  (double)rhs);}
                 return *this;
             }
             template <typename ArithType> UnitInterval& operator/=(const    ArithType &rhs) {
                 static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-                if (std::is_integral<ArithType>::value) {set(Val / ((double)rhs / 100.0));}
-                else                                    {set(Val /  (double)rhs);}
+                if   (std::is_integral<ArithType>::value) {set(Val / ((double)rhs / 100.0));}
+                else                                      {set(Val /  (double)rhs);}
                 return *this;
             }
             template <typename ArithType> UnitInterval& operator%=(const    ArithType &rhs) {
                 static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-                if (std::is_integral<ArithType>::value) {set(std::fmod(Val, ((double)rhs / 100.0)));}
-                else                                    {set(std::fmod(Val,  (double)rhs));}
+                if   (std::is_integral<ArithType>::value) {set(std::fmod(Val, ((double)rhs / 100.0)));}
+                else                                      {set(std::fmod(Val,  (double)rhs));}
                 return *this;
             }
 

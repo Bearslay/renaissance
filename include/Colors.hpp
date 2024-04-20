@@ -175,16 +175,16 @@ unsigned char RGBRough::RelationMetric = RGB_RELATE_COMMON;
 
 class RGBExact {
     private:
-        double R = 1.0;
-        double G = 1.0;
-        double B = 1.0;
-        double A = 1.0;
+        btils::UnitInterval R = 1.0;
+        btils::UnitInterval G = 1.0;
+        btils::UnitInterval B = 1.0;
+        btils::UnitInterval A = 1.0;
 
         static unsigned char RelationMetric;
 
     public:
-        RGBExact(const double &r, const double &g, const double &b, const double &a) : R(btils::normalize<double>(r, 1.0)), G(btils::normalize<double>(g, 1.0)), B(btils::normalize<double>(b, 1.0)), A(btils::normalize<double>(a, 1.0)) {}
-        RGBExact(const double &r, const double &g, const double &b) {RGBExact(r, g, b, 1.0);}
+        RGBExact(const btils::UnitInterval &r, const btils::UnitInterval &g, const btils::UnitInterval &b, const btils::UnitInterval &a) : R(r), G(g), B(b), A(a) {}
+        RGBExact(const btils::UnitInterval &r, const btils::UnitInterval &g, const btils::UnitInterval &b) {RGBExact(r, g, b, 1.0);}
 
         RGBExact(const  RGBRough &color) : R(color.getR() / 255.0), G(color.getG() / 255.0), B(color.getB() / 255.0), A(color.getA() / 255.0) {}
         RGBExact(const  RGBExact &color) : R(color.getR()),         G(color.getG()),         B(color.getB()),         A(color.getA())         {}
