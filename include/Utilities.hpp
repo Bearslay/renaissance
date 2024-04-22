@@ -141,6 +141,26 @@ namespace btils {
         return input - std::floor(input / max) * max;
     }
 
+    /** Clamp a value to a range
+     * @tparam ArithType An arithmetic data type for the input & range
+     * @param input The value to clamp
+     * @param rangeMin The smallest value making up the range (inclusive)
+     * @param rangeMax The largest value making up the range (inclusive)
+     * @returns A value clammped to the given range    */
+    template <typename ArithType> ArithType clamp(const ArithType &input, const ArithType &rangeMin, const ArithType &rangeMax) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        return input < rangeMin ? rangeMin : (input > rangeMax ? rangeMax : input);
+    }
+    /** Clamp a value to a range with a minimum value of 0
+     * @tparam ArithType An arithmetic data type for the input & range
+     * @param input The value to clamp
+     * @param max The largest value making up the range (inclusive)
+     * @returns A value clammped to the given range    */
+    template <typename ArithType> ArithType clamp(const ArithType &input, const ArithType &max) {
+        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+        return input < 0 ? 0 : (input > max ? max : input);
+    }
+
     /** Convert an angle from degrees to radians
      * @param angle An angle in degrees
      * @returns An angle in radians    */
