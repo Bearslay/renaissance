@@ -175,16 +175,16 @@ unsigned char RGBRough::RelationMetric = RGB_RELATE_COMMON;
 
 class RGBExact {
     private:
-        btils::UnitInterval R = 1.0;
-        btils::UnitInterval G = 1.0;
-        btils::UnitInterval B = 1.0;
-        btils::UnitInterval A = 1.0;
+        double R = 1.0;
+        double G = 1.0;
+        double B = 1.0;
+        double A = 1.0;
 
         static unsigned char RelationMetric;
 
     public:
-        RGBExact(const btils::UnitInterval &r, const btils::UnitInterval &g, const btils::UnitInterval &b, const btils::UnitInterval &a) : R(r), G(g), B(b), A(a) {}
-        RGBExact(const btils::UnitInterval &r, const btils::UnitInterval &g, const btils::UnitInterval &b) {RGBExact(r, g, b, 1.0);}
+        RGBExact(const double &r, const double &g, const double &b, const double &a) : R(btils::clamp<double>(r, 1.0)), G(btils::clamp<double>(g, 1.0)), B(btils::clamp<double>(b, 1.0)), A(btils::clamp<double>(a, 1.0)) {}
+        RGBExact(const double &r, const double &g, const double &b) {RGBExact(r, g, b, 1.0);}
 
         RGBExact(const  RGBRough &color) : R(color.getR() / 255.0), G(color.getG() / 255.0), B(color.getB() / 255.0), A(color.getA() / 255.0) {}
         RGBExact(const  RGBExact &color) : R(color.getR()),         G(color.getG()),         B(color.getB()),         A(color.getA())         {}
@@ -196,7 +196,7 @@ class RGBExact {
         RGBExact(const CMYKExact &color) {}
 
         RGBExact(const SDL_Color &color) : R(color.r / 255.0), G(color.g / 255.0), B(color.b / 255.0), A(color.a / 255.0) {}
-        SDL_Color toSDL() const {return {std::round(R * 255), std::round(G * 255), std::round(B * 255), std::round(A * 255)};}
+        SDL_Color toSDL() const {return {std::round(R * 255.0), std::round(G * 255.0), std::round(B * 255.0), std::round(A * 255.0)};}
 
         static unsigned char getRelationMetric()                                                {return RelationMetric;}
         static unsigned char setRelationMetric(const unsigned char &metric = RGB_RELATE_COMMON) {return btils::set<unsigned char>(RelationMetric, metric > 4 || metric < 0 ? RGB_RELATE_COMMON : metric);}
@@ -207,10 +207,10 @@ class RGBExact {
         double getB() const {return B;}
         double getA() const {return A;}
 
-        double setR(const double &r) {return btils::set<double>(R, btils::normalize<double>(r, 1.0));}
-        double setG(const double &g) {return btils::set<double>(G, btils::normalize<double>(g, 1.0));}
-        double setB(const double &b) {return btils::set<double>(B, btils::normalize<double>(b, 1.0));}
-        double setA(const double &a) {return btils::set<double>(A, btils::normalize<double>(a, 1.0));}
+        double setR(const double &r) {return btils::set<double>(R, btils::clamp<double>(r, 1.0));}
+        double setG(const double &g) {return btils::set<double>(G, btils::clamp<double>(g, 1.0));}
+        double setB(const double &b) {return btils::set<double>(B, btils::clamp<double>(b, 1.0));}
+        double setA(const double &a) {return btils::set<double>(A, btils::clamp<double>(a, 1.0));}
 
         double adjR(const double &amount) {return setR(R + amount);}
         double adjG(const double &amount) {return setG(G + amount);}
@@ -225,7 +225,7 @@ class RGBExact {
         }
         RGBExact    operator!()                                 const {return RGBExact(1.0 - R, 1.0 - G, 1.0 - B, A);}
         std::string  toString(const bool &includeAlpha = false) const {return std::to_string(R) + ", " + std::to_string(G) + ", " + std::to_string(B) + (includeAlpha ? ", " + std::to_string(A) : "");}
-        RGBRough      toRough() const {return RGBRough(std::round(R * 255), std::round(G * 255), std::round(B * 255), std::round(A * 255));}
+        RGBRough      toRough() const {return RGBRough(std::round(R * 255.0), std::round(G * 255.0), std::round(B * 255.0), std::round(A * 255.0));}
 
         bool        equal(const RGBExact &color, const unsigned char &metric = RelationMetric) const {
             switch (metric) {
@@ -269,33 +269,33 @@ class RGBExact {
         bool   operator>=(const RGBExact &color) const {return greaterequal(color, RelationMetric);}
 
         RGBExact& operator+=(const RGBExact & color) {
-            R += color.getR();
-            G += color.getG();
-            B += color.getB();
+            adjR(color.getR());
+            adjG(color.getG());
+            adjB(color.getB());
             return *this;
         }
         RGBExact& operator-=(const RGBExact & color) {
-            R -= color.getR();
-            G -= color.getG();
-            B -= color.getB();
+            adjR(-color.getR());
+            adjG(-color.getG());
+            adjB(-color.getB());
             return *this;
         }
         RGBExact& operator*=(const   double &scalar) {
-            R *= scalar;
-            G *= scalar;
-            B *= scalar;
+            R = btils::clamp<double>(R * scalar, 1.0);
+            G = btils::clamp<double>(G * scalar, 1.0);
+            B = btils::clamp<double>(B * scalar, 1.0);
             return *this;
         }
         RGBExact& operator/=(const   double &scalar) {
-            R /= scalar;
-            G /= scalar;
-            B /= scalar;
+            R = btils::clamp<double>(R / scalar, 1.0);
+            G = btils::clamp<double>(G / scalar, 1.0);
+            B = btils::clamp<double>(B / scalar, 1.0);
             return *this;
         }
         RGBExact& operator%=(const   double & denom) {
-            R = std::fmod(R, denom);
-            G = std::fmod(G, denom);
-            B = std::fmod(B, denom);
+            R = btils::clamp<double>(std::fmod(R, denom), 1.0);
+            G = btils::clamp<double>(std::fmod(G, denom), 1.0);
+            B = btils::clamp<double>(std::fmod(B, denom), 1.0);
             return *this;
         }
         RGBExact   operator+(const RGBExact & color) const {return RGBExact(R + color.getR(), G + color.getG(), B + color.getB());}
