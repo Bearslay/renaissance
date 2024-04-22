@@ -77,7 +77,7 @@ namespace btils {
     /** Acts as an assignment operator, but while returning the previous value of the thing being modified
      * @tparam Type A something that has a defined assignment operator (primitive type or otherwise)
      * @param lhs The left-hand side of an assignment operator (value will be altered)
-     * @param newVal The right-hand side of an assignment operator (value will not be altered)
+     * @param rhs The right-hand side of an assignment operator (value will not be altered)
      * @returns The original value of lhs    */
     template <typename Type> Type set(Type &lhs, const Type &rhs) {
         const Type output = lhs;
@@ -87,7 +87,7 @@ namespace btils {
     /** Acts as an addition assignment operator, but while returning the previous value of the thing being modified
      * @tparam Type A something that has a defined addition assignment operator (primitive type or otherwise)
      * @param lhs The left-hand side of an addition assignment operator (value will be altered)
-     * @param newVal The right-hand side of an addition assignment operator (value will not be altered)
+     * @param rhs The right-hand side of an addition assignment operator (value will not be altered)
      * @returns The original value of lhs    */
     template <typename Type> Type adj(Type &lhs, const Type &rhs) {
         const Type output = lhs;
