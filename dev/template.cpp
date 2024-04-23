@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "RenderWindow.hpp"
-#include "DefaultColors.hpp"
+#include "BColors.hpp"
 
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main(int argc, char* args[]) {

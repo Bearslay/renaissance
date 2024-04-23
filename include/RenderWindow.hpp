@@ -1,11 +1,11 @@
-#ifndef RENDERWINDOW
-#define RENDERWINDOW
+#ifndef RENDERWINDoW
+#define RENDERWINDoW
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <iostream>
 
-#include "DefaultColors.hpp"
+#include "PresetColors.hpp"
 #include "Texture.hpp"
 
 class RenderWindow {
@@ -92,7 +92,7 @@ class RenderWindow {
             return output;
         }
 
-        void clear(const SDL_Color &color = DefaultColors[COLOR_BLACK]) {
+        void clear(const SDL_Color &color = PresetColors[COLOR_BLACK]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_RenderClear(Renderer);
         }
@@ -117,25 +117,25 @@ class RenderWindow {
             }
         }
 
-        void drawPixel(const int &x, const int &y, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void drawPixel(const int &x, const int &y, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_RenderDrawPoint(Renderer, W_2 + x, H_2 - y);
         }
-        void drawLine(const int &x1, const int &y1, const int &x2, const int &y2, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void drawLine(const int &x1, const int &y1, const int &x2, const int &y2, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_RenderDrawLine(Renderer, W_2 + x1, H_2 - y1, W_2 + x2, H_2 - y2);
         }
-        void drawRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void drawRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_Rect dst = {W_2 + x, H_2 - y, w, h};
             SDL_RenderDrawRect(Renderer, &dst);
         }
-        void fillRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void fillRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             SDL_Rect dst = {W_2 + x, H_2 - y, w, h};
             SDL_RenderFillRect(Renderer, &dst);
         }
-        void drawCircle(const int &x, const int &y, const int &r, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void drawCircle(const int &x, const int &y, const int &r, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             const int diameter = r * 2;
             int ox    = r - 1;    int oy = 0;
@@ -161,7 +161,7 @@ class RenderWindow {
                 }
             }
         }
-        void fillCircle(const int &x, const int &y, const int &r, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void fillCircle(const int &x, const int &y, const int &r, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
             int ox    = 0;    int oy = r;
             int error = r - 1;

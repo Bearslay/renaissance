@@ -6,7 +6,7 @@
 #include "Coord2D.hpp"
 #include "Vector2D.hpp"
 #include "RenderWindow.hpp"
-#include "DefaultColors.hpp"
+#include "BColors.hpp"
 
 struct {
     double g = 9.80665;
