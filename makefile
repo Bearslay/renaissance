@@ -51,6 +51,6 @@ projector:
 forces:
 	@mkdir bin -p
 	@mkdir bin/debug -p
-	@g++ -c src/forces.cpp -std=c++14 -m64 -g -Wall -I include
-	@g++ forces.o -o bin/debug/forces -lSDL2main -lSDL2 -lSDL2_image
+	@g++ -c src/forces.cpp src/Utilities.cpp src/BColors.cpp -std=c++14 -m64 -g -Wall -I include
+	@g++ forces.o Utilities.o BColors.o -o bin/debug/forces -lSDL2main -lSDL2 -lSDL2_image
 	@./bin/debug/forces
