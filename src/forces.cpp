@@ -6,7 +6,6 @@
 #include "Coord2D.hpp"
 #include "Vector2D.hpp"
 #include "RenderWindow.hpp"
-#include "BColors.hpp"
 
 struct {
     double g = 9.80665;
@@ -180,7 +179,7 @@ double PhysicsObject2D::GravityDirection = 3 * M_PI_2;
 
 class Projectile2D : public PhysicsObject2D {
     private:
-        double Lifetime = 100;
+        double Lifetime = 50;
     
     public:
         Projectile2D(const Coord2D<double> &position, const Vector2D<double> &velocity) {
@@ -222,10 +221,13 @@ int main(int argc, char* args[]) {
 
     PhysicsObject2D Object(Coord2D<double>(0, 0));
     Object.toggleFriction();
+    Object.setGravity(true);
     Texture ObjectTexture(Window.loadTexture("dev/thingy/gfx/smile.png"), frame);
     ObjectTexture.setMods({255, 255, 0, 255});
 
-    SDL_Point dst;
+    Constants.g = 20;
+
+    SDL_Rect dst;
     std::vector<Projectile2D> projectiles;
     std::vector<Texture> projectileTextures;
 
@@ -242,7 +244,7 @@ int main(int argc, char* args[]) {
     struct {
         int Quit = SDL_SCANCODE_ESCAPE;
         int ToggleCapture = SDL_SCANCODE_F1;
-        int Jump = SDL_SCANCODE_SPACE;
+        int Dash = SDL_SCANCODE_SPACE;
         int Up = SDL_SCANCODE_W;
         int Down = SDL_SCANCODE_S;
         int Left = SDL_SCANCODE_A;
@@ -267,6 +269,9 @@ int main(int argc, char* args[]) {
     bool autoPilot = false;
     double moveAccumulator = 0;
     double shootAccumulator = 0;
+
+    unsigned int midAirs = 1;
+    unsigned int remainingMidAirs = midAirs;
 
     bool running = true;
     while (running) {
@@ -317,7 +322,14 @@ int main(int argc, char* args[]) {
                                     MouseInfo.Pos = {0, 0};
                                 }
                             }
-                            if (Keystate[Keybinds.Jump]) {Object.adjF(Vector2D<double>(0, force * 500));}
+                            // if (Keystate[Keybinds.Dash]) {Object.adjF(Vector2D<double>(force * 750, std::atan2(MouseInfo.Pos.y - Object.getPy(), MouseInfo.Pos.x - Object.getPx()), true));}
+                            if (Keystate[Keybinds.Dash]) {Object.adjFx(force * 300 * (Keystate[Keybinds.Left] && !Keystate[Keybinds.Right] ? -1 : (!Keystate[Keybinds.Left] && Keystate[Keybinds.Right] ? 1 : (Object.getVx() > 0 ? 1 : -1))));}
+                            if (remainingMidAirs > 0 && Keystate[Keybinds.Up]) {
+                                Object.adjFy(force * 350);
+                                remainingMidAirs--;
+                            }
+                            if (Object.getPx() <= -Window.getW_2() + ObjectTexture.getCenter().x + 2 && Object.getPy() > -Window.getH_2() + ObjectTexture.getCenter().y && Keystate[Keybinds.Right]) {Object.adjF(Vector2D<double>(force * 500, M_PI / 3, true));}
+                            if (Object.getPx() >=  Window.getW_2() - ObjectTexture.getCenter().x - 2 && Object.getPy() > -Window.getH_2() + ObjectTexture.getCenter().y && Keystate[Keybinds.Left ]) {Object.adjF(Vector2D<double>(force * 500, M_PI_2 + M_PI / 6, true));}
                         }
                         break;
                     case SDL_MOUSEBUTTONDOWN:
@@ -327,8 +339,10 @@ int main(int argc, char* args[]) {
                                 throwAngle = std::atan2(MouseInfo.Pos.y - Object.getPy(), MouseInfo.Pos.x - Object.getPx());
                                 if (!std::isnan(throwAngle)) {
                                     projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, throwAngle, true)));
+                                    projectiles[projectiles.size() - 1].setGravity(true);
                                 } else {
                                     projectiles.emplace_back(Projectile2D(Object.getP(), Vector2D<double>(strength, std::atan2(MouseInfo.Pos.y - Object.getPy(), MouseInfo.Pos.x - Object.getPx()), true)));
+                                    projectiles[projectiles.size() - 1].setGravity(true);
                                 }
                                 projectileTextures.emplace_back(Texture(Window.loadTexture("dev/thingy/gfx/arrow.png"), frame));
                                 break;
@@ -350,6 +364,8 @@ int main(int argc, char* args[]) {
             }
             if (!running) {break;}
 
+            if (Object.getPy() <= -Window.getH_2() + ObjectTexture.getCenter().x) {remainingMidAirs = midAirs;}
+
             if (autoPilot) {
                 moveAccumulator += dt;
                 shootAccumulator += dt;
@@ -370,8 +386,8 @@ int main(int argc, char* args[]) {
                 }
             }
 
-            if (Keystate[Keybinds.Up   ]) {Object.adjF(Vector2D<double>(     0,  force));}
-            if (Keystate[Keybinds.Down ]) {Object.adjF(Vector2D<double>(     0, -force));}
+            if (Keystate[Keybinds.Up   ]) {Object.adjF(Vector2D<double>(     0,  force * 0.25));}
+            if (Keystate[Keybinds.Down ]) {Object.adjF(Vector2D<double>(     0, -force * 2));}
             if (Keystate[Keybinds.Left ]) {Object.adjF(Vector2D<double>(-force,      0));}
             if (Keystate[Keybinds.Right]) {Object.adjF(Vector2D<double>( force,      0));}
 
@@ -379,14 +395,53 @@ int main(int argc, char* args[]) {
             Object.update(dt);
 
             // Confine the fella to the screen by wrapping the edges of the screen
-            if (Object.getPx() - ObjectTexture.getCenter().x >  Window.getW_2()) {Object.setPx(-Window.getW_2() - ObjectTexture.getCenter().x);}
-            if (Object.getPx() + ObjectTexture.getCenter().x < -Window.getW_2()) {Object.setPx( Window.getW_2() + ObjectTexture.getCenter().x);}
-            if (Object.getPy() - ObjectTexture.getCenter().y >  Window.getH_2()) {Object.setPy(-Window.getH_2() - ObjectTexture.getCenter().y);}
-            if (Object.getPy() + ObjectTexture.getCenter().y < -Window.getH_2()) {Object.setPy( Window.getH_2() + ObjectTexture.getCenter().y);}
+            // if (Object.getPx() - ObjectTexture.getCenter().x >  Window.getW_2()) {Object.setPx(-Window.getW_2() - ObjectTexture.getCenter().x);}
+            // if (Object.getPx() + ObjectTexture.getCenter().x < -Window.getW_2()) {Object.setPx( Window.getW_2() + ObjectTexture.getCenter().x);}
+            // if (Object.getPy() - ObjectTexture.getCenter().y >  Window.getH_2()) {Object.setPy(-Window.getH_2() - ObjectTexture.getCenter().y);}
+            // if (Object.getPy() + ObjectTexture.getCenter().y < -Window.getH_2()) {Object.setPy( Window.getH_2() + ObjectTexture.getCenter().y);}
+
+            // Rudimentary collision with the sides of the window
+            if (Object.getPx() + ObjectTexture.getCenter().x > Window.getW_2()) {
+                Object.setPx(Window.getW_2() - ObjectTexture.getCenter().x);
+                Object.setVx(0);
+                Object.setAx(0);
+                Object.setFx(0);
+            }
+            if (Object.getPx() - ObjectTexture.getCenter().x < -Window.getW_2()) {
+                Object.setPx(-Window.getW_2() + ObjectTexture.getCenter().x);
+                Object.setVx(0);
+                Object.setAx(0);
+                Object.setFx(0);
+            }
+            if (Object.getPy() + ObjectTexture.getCenter().y > Window.getH_2()) {
+                Object.setPy(Window.getH_2() - ObjectTexture.getCenter().y);
+                Object.setVy(0);
+                Object.setAy(0);
+                Object.setFy(0);
+            }
+            if (Object.getPy() - ObjectTexture.getCenter().y < -Window.getH_2()) {
+                Object.setPy(-Window.getH_2() + ObjectTexture.getCenter().y);
+                Object.setVy(0);
+                Object.setAy(0);
+                Object.setFy(0);
+            }
 
             // Update the projectiles
             if (projectiles.size() > 0) {
                 for (unsigned long i = projectiles.size() - 1; i >= 0; --i) {
+                    if (projectiles[i].getPx() + projectileTextures[i].getCenter().x > Window.getW_2()) {
+                        projectiles[i].setVx(-projectiles[i].getVx());
+                    }
+                    if (projectiles[i].getPx() - projectileTextures[i].getCenter().x < -Window.getW_2()) {
+                        projectiles[i].setVx(-projectiles[i].getVx());
+                    }
+                    if (projectiles[i].getPy() + projectileTextures[i].getCenter().y > Window.getH_2()) {
+                        projectiles[i].setVy(-projectiles[i].getVy());
+                    }
+                    if (projectiles[i].getPy() - projectileTextures[i].getCenter().y < -Window.getH_2()) {
+                        projectiles[i].setVy(-projectiles[i].getVy());
+                    }
+                    
                     if (projectiles[i].update(dt) == 1) {
                         projectiles.erase(projectiles.begin() + i);
                         projectileTextures.erase(projectileTextures.begin() + i);
@@ -403,17 +458,18 @@ int main(int argc, char* args[]) {
 
         Window.clear();
 
-        for (int i = 0; i < Window.getW() / unitSize; i++) {
-            for (int j = 0; j < Window.getH() / unitSize; j++) {
-                SDL_Point p = {-Window.getW_2() + i * unitSize + tile.getCenter().x, Window.getH_2() - j * unitSize - tile.getCenter().y};
+        const SDL_Point tileOffset = {Window.getW() % unitSize, Window.getH() % unitSize};
+        for (int i = -1; i < Window.getW() / unitSize + 1; i++) {
+            for (int j = -1; j < Window.getH() / unitSize + 1; j++) {
+                const SDL_Point p = {-Window.getW_2() + i * unitSize + tile.getCenter().x + tileOffset.x / 2, Window.getH_2() - j * unitSize - tile.getCenter().y - tileOffset.y / 2};
                 Window.renderTexture(tile, p);
             }
         }
 
-        dst = {(int)Object.getPx(), (int)Object.getPy()};
+        dst = {(int)Object.getPx(), (int)Object.getPy(), ObjectTexture.getFrame().w, ObjectTexture.getFrame().h};
         Window.renderTexture(ObjectTexture, dst);
         for (unsigned long i = 0; i < projectiles.size(); i++) {
-            dst = {(int)projectiles.at(i).getPx(), (int)projectiles.at(i).getPy()};
+            dst = {(int)projectiles.at(i).getPx(), (int)projectiles.at(i).getPy(), projectileTextures.at(i).getFrame().w, projectileTextures.at(i).getFrame().h};
             projectileTextures[i].setAngle(projectiles[i].getVa());
             Window.renderTexture(projectileTextures.at(i), dst);
         }
