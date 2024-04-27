@@ -10,7 +10,7 @@
 #include "RenderWindow.hpp"
 #include "Ray2D.hpp"
 #include "LineSeg2D.hpp"
-#include "DefaultColors.hpp"
+#include "PresetColors.hpp"
 #include "astr.hpp"
 
 #define DIAGMULT 0.707106781
@@ -160,7 +160,7 @@ int main() {
         for (unsigned long i = 0; i < grid.size(); i++) {
             for (unsigned j = 0; j < grid[i].size(); j++) {
                 if (grid[i][j] == 1) {
-                    Layout.fillRectangle(j * unitSize, (grid.size() - i) * unitSize, unitSize, unitSize, DefaultColors[COLOR_WHITE]);
+                    Layout.fillRectangle(j * unitSize - Layout.getW_2(), (grid.size() - i) * unitSize - Layout.getH_2(), unitSize, unitSize, PresetColors[COLOR_WHITE]);
                 }
                 // Layout.drawRectangle(j * unitSize, (grid.size() - i) * unitSize, unitSize, unitSize, DefaultColors[COLOR_DARK_GRAY]);
             }
@@ -174,7 +174,7 @@ int main() {
             // If the current ray hits a wall
             intersection = player.getIntersection(segments);
             if (!std::isnan(intersection.getX())) {
-                Layout.drawLine(player.getPosX(), player.getPosY(), intersection.getX(), intersection.getY(), DefaultColors[COLOR_LIME]);
+                Layout.drawLine(player.getPosX() - Layout.getW_2(), player.getPosY() - Layout.getH_2(), intersection.getX() - Layout.getW_2(), intersection.getY() - Layout.getH_2(), PresetColors[COLOR_LIME]);
 
                 Vector2D<double> projection(std::fabs(player.getPosX() - intersection.getX()), std::fabs(player.getPosY() - intersection.getY()));
                 int distance = projection.getMag();
@@ -182,11 +182,11 @@ int main() {
 
                 unsigned char rectBrightness = (unsigned char)mapVal<int>(distance, 0, (int)player.getViewMag(), 255, 0);
                 int rectHeight = mapVal<int>(distance, 0, (int)player.getViewMag(), View.getH(), 0);
-                View.fillRectangle(i * rectWidth, rectHeight / 2, rectWidth, rectHeight, {rectBrightness, rectBrightness, rectBrightness, 255});
+                View.fillRectangle(i * rectWidth - View.getW_2(), rectHeight / 2 - View.getH_2(), rectWidth, rectHeight, {rectBrightness, rectBrightness, rectBrightness, 255});
             }
             // If the current ray doesn't hit a wall
             else {
-                Layout.drawLine(player.getPosX(), player.getPosY(), player.getPosX() + player.getViewX(), player.getPosY() + player.getViewY(), DefaultColors[COLOR_GREEN]);
+                Layout.drawLine(player.getPosX() - Layout.getW_2(), player.getPosY() - Layout.getH_2(), player.getPosX() + player.getViewX() - Layout.getW_2(), player.getPosY() + player.getViewY() - Layout.getH_2(), PresetColors[COLOR_GREEN]);
             }
         }
         player.setViewAngle(originalAngle);
@@ -198,8 +198,8 @@ int main() {
 
         // Draw the player
         // Layout.drawLine(player.getPosX(), player.getPosY(), player.getPosX() + player.getViewX(), player.getPosY() + player.getViewY(), DefaultColors[COLOR_CYAN]);
-        Layout.fillCircle(player.getPosX(), player.getPosY(), 8, DefaultColors[COLOR_MAROON]);
-        Layout.drawCircle(player.getPosX(), player.getPosY(), 8, DefaultColors[COLOR_RED]);
+        Layout.fillCircle(player.getPosX() - Layout.getW_2(), player.getPosY() - Layout.getH_2(), 8, PresetColors[COLOR_MAROON]);
+        Layout.drawCircle(player.getPosX() - Layout.getW_2(), player.getPosY() - Layout.getH_2(), 8, PresetColors[COLOR_RED]);
         Layout.show();
         View.show();
 
