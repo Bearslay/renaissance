@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 
 #include "PresetColors.hpp"
@@ -205,6 +206,17 @@ class RenderWindow {
             const SDL_Rect dst = {W_2 + pos.x - texture.getFrame().w / 2, H_2 - pos.y - texture.getFrame().h / 2, texture.getFrame().w, texture.getFrame().h};
             const SDL_Point center = texture.getCenter();
             SDL_RenderCopyEx(Renderer, texture.getTexture(), &src, &dst, -texture.getAngle() * 180 / M_PI, &center, texture.getFlip());
+        }
+
+        void renderText(TTF_Font *font, const char16_t* text, const SDL_Point &pos, const Uint32 wrapWidth = 0, const SDL_Color &fg = PresetColors[COLOR_WHITE], const SDL_Color &bg = {0, 0, 0, 0}) {
+            SDL_Surface *surface = TTF_RenderUNICODE_Blended_Wrapped(font, (Uint16*)text, fg, wrapWidth);
+            SDL_Texture *texture = SDL_CreateTextureFromSurface(Renderer, surface);
+
+            drawRectangle(pos.x - surface->w / 2, pos.y + surface->h / 2, surface->w, surface->h, fg);
+            renderTexture(texture, {0, 0, surface->w, surface->h}, {pos.x - surface->w / 2, pos.y + surface->h / 2, surface->w, surface->h}, 0, {0, 0}, SDL_FLIP_NONE);
+
+            SDL_DestroyTexture(texture);
+            SDL_FreeSurface(surface);
         }
 };
 

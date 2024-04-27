@@ -52,5 +52,5 @@ forces:
 	@mkdir bin -p
 	@mkdir bin/debug -p
 	@g++ -c src/forces.cpp src/Utilities.cpp -std=c++14 -m64 -g -Wall -I include
-	@g++ forces.o Utilities.o -o bin/debug/forces -lSDL2main -lSDL2 -lSDL2_image
+	@g++ forces.o Utilities.o -o bin/debug/forces -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 	@./bin/debug/forces

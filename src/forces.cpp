@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <vector>
 
@@ -206,7 +207,8 @@ class Projectile2D : public PhysicsObject2D {
 double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main(int argc, char* args[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
-    if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
+    if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {std::cout << "Error initializing SDL2_image\nERROR: " << IMG_GetError() << "\n";}
+    if (TTF_Init() == -1) {std::cout << "Error initializing SDL2_ttf\nERROR: " << TTF_GetError() << "\n";}
 
     std::srand(time(NULL));
 
@@ -230,6 +232,8 @@ int main(int argc, char* args[]) {
     SDL_Rect dst;
     std::vector<Projectile2D> projectiles;
     std::vector<Texture> projectileTextures;
+
+    TTF_Font *font = TTF_OpenFont("dev/fonts/GNU-Unifont.ttf", 50);
 
     struct {
         SDL_Point Pos = {0, 0};
@@ -474,6 +478,9 @@ int main(int argc, char* args[]) {
             Window.renderTexture(projectileTextures.at(i), dst);
         }
 
+        // Window.renderText(font, u"████████████\n████████████\n████████████\n████████████\n████████████\n████████████", {0, 0}, 0, PresetColors[COLOR_BLACK]);
+        Window.renderText(font, u"  ╶──────╴  \n ╱ ▭▱◫◻▭ ▱╲ \n╱ ▭◻╭──╮▭▱ ╲\n╲ ◫▭╰──╯◻◫ ╱\n ╲ ▱◻◫◻▱  ╱ \n  ╶──────╴  ", {0, 0}, 0, PresetColors[COLOR_RED]);
+
         Window.show();
 
         frameTicks = SDL_GetTicks() - startTicks;
@@ -482,6 +489,9 @@ int main(int argc, char* args[]) {
         }
     }
 
+    TTF_CloseFont(font);
+
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
     return 0; 
