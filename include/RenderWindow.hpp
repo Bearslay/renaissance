@@ -39,48 +39,57 @@ class RenderWindow {
         int getW() const {return W;}
         int setW(const int &w) {
             const int output = W;
-            W = w;    W_2 = W / 2;
+            W = w;
+            W_2 = W / 2;
             SDL_SetWindowSize(Window, W, H);
             return output;
         }
         int adjustW(const int &amount) {
             const int output = W;
-            W += amount;    W_2 = W / 2;
+            W += amount;
+            W_2 = W / 2;
             SDL_SetWindowSize(Window, W, H);
             return output;
         }
         int getH() const {return H;}
         int setH(const int &h) {
             const int output = H;
-            H = h;    H_2 = H / 2;
+            H = h;
+            H_2 = H / 2;
             SDL_SetWindowSize(Window, W, H);
             return output;
         }
         int adjustH(const int &amount) {
             const int output = W;
-            H += amount;    H_2 = H / 2;
+            H += amount;
+            H_2 = H / 2;
             SDL_SetWindowSize(Window, W, H);
             return output;
         }
         SDL_Point getDims() const {return {W, H};}
         SDL_Point setDims(const int &w, const int &h) {
             const SDL_Point output = {W, H};
-            W = w;    W_2 = W / 2;
-            H = h;    H_2 = H / 2;
+            W = w;
+            W_2 = W / 2;
+            H = h;
+            H_2 = H / 2;
             SDL_SetWindowSize(Window, W, H);
             return output;
         }
         SDL_Point adjustDims(const int &w, const int &h) {
             const SDL_Point output = {W, H};
-            W += w;    W_2 = W / 2;
-            H += h;    H_2 = H / 2;
+            W += w;
+            W_2 = W / 2;
+            H += h;
+            H_2 = H / 2;
             SDL_SetWindowSize(Window, W, H);
             return output;
         }
         SDL_Point updateDims() {
             const SDL_Point output = {W, H};
             SDL_GetWindowSize(Window, &W, &H);
-            W_2 = W / 2;    H_2 = H / 2;
+            W_2 = W / 2;
+            H_2 = H / 2;
             return output;
         }
         int getW_2() const {return W_2;}
@@ -101,8 +110,8 @@ class RenderWindow {
 
         bool toggleFullscreen(const bool &trueFullscreen = true) {
             const bool output = IsFullscreen;
-            if   (!IsFullscreen) {SDL_SetWindowFullscreen(Window, trueFullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_FULLSCREEN_DESKTOP);}
-            else                 {SDL_SetWindowFullscreen(Window, SDL_FALSE);}
+            if (!IsFullscreen) {SDL_SetWindowFullscreen(Window, trueFullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_FULLSCREEN_DESKTOP);}
+            else {SDL_SetWindowFullscreen(Window, SDL_FALSE);}
             IsFullscreen = !IsFullscreen;
             updateDims();
             return output;
@@ -154,17 +163,18 @@ class RenderWindow {
                 if (error <= 0) {
                     oy++;
                     error += ty;
-                    ty    += 2;
+                    ty += 2;
                 } else if (error > 0) {
                     ox--;
-                    tx    += 2;
+                    tx += 2;
                     error += tx - diameter;
                 }
             }
         }
         void fillCircle(const int &x, const int &y, const int &r, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             SDL_SetRenderDrawColor(Renderer, color.r, color.g, color.b, color.a);
-            int ox    = 0;    int oy = r;
+            int ox = 0;
+            int oy = r;
             int error = r - 1;
             while (oy >= ox) {
                 SDL_RenderDrawLine(Renderer, W_2 + x - oy, H_2 - y + ox, W_2 + x + oy, H_2 - y + ox);
@@ -176,7 +186,7 @@ class RenderWindow {
                     ox++;
                 } else if (error < 2 * (r - oy)) {
                     error += oy * 2 - 1;
-                    oy--;;
+                    oy--;
                 } else {
                     error += 2 * (oy - ox - 1);
                     oy--;
@@ -208,14 +218,9 @@ class RenderWindow {
             SDL_RenderCopyEx(Renderer, texture.getTexture(), &src, &dst, -texture.getAngle() * 180 / M_PI, &center, texture.getFlip());
         }
 
-        void renderText(TTF_Font *font, const char16_t* text, const SDL_Point &pos, const Uint32 wrapWidth = 0, const SDL_Color &fg = PresetColors[COLOR_WHITE], const SDL_Color &bg = {0, 0, 0, 0}) {
+        void renderText(TTF_Font *font, const char16_t* text, const SDL_Point &pos, const Uint32 wrapWidth = 0, const SDL_Color &fg = PresetColors[COLOR_WHITE]) {
             SDL_Surface *surface = TTF_RenderUNICODE_Blended_Wrapped(font, (Uint16*)text, fg, wrapWidth);
-            SDL_Texture *texture = SDL_CreateTextureFromSurface(Renderer, surface);
-
-            drawRectangle(pos.x - surface->w / 2, pos.y + surface->h / 2, surface->w, surface->h, fg);
-            renderTexture(texture, {0, 0, surface->w, surface->h}, {pos.x - surface->w / 2, pos.y + surface->h / 2, surface->w, surface->h}, 0, {0, 0}, SDL_FLIP_NONE);
-
-            SDL_DestroyTexture(texture);
+            renderTexture(SDL_CreateTextureFromSurface(Renderer, surface), {0, 0, surface->w, surface->h}, {pos.x - surface->w / 2, pos.y + surface->h / 2, surface->w, surface->h}, 0, {0, 0}, SDL_FLIP_NONE);
             SDL_FreeSurface(surface);
         }
 };

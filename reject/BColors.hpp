@@ -1,6 +1,9 @@
 #ifndef BCOLORS
 #define BCOLORS
 
+#include <cmath>
+#include <type_traits>
+
 #include "Utilities.hpp"
 
 typedef enum {
@@ -33,40 +36,6 @@ typedef enum {
     CMYK_RELATE_ALPHA
 } RelationsCMYK;
 
-class RGBRough;
-class HSVRough;
-class HSLRough;
-class CMYKRough;
-class RGBExact;
-class HSVExact;
-class HSLExact;
-class CMYKExact;
-
-HSVRough rgb2hsv(const RGBRough &rgb);
-HSLRough rgb2hsl(const RGBRough &rgb);
-CMYKRough rgb2cmyk(const RGBRough &rgb);
-HSVExact rgb2hsv(const RGBExact &rgb);
-HSLExact rgb2hsl(const RGBExact &rgb);
-CMYKExact rgb2cmyk(const RGBExact &rgb);
-RGBRough hsv2rgb(const HSVRough &hsv);
-HSLRough hsv2hsl(const HSVRough &hsv);
-CMYKRough hsv2cmyk(const HSVRough &hsv);
-RGBExact hsv2rgb(const HSVExact &hsv);
-HSLExact hsv2hsl(const HSVExact &hsv);
-CMYKExact hsv2cmyk(const HSVExact &hsv);
-RGBRough hsl2rgb(const HSLRough &hsl);
-HSVRough hsl2hsv(const HSLRough &hsl);
-CMYKRough hsl2cmyk(const HSLRough &hsl);
-RGBExact hsl2rgb(const HSLExact &hsl);
-HSVExact hsl2hsv(const HSLExact &hsl);
-CMYKExact hsl2cmyk(const HSLExact &hsl);
-RGBRough cmyk2rgb(const CMYKRough &cmyk);
-HSVRough cmyk2hsv(const CMYKRough &cmyk);
-HSLRough cmyk2hsl(const CMYKRough &cmyk);
-RGBExact cmyk2rgb(const CMYKExact &cmyk);
-HSVExact cmyk2hsv(const CMYKExact &cmyk);
-HSLExact cmyk2hsl(const CMYKExact &cmyk);
-
 class RGBRough {
     private:
         unsigned char R = 255;
@@ -77,17 +46,18 @@ class RGBRough {
         static unsigned char RelationMetric;
     
     public:
+        RGBRough();
         RGBRough(const unsigned char &r, const unsigned char &g, const unsigned char &b, const unsigned char &a);
         RGBRough(const unsigned char &r, const unsigned char &g, const unsigned char &b);
 
         RGBRough(const RGBRough &color);
-        RGBRough(const RGBExact &color);
-        RGBRough(const HSVRough &color);
-        RGBRough(const HSVExact &color);
-        RGBRough(const HSLRough &color);
-        RGBRough(const HSLExact &color);
-        RGBRough(const CMYKRough &color);
-        RGBRough(const CMYKExact &color);
+        // RGBRough(const RGBExact &color);
+        // RGBRough(const HSVRough &color);
+        // RGBRough(const HSVExact &color);
+        // RGBRough(const HSLRough &color);
+        // RGBRough(const HSLExact &color);
+        // RGBRough(const CMYKRough &color);
+        // RGBRough(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         RGBRough(const SDL_Color &color);
@@ -115,7 +85,7 @@ class RGBRough {
 
         void operator=(const RGBRough &color);
         RGBRough operator!() const;
-        RGBExact toExact() const;
+        //RGBExact toExact() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -155,17 +125,18 @@ class RGBExact {
         static unsigned char RelationMetric;
     
     public:
+        RGBExact();
         RGBExact(const double &r, const double &g, const double &b, const double &a);
         RGBExact(const double &r, const double &g, const double &b);
 
-        RGBExact(const RGBRough &color);
+        // RGBExact(const RGBRough &color);
         RGBExact(const RGBExact &color);
-        RGBExact(const HSVRough &color);
-        RGBExact(const HSVExact &color);
-        RGBExact(const HSLRough &color);
-        RGBExact(const HSLExact &color);
-        RGBExact(const CMYKRough &color);
-        RGBExact(const CMYKExact &color);
+        // RGBExact(const HSVRough &color);
+        // RGBExact(const HSVExact &color);
+        // RGBExact(const HSLRough &color);
+        // RGBExact(const HSLExact &color);
+        // RGBExact(const CMYKRough &color);
+        // RGBExact(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         RGBExact(const SDL_Color &color);
@@ -193,7 +164,7 @@ class RGBExact {
 
         void operator=(const RGBExact &color);
         RGBExact operator!() const;
-        RGBRough toRough() const;
+        // RGBRough toRough() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -234,17 +205,18 @@ class HSVRough {
         static unsigned char RelationMetric;
     
     public:
+        HSVRough();
         HSVRough(const short &h, const unsigned char &s, const unsigned char &v, const unsigned char &a);
         HSVRough(const short &h, const unsigned char &s, const unsigned char &v);
 
-        HSVRough(const RGBRough &color);
-        HSVRough(const RGBExact &color);
+        // HSVRough(const RGBRough &color);
+        // HSVRough(const RGBExact &color);
         HSVRough(const HSVRough &color);
-        HSVRough(const HSVExact &color);
-        HSVRough(const HSLRough &color);
-        HSVRough(const HSLExact &color);
-        HSVRough(const CMYKRough &color);
-        HSVRough(const CMYKExact &color);
+        // HSVRough(const HSVExact &color);
+        // HSVRough(const HSLRough &color);
+        // HSVRough(const HSLExact &color);
+        // HSVRough(const CMYKRough &color);
+        // HSVRough(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         HSVRough(const SDL_Color &color);
@@ -272,7 +244,7 @@ class HSVRough {
 
         void operator=(const HSVRough &color);
         HSVRough operator!() const;
-        HSVExact toExact() const;
+        // HSVExact toExact() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -312,17 +284,18 @@ class HSVExact {
         static unsigned char RelationMetric;
     
     public:
+        HSVExact();
         HSVExact(const double &h, const double &s, const double &v, const double &a);
         HSVExact(const double &h, const double &s, const double &v);
 
-        HSVExact(const RGBRough &color);
-        HSVExact(const RGBExact &color);
-        HSVExact(const HSVRough &color);
+        // HSVExact(const RGBRough &color);
+        // HSVExact(const RGBExact &color);
+        // HSVExact(const HSVRough &color);
         HSVExact(const HSVExact &color);
-        HSVExact(const HSLRough &color);
-        HSVExact(const HSLExact &color);
-        HSVExact(const CMYKRough &color);
-        HSVExact(const CMYKExact &color);
+        // HSVExact(const HSLRough &color);
+        // HSVExact(const HSLExact &color);
+        // HSVExact(const CMYKRough &color);
+        // HSVExact(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         HSVExact(const SDL_Color &color);
@@ -350,7 +323,7 @@ class HSVExact {
 
         void operator=(const HSVExact &color);
         HSVExact operator!() const;
-        HSVRough toRough() const;
+        // HSVRough toRough() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -391,17 +364,18 @@ class HSLRough {
         static unsigned char RelationMetric;
     
     public:
+        HSLRough();
         HSLRough(const short &h, const unsigned char &s, const unsigned char &l, const unsigned char &a);
         HSLRough(const short &h, const unsigned char &s, const unsigned char &l);
 
-        HSLRough(const RGBRough &color);
-        HSLRough(const RGBExact &color);
-        HSLRough(const HSVRough &color);
-        HSLRough(const HSVExact &color);
+        // HSLRough(const RGBRough &color);
+        // HSLRough(const RGBExact &color);
+        // HSLRough(const HSVRough &color);
+        // HSLRough(const HSVExact &color);
         HSLRough(const HSLRough &color);
-        HSLRough(const HSLExact &color);
-        HSLRough(const CMYKRough &color);
-        HSLRough(const CMYKExact &color);
+        // HSLRough(const HSLExact &color);
+        // HSLRough(const CMYKRough &color);
+        // HSLRough(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         HSLRough(const SDL_Color &color);
@@ -429,7 +403,7 @@ class HSLRough {
 
         void operator=(const HSLRough &color);
         HSLRough operator!() const;
-        HSLExact toExact() const;
+        // HSLExact toExact() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -469,17 +443,18 @@ class HSLExact {
         static unsigned char RelationMetric;
     
     public:
+        HSLExact();
         HSLExact(const double &h, const double &s, const double &l, const double &a);
         HSLExact(const double &h, const double &s, const double &l);
 
-        HSLExact(const RGBRough &color);
-        HSLExact(const RGBExact &color);
-        HSLExact(const HSVRough &color);
-        HSLExact(const HSVExact &color);
-        HSLExact(const HSLRough &color);
+        // HSLExact(const RGBRough &color);
+        // HSLExact(const RGBExact &color);
+        // HSLExact(const HSVRough &color);
+        // HSLExact(const HSVExact &color);
+        // HSLExact(const HSLRough &color);
         HSLExact(const HSLExact &color);
-        HSLExact(const CMYKRough &color);
-        HSLExact(const CMYKExact &color);
+        // HSLExact(const CMYKRough &color);
+        // HSLExact(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         HSLExact(const SDL_Color &color);
@@ -507,7 +482,7 @@ class HSLExact {
 
         void operator=(const HSLExact &color);
         HSLExact operator!() const;
-        HSLRough toRough() const;
+        // HSLRough toRough() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -549,17 +524,18 @@ class CMYKRough {
         static unsigned char RelationMetric;
     
     public:
+        CMYKRough();
         CMYKRough(const unsigned char &c, const unsigned char &m, const unsigned char &y, const unsigned char &k, const unsigned char &a);
         CMYKRough(const unsigned char &c, const unsigned char &m, const unsigned char &y, const unsigned char &k);
         
-        CMYKRough(const RGBRough &color);
-        CMYKRough(const RGBExact &color);
-        CMYKRough(const HSVRough &color);
-        CMYKRough(const HSVExact &color);
-        CMYKRough(const HSLRough &color);
-        CMYKRough(const HSLExact &color);
+        // CMYKRough(const RGBRough &color);
+        // CMYKRough(const RGBExact &color);
+        // CMYKRough(const HSVRough &color);
+        // CMYKRough(const HSVExact &color);
+        // CMYKRough(const HSLRough &color);
+        // CMYKRough(const HSLExact &color);
         CMYKRough(const CMYKRough &color);
-        CMYKRough(const CMYKExact &color);
+        // CMYKRough(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
         CMYKRough(const SDL_Color &color);
@@ -590,7 +566,7 @@ class CMYKRough {
 
         void operator=(const CMYKRough &color);
         CMYKRough operator!() const;
-        CMYKExact toExact() const;
+        // CMYKExact toExact() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -631,16 +607,17 @@ class CMYKExact {
         static unsigned char RelationMetric;
     
     public:
+        CMYKExact();
         CMYKExact(const double &c, const double &m, const double &y, const unsigned char &k, const double &a);
         CMYKExact(const double &c, const double &m, const double &y, const unsigned char &k);
 
-        CMYKExact(const RGBRough &color);
-        CMYKExact(const RGBExact &color);
-        CMYKExact(const HSVRough &color);
-        CMYKExact(const HSVExact &color);
-        CMYKExact(const HSLRough &color);
-        CMYKExact(const HSLExact &color);
-        CMYKExact(const CMYKRough &color);
+        // CMYKExact(const RGBRough &color);
+        // CMYKExact(const RGBExact &color);
+        // CMYKExact(const HSVRough &color);
+        // CMYKExact(const HSVExact &color);
+        // CMYKExact(const HSLRough &color);
+        // CMYKExact(const HSLExact &color);
+        // CMYKExact(const CMYKRough &color);
         CMYKExact(const CMYKExact &color);
 
         #ifdef SDL_pixels_h_
@@ -672,7 +649,7 @@ class CMYKExact {
 
         void operator=(const CMYKExact &color);
         CMYKExact operator!() const;
-        CMYKRough toRough() const;
+        // CMYKRough toRough() const;
 
         #ifdef _GLIBCXX_STRING
         std::string toString(const bool &includeAlpha = false) const;
@@ -702,5 +679,30 @@ class CMYKExact {
         CMYKExact operator/(const double &scalar) const;
         CMYKExact operator%(const double &denom) const;
 };
+
+HSVRough rgb2hsv(const RGBRough &rgb);
+HSLRough rgb2hsl(const RGBRough &rgb);
+CMYKRough rgb2cmyk(const RGBRough &rgb);
+HSVExact rgb2hsv(const RGBExact &rgb);
+HSLExact rgb2hsl(const RGBExact &rgb);
+CMYKExact rgb2cmyk(const RGBExact &rgb);
+RGBRough hsv2rgb(const HSVRough &hsv);
+HSLRough hsv2hsl(const HSVRough &hsv);
+CMYKRough hsv2cmyk(const HSVRough &hsv);
+RGBExact hsv2rgb(const HSVExact &hsv);
+HSLExact hsv2hsl(const HSVExact &hsv);
+CMYKExact hsv2cmyk(const HSVExact &hsv);
+RGBRough hsl2rgb(const HSLRough &hsl);
+HSVRough hsl2hsv(const HSLRough &hsl);
+CMYKRough hsl2cmyk(const HSLRough &hsl);
+RGBExact hsl2rgb(const HSLExact &hsl);
+HSVExact hsl2hsv(const HSLExact &hsl);
+CMYKExact hsl2cmyk(const HSLExact &hsl);
+RGBRough cmyk2rgb(const CMYKRough &cmyk);
+HSVRough cmyk2hsv(const CMYKRough &cmyk);
+HSLRough cmyk2hsl(const CMYKRough &cmyk);
+RGBExact cmyk2rgb(const CMYKExact &cmyk);
+HSVExact cmyk2hsv(const CMYKExact &cmyk);
+HSLExact cmyk2hsl(const CMYKExact &cmyk);
 
 #endif /* BCOLORS */
