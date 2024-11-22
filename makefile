@@ -4,14 +4,6 @@ default:
 	@g++ -c src/main.cpp -std=c++14 -m64 -g -Wall -I include
 	@g++ main.o -o bin/debug/main -lSDL2main -lSDL2 -lSDL2_image
 	@./bin/debug/main
-list:
-	@echo "debug/release (discontinued), raycast (discontinued), gtest (debugging), thingy, projector, forces"
-tb:
-	@mkdir bin -p
-	@mkdir bin/garbo -p
-	@g++ -c src/troubleShooting.cpp -std=c++14 -m64 -g -Wall -I include
-	@g++ troubleShooting.o -o bin/garbo/troubleShooting
-	@./bin/garbo/troubleShooting
 debug:
 	@mkdir bin -p
 	@mkdir bin/debug -p
@@ -30,12 +22,6 @@ raycast:
 	@g++ -c src/raycast.cpp -std=c++14 -m64 -g -Wall -I include
 	@g++ raycast.o -o bin/debug/raycast -lSDL2main -lSDL2 -lSDL2_image
 	@./bin/debug/raycast
-gtest:
-	@mkdir bin -p
-	@mkdir bin/debug -p
-	@g++ -c src/graphTesting.cpp -std=c++14 -m64 -g -Wall -I include
-	@g++ graphTesting.o -o bin/debug/graphTesting
-	@./bin/debug/graphTesting
 thingy:
 	@mkdir bin -p
 	@mkdir bin/debug -p
@@ -54,3 +40,22 @@ forces:
 	@g++ -c src/forces.cpp src/Utilities.cpp -std=c++14 -m64 -g -Wall -I include
 	@g++ forces.o Utilities.o -o bin/debug/forces -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 	@./bin/debug/forces
+
+tileset:
+	@mkdir bin -p
+	@mkdir bin/debug -p
+	@g++ -c src/tileset.cpp -std=c++17 -m64 -g -Wall -I include -I bengine -I btils
+	@g++ tileset.o -o bin/debug/tileset -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+	@./bin/debug/tileset
+raycaster:
+	@mkdir bin -p
+	@mkdir bin/debug -p
+	@g++ -c src/raycaster.cpp -std=c++17 -m64 -g -Wall -I include -I bengine -I btils
+	@g++ raycaster.o -o bin/debug/raycaster -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+	@./bin/debug/raycaster
+physics:
+	@mkdir bin -p
+	@mkdir bin/debug -p
+	@g++ -c src/physics.cpp -std=c++17 -m64 -g -Wall -I include -I bengine -I btils
+	@g++ physics.o -o bin/debug/physics_sim -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+	@./bin/debug/physics_sim
