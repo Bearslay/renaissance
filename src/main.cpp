@@ -11,7 +11,7 @@
 #include "Vector3D.hpp"
 #include "RenderWindow.hpp"
 #include "WireFrame.hpp"
-#include "DefaultColors.hpp"
+#include "PresetColors.hpp"
 #include "astr.hpp"
 
 double hireTime_Sec() {return SDL_GetTicks() * 0.01f;}
@@ -57,7 +57,7 @@ template <typename ArithType> Coord3D<ArithType> rotateCoord3D(const Vector3D<Ar
     if (std::is_floating_point<ArithType>::value) {
         return Coord3D<ArithType>(rotated[0], rotated[1], rotated[2]);
     }
-    
+
     return Coord3D<ArithType>(std::round(rotated[0]), std::round(rotated[1]), std::round(rotated[2]));
 }
 
@@ -447,28 +447,28 @@ int main(int argc, char* args[]) {
                     Window.drawLine(px + projected[pairs[i].first].getY(), py + projected[pairs[i].first].getZ(), px + projected[pairs[i].second].getY(), py + projected[pairs[i].second].getZ());
                 }
                 for (unsigned char i = 0; i < projected.size(); i++) {
-                    Window.fillCircle(px + projected[i].getY(), py + projected[i].getZ(), 2, DefaultColors[5 + i]);
+                    Window.fillCircle(px + projected[i].getY(), py + projected[i].getZ(), 2, PresetColors[5 + i]);
                 }
                 break;
             case 1:
                 for (int i = 0; i < fovAngle / 2 + 1; i++) {
                     mouseAngleOffset = i * M_PI / 180;
-                    Window.drawLine(fellaPos.getX(), fellaPos.getY(), fellaPos.getX() + fellaView.getMag() * std::cos(fellaView.getAngle(false) + mouseAngleOffset), fellaPos.getY() + fellaView.getMag() * std::sin(fellaView.getAngle(false) + mouseAngleOffset), DefaultColors[COLOR_LIME]);
-                    Window.drawLine(fellaPos.getX(), fellaPos.getY(), fellaPos.getX() + fellaView.getMag() * std::cos(fellaView.getAngle(false) - mouseAngleOffset), fellaPos.getY() + fellaView.getMag() * std::sin(fellaView.getAngle(false) - mouseAngleOffset), DefaultColors[COLOR_LIME]);
+                    Window.drawLine(fellaPos.getX(), fellaPos.getY(), fellaPos.getX() + fellaView.getMag() * std::cos(fellaView.getAngle(false) + mouseAngleOffset), fellaPos.getY() + fellaView.getMag() * std::sin(fellaView.getAngle(false) + mouseAngleOffset), PresetColors[COLOR_LIME]);
+                    Window.drawLine(fellaPos.getX(), fellaPos.getY(), fellaPos.getX() + fellaView.getMag() * std::cos(fellaView.getAngle(false) - mouseAngleOffset), fellaPos.getY() + fellaView.getMag() * std::sin(fellaView.getAngle(false) - mouseAngleOffset), PresetColors[COLOR_LIME]);
                 }
-                Window.fillCircle(fellaPos.getX(), fellaPos.getY(), 25, DefaultColors[COLOR_MAROON]);
-                Window.drawCircle(fellaPos.getX(), fellaPos.getY(), 25, DefaultColors[COLOR_RED]);
+                Window.fillCircle(fellaPos.getX(), fellaPos.getY(), 25, PresetColors[COLOR_MAROON]);
+                Window.drawCircle(fellaPos.getX(), fellaPos.getY(), 25, PresetColors[COLOR_RED]);
                 break;
             case 2:
                 for (unsigned char i = 0; i < Cubes.size(); i++) {
-                    Cubes[i].display(Window, DefaultColors[5 + i]);
+                    Cubes[i].display(Window, PresetColors[5 + i]);
                 }
                 break;
             case 3:
                 Pyramid.display(Window);
                 break;
             case 4:
-                Tile.display(Window, DefaultColors[COLOR_RED]);
+                Tile.display(Window, PresetColors[COLOR_RED]);
                 break;
         }
 

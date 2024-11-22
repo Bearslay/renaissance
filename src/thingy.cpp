@@ -176,11 +176,11 @@ int main() {
 
         Window.clear();
 
-        if (dstSize.x / 2 + 4 >= std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {texture.setMods(DefaultColors[COLOR_YELLOW]);}
-        else {texture.setMods(DefaultColors[COLOR_RED]);}
+        if (dstSize.x / 2 + 4 >= std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY()))) {texture.setMods(PresetColors[COLOR_YELLOW]);}
+        else {texture.setMods(PresetColors[COLOR_RED]);}
 
         dst = {(int)pos.getX(), (int)pos.getY(), dstSize.x, dstSize.y};
-        // Window.drawCircle(0, 0, pos.distEuclid(), keystate[SDL_SCANCODE_LEFT] || keystate[SDL_SCANCODE_RIGHT] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
+        // Window.drawCircle(0, 0, pos.distEuclid(), keystate[SDL_SCANCODE_LEFT] || keystate[SDL_SCANCODE_RIGHT] ? PresetColors[COLOR_LIME] : PresetColors[COLOR_WHITE]);
         // Window.drawCircle(MousePos.x, MousePos.y, std::sqrt((MousePos.x - pos.getX()) * (MousePos.x - pos.getX()) + (MousePos.y - pos.getY()) * (MousePos.y - pos.getY())), keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_DOWN] ? DefaultColors[COLOR_LIME] : DefaultColors[COLOR_WHITE]);
         Window.renderTexture(texture, dst);
         Window.renderTexture(block, {0, 0, 64, 64});
@@ -197,7 +197,7 @@ int main() {
             for (double i = 0; i < (MousePos.x - pos.getX()) / strengthComps.first; i += dx) {
                 nx += dx;
                 ny = -0.5 * Constants.g * nx * nx + strengthComps.second * nx;
-                Window.drawLine(dst.x + cx * strengthComps.first, dst.y + cy, dst.x + nx * strengthComps.first, dst.y + ny, DefaultColors[COLOR_RED]);
+                Window.drawLine(dst.x + cx * strengthComps.first, dst.y + cy, dst.x + nx * strengthComps.first, dst.y + ny, PresetColors[COLOR_RED]);
                 cx = nx;
                 cy = ny;
             }

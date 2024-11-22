@@ -10,7 +10,7 @@
 #include "Coord3D.hpp"
 #include "Vector3D.hpp"
 #include "RenderWindow.hpp"
-#include "DefaultColors.hpp"
+#include "PresetColors.hpp"
 #include "astr.hpp"
 
 template <typename ArithType> class WireFrame {
@@ -145,7 +145,7 @@ template <typename ArithType> class WireFrame {
             }
         }
 
-        void display(RenderWindow &window, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void display(RenderWindow &window, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             for (unsigned int i = 0; i < Pairs.size(); i++) {
                 window.drawLine(Origin.getY() + Points[Pairs[i].first][2].getY(), Origin.getZ() + Points[Pairs[i].first][2].getZ(), Origin.getY() + Points[Pairs[i].second][2].getY(), Origin.getZ() + Points[Pairs[i].second][2].getZ(), color);
             }

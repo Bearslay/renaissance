@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "RenderWindow.hpp"
-#include "DefaultColors.hpp"
+#include "PresetColors.hpp"
 
 #include <vector>
 
@@ -165,7 +165,7 @@ template <typename ArithType> class WireFrame {
             }
         }
 
-        void draw(RenderWindow &window, const SDL_Color &color = DefaultColors[COLOR_WHITE]) {
+        void draw(RenderWindow &window, const SDL_Color &color = PresetColors[COLOR_WHITE]) {
             for (unsigned long i = 0; i < Pairs.size(); i++) {
                 window.drawLine(
                     Origin.getX() + ProjectedPoints[Pairs[i].first ].getX(),
@@ -317,9 +317,9 @@ int main(int argc, char* args[]) {
         const Coord2D<double> xPoint = wireFrame.getProjectedPoint(1);
         const Coord2D<double> yPoint = wireFrame.getProjectedPoint(2);
         const Coord2D<double> zPoint = wireFrame.getProjectedPoint(3);
-        Window.fillCircle(xPoint.getX(), xPoint.getY(), 5, DefaultColors[COLOR_RED]);
-        Window.fillCircle(yPoint.getX(), yPoint.getY(), 5, DefaultColors[COLOR_BLUE]);
-        Window.fillCircle(zPoint.getX(), zPoint.getY(), 5, DefaultColors[COLOR_LIME]);
+        Window.fillCircle(xPoint.getX(), xPoint.getY(), 5, PresetColors[COLOR_RED]);
+        Window.fillCircle(yPoint.getX(), yPoint.getY(), 5, PresetColors[COLOR_BLUE]);
+        Window.fillCircle(zPoint.getX(), zPoint.getY(), 5, PresetColors[COLOR_LIME]);
         Window.show();
 
         frameTicks = SDL_GetTicks() - startTicks;
