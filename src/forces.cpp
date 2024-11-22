@@ -479,7 +479,7 @@ int main(int argc, char* args[]) {
         }
 
         // Window.renderText(font, u"████████████\n████████████\n████████████\n████████████\n████████████\n████████████", {0, 0}, 0, PresetColors[COLOR_BLACK]);
-        Window.renderText(font, u"  ╶──────╴  \n ╱ ▭▱◫◻▭ ▱╲ \n╱ ▭◻╭──╮▭▱ ╲\n╲ ◫▭╰──╯◻◫ ╱\n ╲ ▱◻◫◻▱  ╱ \n  ╶──────╴  ", {0, 0}, 0, PresetColors[COLOR_RED]);
+        // Window.renderText(font, u"  ╶──────╴  \n ╱ ▭▱◫◻▭ ▱╲ \n╱ ▭◻╭──╮▭▱ ╲\n╲ ◫▭╰──╯◻◫ ╱\n ╲ ▱◻◫◻▱  ╱ \n  ╶──────╴  ", {0, 0}, 0, PresetColors[COLOR_RED]);
 
         Window.show();
 
