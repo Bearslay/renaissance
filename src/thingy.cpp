@@ -1,107 +1,143 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <vector>
 
-#include "Coord2D.hpp"
-#include "Texture.hpp"
-#include "RenderWindow.hpp"
+#include "btils.hpp"
+#include "bengine.hpp"
+
+#include "bengine_coordinate_2d.hpp"
 
 double getMoveAngle(const bool &f, const bool &b, const bool &l, const bool &r) {
     if (f && !b) {
-        if (l && !r) {return 3 * M_PI_4;}
-        if (!l && r) {return M_PI_4;}
+        if (l && !r) {
+            return 3 * M_PI_4;
+        }
+        if (!l && r) {
+            return M_PI_4;
+        }
         return M_PI_2;
     }
     if (!f && b) {
-        if (l && !r) {return 5 * M_PI_4;}
-        if (!l && r) {return 7 * M_PI_4;}
+        if (l && !r) {
+            return 5 * M_PI_4;
+        }
+        if (!l && r) {
+            return 7 * M_PI_4;
+        }
         return 3 * M_PI_2;
     }
-    if (l && !r) {return M_PI;}
-    if (!l && r) {return 0;}
+    if (l && !r) {
+        return M_PI;
+    }
+    if (!l && r) {
+        return 0;
+    }
     return -1;
 }
 
-struct {
-    double g = 9.80665;
-} Constants;
-
-template <typename ArithType> std::pair<ArithType, double> makeVector(const ArithType &x, const ArithType &y, const bool &useRadians = true) {
-    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-    return {std::is_integral<ArithType>::value ? std::round(std::sqrt(x * x + y * y)) : std::sqrt(x * x + y * y), std::atan2(y, x) * (useRadians ? 1 : 180 / M_PI)};
+enum class movement_direction : unsigned char {
+    NONE = 0,
+    RIGHT = 1,
+    UP = 2,
+    UP_RIGHT = 3,
+    LEFT = 4,
+    UP_LEFT = 6,
+    DOWN = 8,
+    DOWN_RIGHT = 9,
+    DOWN_LEFT = 12
+};
+double get_movement_angle(const movement_direction &direction) {
+    switch (direction) {
+        default:
+        case movement_direction::NONE:
+            return -1;
+        case movement_direction::RIGHT:
+            return 0;
+        case movement_direction::UP:
+            return M_PI_2;
+        case movement_direction::UP_RIGHT:
+            return M_PI_4;
+        case movement_direction::LEFT:
+            return M_PI;
+        case movement_direction::UP_LEFT:
+            return M_PI_2 + M_PI_4;
+        case movement_direction::DOWN:
+            return M_PI + M_PI_2;
+        case movement_direction::DOWN_RIGHT:
+            return M_PI + M_PI_2 + M_PI_4;
+        case movement_direction::DOWN_LEFT:
+            return M_PI + M_PI_4;
+    }
 }
-template <typename ArithType> std::pair<ArithType, ArithType> breakVector(const ArithType &mag, const double &angle, const bool &useRadians = true) {
-    static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-    if (std::is_integral<ArithType>::value) {return {std::round(mag * std::cos(angle * (useRadians ? 1 : 180 / M_PI))), std::round(mag * std::sin(angle * (useRadians ? 1 : 180 / M_PI)))};}
-    return {mag * std::cos(angle * (useRadians ? 1 : M_PI / 180)), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))};
+double get_movement_angle(const bool &forwards, const bool &backwards, const bool &left, const bool &right) {
+    switch (forwards + backwards * 2 + left * 4 + right * 8) {
+        case 1:
+        case 11:
+            return 0;
+        case 2:
+        case 7:
+            return M_PI_2;
+        case 3:
+            return M_PI_4;
+        case 4:
+        case 14:
+            return M_PI;
+        case 6:
+            return M_PI_2 + M_PI_4;
+        case 8:
+        case 13:
+            return M_PI + M_PI_2;
+        case 9:
+            return M_PI + M_PI_2 + M_PI_4;
+        case 12:
+            return M_PI + M_PI_4;
+        default:
+            return -1;
+    }
 }
 
-namespace kmtcs {
-    template <typename ArithType> ArithType airTime(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        const double vy = mag * std::sin(angle * (useRadians ? 1 : M_PI / 180));
-        const double root = std::sqrt(vy * vy - 2 * Constants.g * dy);
-        return std::is_integral<ArithType>::value ? std::round(std::fmax((-vy + root) / -Constants.g, (-vy - root) / -Constants.g)) : std::fmax((-vy + root) / -Constants.g, (-vy - root) / -Constants.g);
-    }
+class projectile_and_movement_demo : public bengine::loop {
+    private:
+        bengine::normalMouseState mstate;
 
-    template <typename ArithType> ArithType peakTime(const ArithType &mag, const double &angle, const bool &useRadians = true) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return std::is_integral<ArithType>::value ? std::round((mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))) / Constants.g) : ((mag * std::sin(angle * (useRadians ? 1 : M_PI / 180))) / Constants.g);
-    }
+        struct {
+            int moveForwards = SDL_SCANCODE_W;
+            int moveBackwards = SDL_SCANCODE_S;
+            int strafeLeft = SDL_SCANCODE_A;
+            int strafeRight = SDL_SCANCODE_D;
+        } keybinds;
 
-    template <typename ArithType> ArithType maxHeight(const ArithType &mag, const double &angle, const ArithType &y0, const bool &useRadians = true) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        const double peak = peakTime<double>(mag, angle, useRadians);
-        return std::is_integral<ArithType>::value ? std::round(y0 + mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) * peak - 0.5 * Constants.g * peak * peak) : (y0 + mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) * peak - 0.5 * Constants.g * peak * peak);
-    }
+        bengine::basicTexture fella = bengine::basicTexture(this->window.loadTexture("dev/thingy/gfx/smile.png"), {0, 0, 64, 64});
+        bengine::basicTexture tile = bengine::basicTexture(this->window.loadTexture("dev/thingy/gfx/tile.png"), {0, 0, 64, 64});
 
-    template <typename ArithType> double launchAngle(const ArithType &dx, const ArithType &dy, const ArithType &mag, const bool &minimizeHeight = true, const bool &useRadians = true) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        const double root = std::sqrt(mag * mag * mag * mag - Constants.g * (Constants.g * dx * dx + 2 * dy * mag * mag));
-        const double a1 = std::atan2(mag * mag + root, Constants.g * dx);
-        const double a2 = std::atan2(mag * mag - root, Constants.g * dx);
-        if (minimizeHeight) {
-            if (maxHeight<ArithType>(mag, a1, 0, useRadians) < maxHeight<ArithType>(mag, a2, 0, useRadians)) {return a1 * (useRadians ? 1 : 180 / M_PI);}
-            return a2 * (useRadians ? 1 : 180 / M_PI);
+        bengine::coordinate_2d<double> character_position = bengine::coordinate_2d<double>(1280 / 2, 720 / 2);
+        double character_movespeed = 0.25;
+        double character_strength = 150;
+
+        void handleEvent() override {
+            switch (this->event.type) {
+                case SDL_MOUSEMOTION:
+                    this->mstate.updateMotion(this->event);
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    this->mstate.pressButton(this->event);
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    this->mstate.releaseButton(this->event);
+                    break;
+            }
         }
-        if (maxHeight<ArithType>(mag, a1, 0, useRadians) < maxHeight<ArithType>(mag, a2, 0, useRadians)) {return a2 * (useRadians ? 1 : 180 / M_PI);}
-        return a1 * (useRadians ? 1 : 180 / M_PI);
-    }
+        void compute() override {
+            this->mstate.stopMotion();
+        }
+        void render() override {
 
-    template <typename ArithType> std::pair<ArithType, double> landingVector(const ArithType &mag, const double &angle, const ArithType &dy, const bool &useRadians = true) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return makeVector<ArithType>(std::is_integral<ArithType>::value ? std::round(mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))) : (mag * std::cos(angle * (useRadians ? 1 : M_PI / 180))), mag * std::sin(angle * (useRadians ? 1 : M_PI / 180)) - Constants.g * airTime<double>(mag, angle, dy, useRadians), useRadians);
-    }
-}
+        }
+    
+    public:
+        projectile_and_movement_demo() : bengine::loop("Projectile Trajectory and Movement Demo", 1280, 720, SDL_WINDOW_SHOWN, IMG_INIT_PNG, false) {}
+};
 
-long double HireTime_Sec() {return SDL_GetTicks() * 0.01f;}
 int main() {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {std::cout << "Error initializing SDL2\nERROR: " << SDL_GetError() << "\n";}
-    if (!IMG_Init(IMG_INIT_PNG)) {std::cout << "Error initializing SDL2_image\nERROR: " << SDL_GetError() << "\n";}
-
-    RenderWindow Window("Game Thing", 1280, 720);
-    SDL_Event event;
-    const Uint8 *keystate = SDL_GetKeyboardState(NULL);
-
-    long double t = 0.0;
-    double dt = 0.01;
-    int startTicks = 0, frameTicks = 0;
-    long double currentTime = HireTime_Sec();
-    long double newTime = 0.0;
-    double frameTime = 0.0;
-    double accumulator = 0.0;
-
-    struct {
-        int exit = SDL_SCANCODE_ESCAPE;
-        int moveForwards = SDL_SCANCODE_W;
-        int moveBackwards = SDL_SCANCODE_S;
-        int strafeLeft = SDL_SCANCODE_A;
-        int strafeRight = SDL_SCANCODE_D;
-    } keybinds;
-    SDL_Point MousePos;
-
     SDL_Point dstSize = {32, 32};
     Texture texture(Window.loadTexture("dev/thingy/gfx/smile.png"), {dstSize.x / 2, dstSize.y / 2}, {0, 0, 64, 64});
     Coord2D<double> pos(0, 0);

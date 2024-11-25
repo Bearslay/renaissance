@@ -1,6 +1,7 @@
 #ifndef BENGINE_HELPERS_hpp
 #define BENGINE_HELPERS_hpp
 
+#include <iostream>
 #include <vector>
 #include <utility>
 #include <cmath>
