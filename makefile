@@ -22,12 +22,6 @@ raycast:
 	@g++ -c src/raycast.cpp -std=c++14 -m64 -g -Wall -I include
 	@g++ raycast.o -o bin/debug/raycast -lSDL2main -lSDL2 -lSDL2_image
 	@./bin/debug/raycast
-thingy:
-	@mkdir bin -p
-	@mkdir bin/debug -p
-	@g++ -c src/thingy.cpp -std=c++14 -m64 -g -Wall -I include
-	@g++ thingy.o -o bin/debug/thingy -lSDL2main -lSDL2 -lSDL2_image
-	@./bin/debug/thingy
 projector:
 	@mkdir bin -p
 	@mkdir bin/debug -p
@@ -59,3 +53,9 @@ physics:
 	@g++ -c src/physics.cpp -std=c++17 -m64 -g -Wall -I include -I bengine -I btils
 	@g++ physics.o -o bin/debug/physics_sim -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 	@./bin/debug/physics_sim
+thingy:
+	@mkdir bin -p
+	@mkdir bin/debug -p
+	@g++ -c src/thingy.cpp -std=c++17 -m64 -g -Wall -I include -I bengine -I btils
+	@g++ thingy.o -o bin/debug/thingy -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+	@./bin/debug/thingy

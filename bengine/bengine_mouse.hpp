@@ -231,6 +231,14 @@ namespace bengine {
             /// @brief bengine::clickRectangle deconstructor
             ~clickRectangle() {}
 
+            bengine::clickRectangle& operator=(const bengine::clickRectangle &rhs) {
+                this->x1 = rhs.getX1();
+                this->y1 = rhs.getY1();
+                this->x2 = rhs.getX2();
+                this->y2 = rhs.getY2();
+                return *this;
+            }
+
             /** Get the x-position of the top-left corner of the rectangle
              * @returns The x-position of the top-left corner of the rectangle
              */

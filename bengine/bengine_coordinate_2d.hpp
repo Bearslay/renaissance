@@ -171,6 +171,12 @@ namespace bengine {
                 this->x_pos = (this->x_pos - pivot.get_x_pos()) * cos - (this->y_pos - pivot.get_y_pos()) * sin + pivot.get_x_pos();
                 this->y_pos = (this->x_pos - pivot.get_x_pos()) * sin + (this->y_pos - pivot.get_y_pos()) * cos + pivot.get_y_pos();
             }
+            void rotate_about_origin(const double &angle) {
+                const double sin = std::sin(angle);
+                const double cos = std::cos(angle);
+                this->x_pos = this->x_pos * cos - this->y_pos * sin;
+                this->y_pos = this->x_pos * sin + this->y_pos * cos;
+            }
             void rotate_about_reference_point(const double &angle) {
                 this->rotate_about_pivot(bengine::coordinate_2d<type>::reference_point, angle);
             }
@@ -283,7 +289,7 @@ namespace bengine {
                 this->y_pos /= rhs;
                 return *this;
             }
-            bengine::coordinate_2d<type>& operator*=(const double &rhs) {
+            bengine::coordinate_2d<type>& operator%=(const double &rhs) {
                 this->x_pos = std::fmod(this->x_pos, rhs);
                 this->y_pos = std::fmod(this->y_pos, rhs);
                 return *this;
@@ -295,7 +301,7 @@ namespace bengine {
                 return bengine::coordinate_2d<type>(this->x_pos - rhs.get_x_pos(), this->y_pos - rhs.get_y_pos());
             }
             bengine::coordinate_2d<type> operator*(const double &rhs) const {
-                return bengine::coordinate_2d<type>(this->x_pos * rhs, this->x_pos * rhs);
+                return bengine::coordinate_2d<type>(this->x_pos * rhs, this->y_pos * rhs);
             }
             bengine::coordinate_2d<type> operator/(const double &rhs) const {
                 return bengine::coordinate_2d<type>(this->x_pos / rhs, this->y_pos / rhs);
@@ -304,15 +310,21 @@ namespace bengine {
                 return bengine::coordinate_2d<type>(std::fmod(this->x_pos, rhs), std::fmod(this->y_pos, rhs));
             }
 
-            type get_euclidean_distance_to(const bengine::coordinate_2d<type> &other = bengine::coordinate_2d<type>::reference_point) const {
+            type get_euclidean_distance_to(const bengine::coordinate_2d<type> &other) const {
                 return std::is_integral<type>::value ? std::round(std::sqrt((this->x_pos - other.get_x_pos()) * (this->x_pos - other.get_x_pos()) + (this->y_pos - other.get_y_pos()) * (this->y_pos - other.get_y_pos()))) : std::sqrt((this->x_pos - other.get_x_pos()) * (this->x_pos - other.get_x_pos()) + (this->y_pos - other.get_y_pos()) * (this->y_pos - other.get_y_pos()));
             }
-            type get_taxicab_distance_to(const bengine::coordinate_2d<type> &other = bengine::coordinate_2d<type>::reference_point) const {
+            type get_euclidean_distance() const {
+                return this->get_euclidean_distance_to(bengine::coordinate_2d<type>::reference_point);
+            }
+            type get_taxicab_distance_to(const bengine::coordinate_2d<type> &other) const {
                 return std::is_integral<type>::value ? std::abs(this->x_pos - other.get_x_pos()) + std::abs(this->y_pos - other.get_y_pos()) : std::fabs(this->x_pos - other.get_x_pos()) + std::fabs(this->y_pos - other.get_y_pos());
             }
+            type get_taxicab_distance() const {
+                return this->get_taxicab_distance_to(bengine::coordinate_2d<type>::reference_point);
+            }
     };
-    template <class type> bengine::coordinate_2d<type>::relation bengine::coordinate_2d<type>::relation_metric = bengine::coordinate_2d<type>::relation::DEFAULT;
-    template <class type> bengine::coordinate_2d<type> bengine::coordinate_2d<type>::reference_point = bengine::coordinate_2d<type>(0, 0);
+    template <class type> typename bengine::coordinate_2d<type>::relation bengine::coordinate_2d<type>::relation_metric = bengine::coordinate_2d<type>::relation::DEFAULT;
+    template <class type> typename bengine::coordinate_2d<type> bengine::coordinate_2d<type>::reference_point = bengine::coordinate_2d<type>(0, 0);
 }
 
 #endif // BENGINE_COORDINATE_2D_hpp

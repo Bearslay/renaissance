@@ -41,6 +41,10 @@ namespace bengine {
                 PURPLE         // Purple (115, 0, 115)
             };
 
+            static SDL_Color getColorFromPreset(const bengine::window::presetColor &color) {
+                return bengine::window::presetColors[static_cast<unsigned char>(color)];
+            }
+
         private:
             /// @brief The SDL_Window that the whole class is based around
             SDL_Window *win = NULL;
@@ -423,7 +427,7 @@ namespace bengine {
             /** Clear the renderer
              * @param color The color to make the newly blank screen as an SDL_Color
              */
-            void clear(const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::BLACK)]) {
+            void clear(const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::BLACK)) {
                 bengine::window::changeDrawColor(color);
                 if (SDL_RenderClear(this->renderer) != 0) {
                     std::cout << "Window \"" << this->title << "\" failed to clear renderer";
@@ -489,7 +493,7 @@ namespace bengine {
              * @param y y-position of the pixel to change relative to the window
              * @param color The color to change the pixel to as an SDL_Color
              */
-            void drawPixel(const int &x, const int &y, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void drawPixel(const int &x, const int &y, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 bengine::window::changeDrawColor(color);
 
                 if (this->stretchGraphics) {
@@ -511,7 +515,7 @@ namespace bengine {
              * @param y2 y-position of the ending point relative to the window (px)
              * @param color The color to draw the line with as an SDL_Color
              */
-            void drawLine(const int &x1, const int &y1, const int &x2, const int &y2, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void drawLine(const int &x1, const int &y1, const int &x2, const int &y2, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 if (x1 == x2 && y1 == y2) {
                     bengine::window::drawPixel(x1, y1, color);
                     return;
@@ -557,7 +561,7 @@ namespace bengine {
              * @param h Height of the rectangle (px) (can be negative, thereby making the "y" parameter reference the bottom side of the rectangle)
              * @param color The color to draw the rectangle with as an SDL_Color
              */
-            void drawRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void drawRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 bengine::window::changeDrawColor(color);
                 
                 if (this->stretchGraphics) {
@@ -583,7 +587,7 @@ namespace bengine {
              * @param mode The mode to use when thickening the lines; THICKSHAPE_INNER keeps the same width/height, THICKSHAPE_OUTER adds 2*thickness to the width/height, and THICKSHAPE_MIDDLE adds 1*thickness to the width/height
              * @param color The color to draw the rectangle with as an SDL_Color
              */
-            void drawThickRectangle(const int &x, const int &y, const int &w, const int &h, const int &thickness, const unsigned char &mode = THICKSHAPE_INNER, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void drawThickRectangle(const int &x, const int &y, const int &w, const int &h, const int &thickness, const unsigned char &mode = THICKSHAPE_INNER, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 bengine::window::changeDrawColor(color);
 
                 SDL_Rect rect[4];
@@ -630,7 +634,7 @@ namespace bengine {
              * @param h Height of the rectangle (px) (can be negative, thereby making the "y" parameter reference the bottom side of the rectangle)
              * @param color The color to fill the rectangle with as an SDL_Color
              */
-            void fillRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void fillRectangle(const int &x, const int &y, const int &w, const int &h, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 bengine::window::changeDrawColor(color);
 
                 if (this->stretchGraphics) {
@@ -653,7 +657,7 @@ namespace bengine {
              * @param r Radius of the circle (px)
              * @param color The color to draw the circle with as an SDL_Color
              */
-            void drawCircle(const int &x, const int &y, const int &r, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void drawCircle(const int &x, const int &y, const int &r, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
                 const int diameter = r * 2;
                 int ox = r - 1;
@@ -687,7 +691,7 @@ namespace bengine {
              * @param r Radius of the circle (px)
              * @param color The color to fill the circle with as an SDL_Color
              */
-            void fillCircle(const int &x, const int &y, const int &r, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void fillCircle(const int &x, const int &y, const int &r, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
                 int ox = 0;
                 int oy = r;
@@ -975,7 +979,7 @@ namespace bengine {
              * @param wrapWidth The maximum width for the text to render (px) (a width of zero prevents any wrapping)
              * @param color The color to fill the circle with as an SDL_Color
              */
-            void renderText(TTF_Font *font, const char16_t *text, const int &x, const int &y, const Uint32 &wrapWidth = 0, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void renderText(TTF_Font *font, const char16_t *text, const int &x, const int &y, const Uint32 &wrapWidth = 0, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 SDL_Surface *surface = TTF_RenderUNICODE_Blended_Wrapped(font, (Uint16*)text, color, wrapWidth);
 
                 const SDL_Rect src = {0, 0, surface->w, surface->h};
@@ -991,7 +995,7 @@ namespace bengine {
              * @param dst The portion of the window/dummy texture to copy to (px for all 4 metrics) (will stretch the text to fill the given rectangle)
              * @param color The color to fill the circle with as an SDL_Color
              */
-            void renderText(TTF_Font *font, const char16_t *text, const SDL_Rect &dst, const SDL_Color &color = bengine::window::presetColors[static_cast<Uint8>(presetColor::WHITE)]) {
+            void renderText(TTF_Font *font, const char16_t *text, const SDL_Rect &dst, const SDL_Color &color = bengine::window::getColorFromPreset(bengine::window::presetColor::WHITE)) {
                 SDL_Surface *surface = TTF_RenderUNICODE_Blended_Wrapped(font, (Uint16*)text, color, dst.w);
                 SDL_Texture *texture = SDL_CreateTextureFromSurface(this->renderer, surface);
                 
