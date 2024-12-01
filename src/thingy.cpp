@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 
+#include "btils_string.hpp"
 #include "btils.hpp"
 #include "bengine.hpp"
 
@@ -117,15 +118,11 @@ class polynomial_function {
         }
 
         polynomial_function operator!() const {
-            std::vector<double> coefficients = this->coefficients;
-            for (std::size_t i = 0; i < coefficients.size(); i++) {
-                coefficients[i] = -coefficients[i];
-            }
-            return polynomial_function(coefficients);
+            return *this * (-1);
         }
         polynomial_function operator+(const polynomial_function &rhs) const {
-            const std::vector<double> &larger = this->coefficients.size() >= rhs.coefficients.size() ? this->coefficients : rhs.get_all_coefficients();
-            const std::vector<double> &smaller = this->coefficients.size() < rhs.coefficients.size() ? this->coefficients : rhs.get_all_coefficients();
+            const std::vector<double> &larger = this->coefficients.size() >= rhs.coefficients.size() ? this->coefficients : rhs.to_vector();
+            const std::vector<double> &smaller = this->coefficients.size() < rhs.coefficients.size() ? this->coefficients : rhs.to_vector();
 
             std::vector<double> output = larger;
             for (std::size_t i = 0; i < smaller.size(); i++) {
@@ -134,8 +131,8 @@ class polynomial_function {
             return polynomial_function(output);
         }
         polynomial_function operator-(const polynomial_function &rhs) const {
-            const std::vector<double> &larger = this->coefficients.size() >= rhs.coefficients.size() ? this->coefficients : rhs.get_all_coefficients();
-            const std::vector<double> &smaller = this->coefficients.size() < rhs.coefficients.size() ? this->coefficients : rhs.get_all_coefficients();
+            const std::vector<double> &larger = this->coefficients.size() >= rhs.coefficients.size() ? this->coefficients : rhs.to_vector();
+            const std::vector<double> &smaller = this->coefficients.size() < rhs.coefficients.size() ? this->coefficients : rhs.to_vector();
 
             std::vector<double> output = larger;
             for (std::size_t i = 0; i < smaller.size(); i++) {
@@ -144,8 +141,8 @@ class polynomial_function {
             return polynomial_function(output);
         }
         polynomial_function operator*(const polynomial_function &rhs) const {
-            const std::vector<double> &larger = this->coefficients.size() >= rhs.coefficients.size() ? this->coefficients : rhs.get_all_coefficients();
-            const std::vector<double> &smaller = this->coefficients.size() < rhs.coefficients.size() ? this->coefficients : rhs.get_all_coefficients();
+            const std::vector<double> &larger = this->coefficients.size() >= rhs.coefficients.size() ? this->coefficients : rhs.to_vector();
+            const std::vector<double> &smaller = this->coefficients.size() < rhs.coefficients.size() ? this->coefficients : rhs.to_vector();
 
             std::vector<double> output(larger.size() + smaller.size() - 1);
             for (std::size_t i = 0; i < smaller.size(); i++) {
@@ -164,7 +161,7 @@ class polynomial_function {
         }
 
         polynomial_function& operator=(const polynomial_function &rhs) {
-            this->coefficients = rhs.get_all_coefficients();
+            this->coefficients = rhs.to_vector();
             return *this;
         }
         polynomial_function& operator+=(const polynomial_function &rhs) {
@@ -184,6 +181,13 @@ class polynomial_function {
             return *this;
         }
 
+        bool operator==(const polynomial_function &rhs) const {
+            return this->coefficients == rhs.to_vector();
+        }
+        bool operator!=(const polynomial_function &rhs) const {
+            return !(*this == rhs);
+        }
+
         double operator()(const double &x) const {
             double result = 0;
             for (std::size_t i = 0; i < this->coefficients.size(); i++) {
@@ -194,9 +198,6 @@ class polynomial_function {
 
         double get_coefficient(const std::size_t &power) const {
             return power < this->coefficients.size() ? this->coefficients.at(power) : 0;
-        }
-        std::vector<double> get_all_coefficients() const {
-            return this->coefficients;
         }
 
         void set_coefficient(const std::size_t &power, const double &coefficient) {
@@ -211,19 +212,23 @@ class polynomial_function {
             this->coefficients.emplace_back(coefficient);
         }
 
-        void print_polynomial() const {
-            std::cout << this->coefficients.at(0);
+        std::vector<double> to_vector() const {
+            return this->coefficients;
+        }
+
+        std::string to_string() const {
+            std::string output = btils::toString<double>(this->coefficients.at(0));
             for (std::size_t i = 1; i < this->coefficients.size(); i++) {
                 if (this->coefficients.at(i) == 0) {
                     continue;
                 }
                 if (std::fabs(this->coefficients.at(i)) == 1) {
-                    std::cout << (this->coefficients.at(i) < 0 ? " - " : " + ") << "x^" << i;
+                    output += (this->coefficients.at(i) < 0 ? " - x^" : " + x^") + btils::toString<std::size_t>(i);
                     continue;
                 }
-                std::cout << (this->coefficients.at(i) < 0 ? " - " : " + ") << std::fabs(this->coefficients.at(i)) << "x^" << i;
+                output += (this->coefficients.at(i) < 0 ? " - " : " + ") + btils::toString<double>(std::fabs(this->coefficients.at(i))) + "x^" + btils::toString<std::size_t>(i);
             }
-            std::cout << "\n";
+            return output + "\n";
         }
 };
 
@@ -308,9 +313,24 @@ class projectile_and_movement_demo : public bengine::loop {
         void render() override {
             const double launch_angle = bengine::kinematics_helper::launchAngle(this->fella_strength, this->mstate.posx() - this->fella_position.get_x_pos(), this->mstate.posy() - this->fella_position.get_y_pos(), true);
             if (!std::isnan(launch_angle)) {
-                // const double projectile_x_component = this->fella_strength * std::cos(launch_angle);
-            }
+                const double projectile_x_component = this->fella_strength * std::cos(launch_angle);
 
+                const double dx = 0.05;
+                double current_x = 0.0;
+                double current_y = 0.0;
+                double new_x = 0.0;
+                double new_y = 0.0;
+
+                polynomial_function equation = polynomial_function({0, this->fella_strength * std::sin(launch_angle), -0.5 * bengine::kinematics_helper::get_gravitational_constant()});
+
+                for (double i = 0.0; i < (this->mstate.posx() - this->fella_position.get_x_pos()) / projectile_x_component; i += dx) {
+                    new_x += dx;
+                    new_y = equation(new_x);
+                    this->window.drawLine(this->fella_position.get_x_pos() + current_x * projectile_x_component, this->fella_position.get_y_pos() - current_y, this->fella_position.get_x_pos() + new_x * projectile_x_component, this->fella_position.get_y_pos() - new_y, bengine::window::getColorFromPreset(bengine::window::presetColor::RED));
+                    current_x = new_x;
+                    current_y = new_y;
+                }
+            }
             this->window.renderModdedTexture(this->fella_texture, {this->fella_box.getX1(), this->fella_box.getY1(), this->fella_box.getW(), this->fella_box.getH()});
         }
     
@@ -323,21 +343,21 @@ class projectile_and_movement_demo : public bengine::loop {
 };
 
 int main() {
-    // projectile_and_movement_demo p;
-    // p.run();
+    projectile_and_movement_demo p;
+    return p.run();
 
     polynomial_function p1 = polynomial_function({8, 4, -3, 1});
     polynomial_function p2 = polynomial_function({-1, 2, 1});
-    p1.print_polynomial();
-    p2.print_polynomial();
+    std::cout << p1.to_string();
+    std::cout << p2.to_string();
 
     p1 *= p2;
-    p1.print_polynomial();
-    p2.print_polynomial();
+    std::cout << p1.to_string();
+    std::cout << p2.to_string();
 
     p1 *= p2;
-    p1.print_polynomial();
-    p2.print_polynomial();
+    std::cout << p1.to_string();
+    std::cout << p2.to_string();
 
     // throwAngle = kmtcs::launchAngle<double>(MousePos.x - pos.getX(), MousePos.y - pos.getY(), strength, true);
     // if (!std::isnan(throwAngle)) {
