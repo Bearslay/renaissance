@@ -510,6 +510,13 @@ namespace bengine {
             static double gravitational_constant;
         
         public:
+            static double get_gravitational_constant() {
+                return bengine::kinematics_helper::gravitational_constant;
+            }
+            static void set_gravitational_constant(const double &constant) {
+                bengine::kinematics_helper::gravitational_constant = constant;
+            }
+
             /** Calculate how long a projecticle will remain airborne
              * 
              */
