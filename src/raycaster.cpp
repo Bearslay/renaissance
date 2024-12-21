@@ -49,7 +49,7 @@ class player_top_down {
             this->collider.set_y_pos(y_pos - this->collider.get_height() / 2);
         }
         void set_rotation(const double &rotation) {
-            this->rotation = btils::normalizeRadian(rotation);
+            this->rotation = btils::normalize_radian_angle(rotation);
         }
         void set_movespeed(const double &movespeed) {
             this->movespeed = movespeed < 0 ? 0 : movespeed;
@@ -71,10 +71,10 @@ class player_top_down {
         }
 
         void look_cw(const double &amount) {
-            this->rotation = btils::normalizeRadian(this->rotation - amount);
+            this->rotation = btils::normalize_radian_angle(this->rotation - amount);
         }
         void look_ccw(const double &amount) {
-            this->rotation = btils::normalizeRadian(this->rotation + amount);
+            this->rotation = btils::normalize_radian_angle(this->rotation + amount);
         }
 
         bool detect_collision(const bengine::basic_collider_2d &other) const {
@@ -147,7 +147,7 @@ class raycaster : public bengine::loop {
             int look_right = SDL_SCANCODE_RIGHT;
         } keybinds;
 
-        bengine::basicTexture minimap_texture;
+        bengine::basic_texture minimap_texture;
         TTF_Font *font = TTF_OpenFont("dev/fonts/GNU-Unifont.ttf", 20);
 
         std::vector<std::vector<Uint8>> grid;
@@ -200,35 +200,35 @@ class raycaster : public bengine::loop {
             return -1;
         }
 
-        void handleEvent() override {}
+        void handle_event() override {}
         void compute() override {
             if (this->keystate[this->keybinds.quit]) {
-                this->loopRunning = false;
+                this->loop_running = false;
             }
 
             if (this->keystate[this->keybinds.move_forwards]) {
-                player.move_y(-this->player.get_movespeed() * this->deltaTime);
-                this->visualsChanged = true;
+                player.move_y(-this->player.get_movespeed() * this->delta_time);
+                this->visuals_changed = true;
             }
             if (this->keystate[this->keybinds.move_backwards]) {
-                player.move_y(this->player.get_movespeed() * this->deltaTime);
-                this->visualsChanged = true;
+                player.move_y(this->player.get_movespeed() * this->delta_time);
+                this->visuals_changed = true;
             }
             if (this->keystate[this->keybinds.strafe_left]) {
-                player.move_x(-this->player.get_movespeed() * this->deltaTime);
-                this->visualsChanged = true;
+                player.move_x(-this->player.get_movespeed() * this->delta_time);
+                this->visuals_changed = true;
             }
             if (this->keystate[this->keybinds.strafe_right]) {
-                player.move_x(this->player.get_movespeed() * this->deltaTime);
-                this->visualsChanged = true;
+                player.move_x(this->player.get_movespeed() * this->delta_time);
+                this->visuals_changed = true;
             }
 
             if (this->keystate[this->keybinds.look_left]) {
-                player.look_ccw(this->player.get_look_speed() * this->deltaTime);
-                this->visualsChanged = true;
+                player.look_ccw(this->player.get_look_speed() * this->delta_time);
+                this->visuals_changed = true;
             } else if (this->keystate[this->keybinds.look_right]) {
-                player.look_cw(this->player.get_look_speed() * this->deltaTime);
-                this->visualsChanged = true;
+                player.look_cw(this->player.get_look_speed() * this->delta_time);
+                this->visuals_changed = true;
             }
             // if (keystate[SDL_SCANCODE_UP]) {
             //     player.zoomOut(zoomspeed);
@@ -237,35 +237,37 @@ class raycaster : public bengine::loop {
             // }
 
             for (std::size_t i = 0; i < this->colliders.size(); i++) {
-                this->player.fix_collision(this->colliders[i], bengine::basic_collider_2d::fix_mode::MOVE_SELF, true);
+                if (this->player.fix_collision(this->colliders[i], bengine::basic_collider_2d::fix_mode::MOVE_SELF, true)) {
+                    this->visuals_changed = true;
+                }
             }
         }
 
         void create_minimap_texture() {
-            this->window.targetDummy();
-            this->window.initDummy(this->grid.at(0).size() * minimap_cell_size, this->grid.size() * minimap_cell_size);
-            this->window.clear();
+            this->window.target_renderer_at_dummy();
+            this->window.initialize_dummy(this->grid.at(0).size() * minimap_cell_size, this->grid.size() * minimap_cell_size);
+            this->window.clear_renderer();
 
             for (std::size_t row = 0; row < this->grid.size(); row++) {
                 for (std::size_t col = 0; col < this->grid.at(0).size(); col++) {
                     if (grid.at(row).at(col) > 0) {
-                        this->window.fillRectangle(col * minimap_cell_size, row * minimap_cell_size, minimap_cell_size, minimap_cell_size, bengine::window::presetColors[static_cast<Uint8>(bengine::window::presetColor::WHITE)]);
+                        this->window.fill_rectangle(col * minimap_cell_size, row * minimap_cell_size, minimap_cell_size, minimap_cell_size, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::WHITE));
                     }
                 }
             }
-            this->window.present();
+            this->window.present_renderer();
 
-            this->minimap_texture.setTexture(this->window.copyDummy());
-            this->window.targetWindow();
-            this->window.clear();
+            this->minimap_texture.set_texture(this->window.duplicate_dummy());
+            this->window.target_renderer_at_window();
+            this->window.clear_renderer();
         }
         void render() override {
             // Minimap rendering
             if ((Uint8)(this->minimap_settings << 7) >> 7 == 1) {
                 const Uint16 minimap_side_length = 360;
                 const Uint16 minimap_corner_offset = 32;
-                const Uint16 minimap_x_pos = ((Uint8)(this->minimap_settings << 5) >> 6) % 2 == 0 ? minimap_corner_offset : this->window.getWidth() - minimap_side_length - minimap_corner_offset;
-                const Uint16 minimap_y_pos = (Uint8)(this->minimap_settings << 5) >> 6 <= 1 ? minimap_corner_offset : this->window.getHeight() - minimap_side_length - minimap_corner_offset;
+                const Uint16 minimap_x_pos = ((Uint8)(this->minimap_settings << 5) >> 6) % 2 == 0 ? minimap_corner_offset : this->window.get_width() - minimap_side_length - minimap_corner_offset;
+                const Uint16 minimap_y_pos = (Uint8)(this->minimap_settings << 5) >> 6 <= 1 ? minimap_corner_offset : this->window.get_height() - minimap_side_length - minimap_corner_offset;
                 
                 const double view_distance = this->player.get_view_distance() * 2 > this->grid.size() || this->player.get_view_distance() * 2 > this->grid.at(0).size() ? std::min(this->grid.size(), this->grid.at(0).size()) / 2 : this->player.get_view_distance();
                 const Uint16 minimap_view_x_pos = this->player.get_x_pos() - view_distance < 0 ? 0 : (this->player.get_x_pos() + view_distance > this->grid.at(0).size() ? (this->grid.at(0).size() - view_distance * 2) * this->minimap_cell_size : (this->player.get_x_pos() - view_distance) * this->minimap_cell_size);
@@ -283,18 +285,23 @@ class raycaster : public bengine::loop {
                     this->minimap_player.set_y_pos(minimap_side_length - (this->grid.size() - this->player.get_y_pos()) * minimap_scale_factor * this->minimap_cell_size);
                 }
 
-                this->window.fillRectangle(minimap_x_pos - minimap_side_length / 30, minimap_y_pos - minimap_side_length / 30, minimap_side_length + minimap_side_length / 15, minimap_side_length + minimap_side_length / 15, bengine::window::presetColors[static_cast<Uint8>(bengine::window::presetColor::DARK_GRAY)]);
-                this->minimap_texture.setFrame({minimap_view_x_pos, minimap_view_y_pos, (int)(view_distance * this->minimap_cell_size * 2), (int)(view_distance * this->minimap_cell_size * 2)});
-                this->window.renderBasicTexture(this->minimap_texture, {minimap_x_pos, minimap_y_pos, minimap_side_length, minimap_side_length});
+                this->window.fill_rectangle(minimap_x_pos - minimap_side_length / 30, minimap_y_pos - minimap_side_length / 30, minimap_side_length + minimap_side_length / 15, minimap_side_length + minimap_side_length / 15, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
+                this->minimap_texture.set_frame({minimap_view_x_pos, minimap_view_y_pos, (int)(view_distance * this->minimap_cell_size * 2), (int)(view_distance * this->minimap_cell_size * 2)});
+                this->window.render_basic_texture(this->minimap_texture, {minimap_x_pos, minimap_y_pos, minimap_side_length, minimap_side_length});
 
                 minimap_player.set_radius(this->player.get_radius() * (minimap_side_length / (2 * view_distance * this->minimap_cell_size)) * this->minimap_cell_size);
-                this->window.fillRectangle(minimap_x_pos + minimap_player.get_x_pos() - minimap_player.get_radius(), minimap_y_pos + minimap_player.get_y_pos() - minimap_player.get_radius(), minimap_player.get_radius() * 2, minimap_player.get_radius() * 2, bengine::window::presetColors[static_cast<Uint8>(bengine::window::presetColor::RED)]);
+                this->window.fill_rectangle(minimap_x_pos + minimap_player.get_x_pos() - minimap_player.get_radius(), minimap_y_pos + minimap_player.get_y_pos() - minimap_player.get_radius(), minimap_player.get_radius() * 2, minimap_player.get_radius() * 2, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
             }
 
             // Temporary full-view of the map
-            this->window.renderText(this->font, btils::to_u16string("(" + btils::toString<double>(this->player.get_x_pos()) + ", " + btils::toString<double>(this->player.get_y_pos()) + ")").c_str(), 0, 0);
-            this->window.renderSDLTexture(this->minimap_texture.getTexture(), {0, 0, (int)(this->grid.at(0).size() * this->minimap_cell_size), (int)(this->grid.size() * this->minimap_cell_size)}, {50, 50, (int)(this->grid.at(0).size() * this->minimap_cell_size), (int)(this->grid.size() * this->minimap_cell_size)});
-            this->window.fillRectangle(50 + (this->player.get_x_pos() - this->player.get_radius()) * this->minimap_cell_size, 50 + (this->player.get_y_pos() - this->player.get_radius()) * this->minimap_cell_size, this->player.get_radius() * this->minimap_cell_size * 2, this->player.get_radius() * this->minimap_cell_size * 2, bengine::window::presetColors[static_cast<Uint8>(bengine::window::presetColor::RED)]);
+            this->window.render_text(this->font, btils::to_u16string("(" + btils::to_string<double>(this->player.get_x_pos()) + ", " + btils::to_string<double>(this->player.get_y_pos()) + ")").c_str(), 0, 0);
+            this->window.render_SDLTexture(this->minimap_texture.get_texture(), {0, 0, (int)(this->grid.at(0).size() * this->minimap_cell_size), (int)(this->grid.size() * this->minimap_cell_size)}, {50, 50, (int)(this->grid.at(0).size() * this->minimap_cell_size), (int)(this->grid.size() * this->minimap_cell_size)});
+            this->window.fill_rectangle(50 + (this->player.get_x_pos() - this->player.get_radius()) * this->minimap_cell_size, 50 + (this->player.get_y_pos() - this->player.get_radius()) * this->minimap_cell_size, this->player.get_radius() * this->minimap_cell_size * 2, this->player.get_radius() * this->minimap_cell_size * 2, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
+        
+            // Tempoarary viewing of the colliders
+            for (std::size_t i = 0; i < this->colliders.size(); i++) {
+                this->window.draw_rectangle(51 + this->colliders.at(i).get_x_pos() * this->minimap_cell_size, 51 + this->colliders.at(i).get_y_pos() * this->minimap_cell_size, this->colliders.at(i).get_width() * this->minimap_cell_size - 2, this->colliders.at(i).get_height() * this->minimap_cell_size - 2, {255, 0, 0, 255});
+            }
         }
 
     public:
@@ -305,29 +312,26 @@ class raycaster : public bengine::loop {
                     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
                     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1},
-                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
                     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-                    {1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-                    {1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
                 };
-
                 this->colliders.emplace_back(bengine::basic_collider_2d(0, 0, 16, 1));
-                this->colliders.emplace_back(bengine::basic_collider_2d(0, 1, 1, 14));
+                this->colliders.emplace_back(bengine::basic_collider_2d(0, 1, 1, 15));
                 this->colliders.emplace_back(bengine::basic_collider_2d(15, 1, 1, 14));
-                this->colliders.emplace_back(bengine::basic_collider_2d(0, 15, 16, 1));
-                this->colliders.emplace_back(bengine::basic_collider_2d(7, 7, 2, 2));
-                this->colliders.emplace_back(bengine::basic_collider_2d(2, 11, 2, 2));
-                this->colliders.emplace_back(bengine::basic_collider_2d(12, 3, 1, 7));
+                this->colliders.emplace_back(bengine::basic_collider_2d(1, 15, 15, 1));
             } else {
+                // Basic copying of an input vector to and output, but also ensures that the output is rectangular
                 std::size_t longest_row_cols = 0;
                 for (std::size_t row = 0; row < grid.size(); row++) {
                     this->grid.emplace_back();
@@ -341,6 +345,79 @@ class raycaster : public bengine::loop {
                 for (std::size_t row = 0; row < this->grid.size(); row++) {
                     for (std::size_t col = this->grid.at(row).size(); col < longest_row_cols; col++) {
                         this->grid[row].emplace_back(0);
+                    }
+                }
+                
+                // Algorithm to generate colliders with, making sure that any colliders that can be merged are merged
+
+                // Create a grid that will hold whether a cell has been visited or not
+                std::vector<std::vector<bool>> visit_grid(this->grid.size(), std::vector<bool>(this->grid.at(0).size(), false));
+                for (std::size_t row = 0; row < this->grid.size(); row++) {
+                    for (std::size_t col = 0; col < this->grid.at(0).size(); col++) {
+                        if (this->grid.at(row).at(col) == 0) {
+                            visit_grid[row][col] = true;
+                        }
+                    }
+                }
+
+                std::size_t row_start = 0, col_start = 0;
+                while (row_start < this->grid.size() && col_start < this->grid.at(0).size()) {
+                    std::size_t row_end = row_start, col_end = col_start;
+                    // First, start by going to the right until reached a cell visited before (which either means that its blank or has been used already; it can't be included in either case)
+                    while (col_end < this->grid.at(0).size()) {
+                        if (visit_grid.at(row_end).at(col_end)) {
+                            break;
+                        }
+                        visit_grid[row_end][col_end] = true;
+                        col_end++;
+                    }
+                    // Now the mesh has a width, so now we go down with that width until a row has a cell that has been visited before
+                    while (row_end < this->grid.size() - 1) {
+                        row_end++;
+
+                        // Check to see if the next row is allowed to be added to the mesh
+                        bool valid_row = true;
+                        for (std::size_t col = col_start; col < col_end; col++) {
+                            if (visit_grid.at(row_end).at(col)) {
+                                valid_row = false;
+                                break;
+                            }
+                        }
+
+                        // If the new row isn't valid, then the row_end is retracted back to a valid row and the start/end points of the mesh are defined
+                        if (!valid_row) {
+                            row_end--;
+                            break;
+                        }
+                        // If the new row is valid, then the entire row is marked as visited as it will be consumed by the mesh
+                        for (std::size_t i = col_start; i < col_end; i++) {
+                            visit_grid[row_end][i] = true;
+                        }
+                    }
+
+                    // At this point, there should be the top-left and bottom-right corners of a new mesh defined
+                    // Here, a new collider is added based upon the start/end positions of the mesh
+                    this->colliders.emplace_back(bengine::basic_collider_2d(col_start, row_start, col_end - col_start, row_end - row_start + 1));
+
+                    // Now, the new starting row/column is found by searching for the next spot that is unvisited
+                    bool found_unvisited_cell = false;
+                    while (row_start < this->grid.size()) {
+                        while (col_start < this->grid.at(0).size()) {
+                            if (!visit_grid.at(row_start).at(col_start)) {
+                                found_unvisited_cell = true;
+                                break;
+                            }
+                            col_start++;
+                        }
+                        if (found_unvisited_cell) {
+                            break;
+                        }
+                        row_start++;
+                        col_start = 0;
+                        found_unvisited_cell = false;
+                    }
+                    if (!found_unvisited_cell) {
+                        break;
                     }
                 }
             }
@@ -374,6 +451,6 @@ int main(int argc, char* args[]) {
         {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
     };
-    raycaster r({});
+    raycaster r(grid);
     return r.run();
 }
