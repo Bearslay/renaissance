@@ -9,7 +9,7 @@
 class physics_sim : public bengine::loop {
     private:
 
-        void handleEvent() override {
+        void handle_event() override {
             
         }
         void compute() override {

@@ -217,16 +217,16 @@ class polynomial_function {
         }
 
         std::string to_string() const {
-            std::string output = btils::toString<double>(this->coefficients.at(0));
+            std::string output = btils::to_string<double>(this->coefficients.at(0));
             for (std::size_t i = 1; i < this->coefficients.size(); i++) {
                 if (this->coefficients.at(i) == 0) {
                     continue;
                 }
                 if (std::fabs(this->coefficients.at(i)) == 1) {
-                    output += (this->coefficients.at(i) < 0 ? " - x^" : " + x^") + btils::toString<std::size_t>(i);
+                    output += (this->coefficients.at(i) < 0 ? " - x^" : " + x^") + btils::to_string<std::size_t>(i);
                     continue;
                 }
-                output += (this->coefficients.at(i) < 0 ? " - " : " + ") + btils::toString<double>(std::fabs(this->coefficients.at(i))) + "x^" + btils::toString<std::size_t>(i);
+                output += (this->coefficients.at(i) < 0 ? " - " : " + ") + btils::to_string<double>(std::fabs(this->coefficients.at(i))) + "x^" + btils::to_string<std::size_t>(i);
             }
             return output + "\n";
         }
@@ -234,7 +234,7 @@ class polynomial_function {
 
 class projectile_and_movement_demo : public bengine::loop {
     private:
-        bengine::normalMouseState mstate;
+        bengine::generic_mouse_state mstate;
 
         struct {
             int move_forwards = SDL_SCANCODE_W;
@@ -247,25 +247,25 @@ class projectile_and_movement_demo : public bengine::loop {
             int orbit_mouse_cw = SDL_SCANCODE_DOWN;
         } keybinds;
 
-        bengine::moddedTexture fella_texture = bengine::moddedTexture(this->window.loadTexture("dev/thingy/gfx/smile.png"), {0, 0, 64, 64}, {255, 0, 0, 255});
-        bengine::clickRectangle fella_box;
-        bengine::basicTexture tile = bengine::basicTexture(this->window.loadTexture("dev/thingy/gfx/tile.png"), {0, 0, 64, 64});
+        bengine::modded_texture fella_texture = bengine::modded_texture(this->window.load_texture("dev/thingy/gfx/smile.png"), {0, 0, 64, 64}, {255, 0, 0, 255});
+        bengine::click_rectangle fella_box;
+        bengine::basic_texture tile = bengine::basic_texture(this->window.load_texture("dev/thingy/gfx/tile.png"), {0, 0, 64, 64});
 
         bengine::coordinate_2d<double> fella_position;
         double fella_speed = 0.25;
         double fella_strength = 150;
         double fella_radius = 16;
 
-        void handleEvent() override {
+        void handle_event() override {
             switch (this->event.type) {
                 case SDL_MOUSEMOTION:
-                    this->mstate.updateMotion(this->event);
+                    this->mstate.update_motion(this->event);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-                    this->mstate.pressButton(this->event);
+                    this->mstate.press_button(this->event);
                     break;
                 case SDL_MOUSEBUTTONUP:
-                    this->mstate.releaseButton(this->event);
+                    this->mstate.release_button(this->event);
                     break;
             }
         }
@@ -273,72 +273,68 @@ class projectile_and_movement_demo : public bengine::loop {
             const double movement_angle = get_movement_angle(this->keystate[this->keybinds.move_forwards], this->keystate[this->keybinds.move_backwards], this->keystate[this->keybinds.strafe_left], this->keystate[this->keybinds.strafe_right]);
             if (movement_angle >= 0) {
                 this->fella_position += bengine::coordinate_2d<double>(std::cos(movement_angle), std::sin(-movement_angle)) * this->fella_speed;
-                this->visualsChanged = true;
+                this->visuals_changed = true;
             }
 
             if (this->fella_position.get_euclidean_distance() > 0) {
                 if (this->keystate[this->keybinds.orbit_reference_cw]) {
                     this->fella_position.rotate_about_reference_point(this->fella_speed / this->fella_position.get_euclidean_distance());    // Angle is opposite sign of what it should be due to left-handed coordinate system used
-                    this->visualsChanged = true;
+                    this->visuals_changed = true;
                 } else if (this->keystate[this->keybinds.orbit_reference_ccw]) {
                     this->fella_position.rotate_about_reference_point(-this->fella_speed / this->fella_position.get_euclidean_distance());    // Angle is opposite sign of what it should be due to left-handed coordinate system used
-                    this->visualsChanged = true;
+                    this->visuals_changed = true;
                 }
             }
 
-            const double distance_from_mouse = std::sqrt((this->mstate.posx() - this->fella_position.get_x_pos()) * (this->mstate.posx() - this->fella_position.get_x_pos()) + (this->mstate.posy() - this->fella_position.get_y_pos()) * (this->mstate.posy() - this->fella_position.get_y_pos()));
+            const double distance_from_mouse = std::sqrt((this->mstate.get_x_pos() - this->fella_position.get_x_pos()) * (this->mstate.get_x_pos() - this->fella_position.get_x_pos()) + (this->mstate.get_y_pos() - this->fella_position.get_y_pos()) * (this->mstate.get_y_pos() - this->fella_position.get_y_pos()));
             if (distance_from_mouse > 0) {
                 if (this->keystate[this->keybinds.orbit_mouse_cw]) {
-                    this->fella_position.rotate_about_pivot(bengine::coordinate_2d<double>(this->mstate.posx(), this->mstate.posy()), this->fella_speed / distance_from_mouse);    // Angle is opposite sign of what it should be due to left-handed coordinate system used
-                    this->visualsChanged = true;
+                    this->fella_position.rotate_about_pivot(bengine::coordinate_2d<double>(this->mstate.get_x_pos(), this->mstate.get_y_pos()), this->fella_speed / distance_from_mouse);    // Angle is opposite sign of what it should be due to left-handed coordinate system used
+                    this->visuals_changed = true;
                 } else if (this->keystate[this->keybinds.orbit_mouse_ccw]) {
-                    this->fella_position.rotate_about_pivot(bengine::coordinate_2d<double>(this->mstate.posx(), this->mstate.posy()), -this->fella_speed / distance_from_mouse);    // Angle is opposite sign of what it should be due to left-handed coordinate system used
-                    this->visualsChanged = true;
+                    this->fella_position.rotate_about_pivot(bengine::coordinate_2d<double>(this->mstate.get_x_pos(), this->mstate.get_y_pos()), -this->fella_speed / distance_from_mouse);    // Angle is opposite sign of what it should be due to left-handed coordinate system used
+                    this->visuals_changed = true;
                 }
             }
 
-            if (this->fella_box.checkPos(this->mstate)) {
-                this->fella_texture.setColorMod(bengine::window::getColorFromPreset(bengine::window::presetColor::YELLOW));
-                this->visualsChanged = true;
+            if (this->fella_box.check_position(this->mstate)) {
+                this->fella_texture.set_color_mod(bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::YELLOW));
+                this->visuals_changed = true;
             } else {
-                this->fella_texture.setColorMod(bengine::window::getColorFromPreset(bengine::window::presetColor::RED));
-                this->visualsChanged = true;
+                this->fella_texture.set_color_mod(bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
+                this->visuals_changed = true;
             }
 
-            if (visualsChanged) {
-                this->fella_box = bengine::clickRectangle(this->fella_position.get_x_pos() - this->fella_radius, this->fella_position.get_y_pos() - this->fella_radius, this->fella_position.get_x_pos() + this->fella_radius, this->fella_position.get_y_pos() + this->fella_radius);
+            if (visuals_changed) {
+                this->fella_box = bengine::click_rectangle(this->fella_position.get_x_pos() - this->fella_radius, -this->window.get_height() + this->fella_position.get_y_pos() - this->fella_radius, this->fella_position.get_x_pos() + this->fella_radius, -this->window.get_height() + this->fella_position.get_y_pos() + this->fella_radius);
             }
-            this->mstate.stopMotion();
+            this->mstate.stop_motion();
         }
         void render() override {
-            const double launch_angle = bengine::kinematics_helper::launchAngle(this->fella_strength, this->mstate.posx() - this->fella_position.get_x_pos(), this->mstate.posy() - this->fella_position.get_y_pos(), true);
+            const double launch_angle = bengine::kinematics_helper::launch_angle(this->fella_strength, this->mstate.get_x_pos() - this->fella_position.get_x_pos(), this->fella_position.get_y_pos() - this->mstate.get_y_pos(), true);
             if (!std::isnan(launch_angle)) {
                 const double projectile_x_component = this->fella_strength * std::cos(launch_angle);
 
-                const double dx = 0.05;
-                double current_x = 0.0;
-                double current_y = 0.0;
-                double new_x = 0.0;
-                double new_y = 0.0;
+                int previous_y = 0;
+                int current_y = 0;
 
                 polynomial_function equation = polynomial_function({0, this->fella_strength * std::sin(launch_angle), -0.5 * bengine::kinematics_helper::get_gravitational_constant()});
 
-                for (double i = 0.0; i < (this->mstate.posx() - this->fella_position.get_x_pos()) / projectile_x_component; i += dx) {
-                    new_x += dx;
-                    new_y = equation(new_x);
-                    this->window.drawLine(this->fella_position.get_x_pos() + current_x * projectile_x_component, this->fella_position.get_y_pos() - current_y, this->fella_position.get_x_pos() + new_x * projectile_x_component, this->fella_position.get_y_pos() - new_y, bengine::window::getColorFromPreset(bengine::window::presetColor::RED));
-                    current_x = new_x;
-                    current_y = new_y;
+                const bool negative_x_component = this->mstate.get_x_pos() - this->fella_position.get_x_pos() < 0;
+                for (int i = 0; i < std::abs(this->mstate.get_x_pos() - this->fella_position.get_x_pos()); i++) {
+                    current_y = std::round(equation(i / projectile_x_component));
+                    this->window.draw_line(this->fella_position.get_x_pos() + i * (negative_x_component ? -1 : 1), this->fella_position.get_y_pos() - previous_y, this->fella_position.get_x_pos() + i * (negative_x_component ? -1 : 1) + (negative_x_component ? -1 : 1), this->fella_position.get_y_pos() - current_y, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
+                    previous_y = current_y;
                 }
             }
-            this->window.renderModdedTexture(this->fella_texture, {this->fella_box.getX1(), this->fella_box.getY1(), this->fella_box.getW(), this->fella_box.getH()});
+            this->window.render_modded_texture(this->fella_texture, {this->fella_box.get_x1(), this->fella_box.get_y1(), this->fella_box.get_width(), this->fella_box.get_height()});
         }
-    
+
     public:
         projectile_and_movement_demo() : bengine::loop("Projectile Trajectory and Movement Demo", 1280, 720, SDL_WINDOW_SHOWN, IMG_INIT_PNG, false) {
-            bengine::coordinate_2d<double>::set_reference_point(bengine::coordinate_2d<double>(this->window.getWidth() / 2, this->window.getHeight() / 2));
+            bengine::coordinate_2d<double>::set_reference_point(bengine::coordinate_2d<double>(this->window.get_width() / 2, this->window.get_height() / 2));
             this->fella_position = bengine::coordinate_2d<double>::get_reference_point();
-            this->fella_box = bengine::clickRectangle(this->fella_position.get_x_pos() - this->fella_radius, this->fella_position.get_y_pos() - this->fella_radius, this->fella_position.get_x_pos() + this->fella_radius, this->fella_position.get_y_pos() + this->fella_radius);
+            this->fella_box = bengine::click_rectangle(this->fella_position.get_x_pos() - this->fella_radius, this->fella_position.get_y_pos() - this->fella_radius, this->fella_position.get_x_pos() + this->fella_radius, this->fella_position.get_y_pos() + this->fella_radius);
         }
 };
 
@@ -358,24 +354,6 @@ int main() {
     p1 *= p2;
     std::cout << p1.to_string();
     std::cout << p2.to_string();
-
-    // throwAngle = kmtcs::launchAngle<double>(MousePos.x - pos.getX(), MousePos.y - pos.getY(), strength, true);
-    // if (!std::isnan(throwAngle)) {
-    //     strengthComps = breakVector<double>(strength, throwAngle);
-
-    //     double dx = 0.05;
-    //     double cx = 0;
-    //     double cy = 0;
-    //     double nx = 0;
-    //     double ny = 0;
-    //     for (double i = 0; i < (MousePos.x - pos.getX()) / strengthComps.first; i += dx) {
-    //         nx += dx;
-    //         ny = -0.5 * Constants.g * nx * nx + strengthComps.second * nx;
-    //         Window.drawLine(dst.x + cx * strengthComps.first, dst.y + cy, dst.x + nx * strengthComps.first, dst.y + ny, PresetColors[COLOR_RED]);
-    //         cx = nx;
-    //         cy = ny;
-    //     }
-    // }       
 
     return 0; 
 }
