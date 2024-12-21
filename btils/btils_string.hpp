@@ -5,16 +5,18 @@
 #include <string>
 
 namespace btils {
-    /** Convert an arithmetic data type to an std::string with some extra formatting for floating-point types
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a string
-     * @returns An std::string where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
+    /** Convert an arithmetic data type to an std::string; trailing zeros and decimals are omitted from floating-point conversions
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into a string
+     * \returns An std::string where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
      */
-    template <typename ArithType> std::string toString(const ArithType &input) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
+    template <class type> std::string to_string(const type &input) {
+        static_assert(std::is_arithmetic<type>::value, "type must be an arithmetic type");
 
-        // std::to_string() is acceptable for integral types, floating point types are where the formatting is needed
-        if (std::is_integral<ArithType>::value) {return std::to_string(input);}
+        // std::to_string() is acceptable for anything other than floating-point types
+        if (std::is_integral<type>::value) {
+            return std::to_string(input);
+        }
 
         std::string output = std::to_string(input);
         // Remove the last character if it is either a zero or a decimal
@@ -29,77 +31,79 @@ namespace btils {
         return output;
     }
 
-    /** Convert an arithmetic data type to an std::string with some extra formatting
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a string
-     * @param alwaysIncludeSign Whether to include a positive sign if the input is positive or not
-     * @returns An std::string where each character represents a part of the input and also beginning with either a positive or negative sign; trailing zeros and decimals are omitted from floating-point conversions
+    /** Convert an arithmetic data type to an std::string while having the ability to specify sign; trailing zeros and decimals are omitted from floating-point conversions
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into a string
+     * \param always_include_sign Whether to include a positive sign if the input is positive or not (a negative sign will be included regardless of the value of this parameter)
+     * \returns An std::string where each character represents a part of the input (and might also specifically include a sign); trailing zeros and decimals are omitted from floating-point conversions
      */
-    template <typename ArithType> std::string toString(const ArithType &input, const bool alwaysIncludeSign) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return (alwaysIncludeSign && input >= 0 ? "+" : "") + btils::toString<ArithType>(input);
+    template <class type> std::string to_string(const type &input, const bool always_include_sign) {
+        static_assert(std::is_arithmetic<type>::value, "type must be an arithmetic type");
+        return (always_include_sign && input >= 0 ? "+" : "") + btils::to_string<type>(input);
     }
 
     /** Convert an arithmetic data type to an std::string with extra leading/trailing zeros if specified
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a string
-     * @param leftDigits The minimum amount of digits that will be to the left of the decimal; metric reached by adding leading zeros
-     * @param rightDigits The minimum amount of digits that will be to the right of the decimal; metric reached by adding trailing zeros
-     * @param alwaysIncludeSign Whether to include a positive sign if the input is positive or not (sign counts as a 'left digit')
-     * @returns An std::string where each character represents a part of the input and also beginning with either a positive or negatie sign; leading and trailing zeros are also included in order to meet certain parameters
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into a string
+     * \param left_digits The minimum amount of digits that will be to the left of the decimal (can be exceeded depending on input value); reached by adding leading zeros
+     * \param right_digits The minimum amount of digits that will be to the right of the decimal (can be exceeded depending on input value); reached by adding trailing zeros
+     * \returns An std::string where each character represents a part of the input; leading and trailing zeros are also included in order to meet certain requirements
      */
-    template <typename ArithType> std::string tstr_AddZeros(const ArithType &input, const unsigned long int &leftDigits, const unsigned long int &rightDigits, const bool &alwaysIncludeSign) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        std::string output = btils::toString<ArithType>(input, alwaysIncludeSign);
-        const unsigned long int decimalPos = output.find('.');
-        const unsigned long int before = decimalPos == std::string::npos ? output.length() : decimalPos, after = decimalPos == std::string::npos ? 0 : output.length() - before - 1;
-        const bool insertPos = alwaysIncludeSign || input < 0;
+    template <class type> std::string to_string_with_added_zeros(const type &input, const unsigned long int &left_digits, const unsigned long int &right_digits) {
+        static_assert(std::is_arithmetic<type>::value, "type must be an arithmetic type");
+        std::string output = btils::to_string<type>(input);
+        const unsigned long int decimal_index = output.find('.');
+        const unsigned long int left_length = decimal_index == std::string::npos ? output.length() : decimal_index;
+        const unsigned long int right_length = decimal_index == std::string::npos ? 0 : output.length() - left_length - 1;
+        const bool insert_position = input < 0;
 
         // Add on the leading zeros
-        for (unsigned long int i = before; i < leftDigits; i++) {
-            output.insert(insertPos, "0");
+        for (unsigned long int i = left_length; i < left_digits; i++) {
+            output.insert(insert_position, "0");
         }
         // Return early if no trailing zeros are needed
-        if (rightDigits == 0) {return output;}
+        if (right_digits == 0) {
+            return output;
+        }
 
         // Add a decimal place if it is missing
-        if (decimalPos == std::string::npos) {output += ".";}
+        if (decimal_index == std::string::npos) {
+            output += ".";
+        }
         // Add on the trailing zeros
-        for (unsigned long int i = after; i < rightDigits; i++) {
+        for (unsigned long int i = right_length; i < right_digits; i++) {
             output += '0';
         }
         return output;
     }
 
     /** Convert an arithmetic data type to an std::string with extra leading/trailing zeros if specified
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a string
-     * @param leftDigits The minimum amount of digits that will be to the left of the decimal; metric reached by adding leading zeros
-     * @param rightDigits The minimum amount of digits that will be to the right of the decimal; metric reached by adding trailing zeros
-     * @returns An std::string where each character represents a part of the input; leading and trailing zeros are also included in order to meet certain parameters
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into a string
+     * \param left_digits The minimum amount of digits that will be to the left of the decimal (can be exceeded depending on input value); reached by adding leading zeros
+     * \param right_digits The minimum amount of digits that will be to the right of the decimal (can be exceeded depending on input value); reached by adding trailing zeros
+     * \returns An std::string where each character represents a part of the input; leading and trailing zeros are also included in order to meet certain parameters
      */
-    template <typename ArithType> std::string tstr_AddZeros(const ArithType &input, const unsigned long int &leadingZeros, const unsigned long int &trailingZeros) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return btils::tstr_AddZeros<ArithType>(input, leadingZeros, trailingZeros, false);
+    template <class type> std::string to_string_with_added_zeros(const type &input, const unsigned long int &left_digits, const unsigned long int &right_digits, const bool &always_include_sign) {
+        return (always_include_sign && input >= 0 ? "+" : "") + btils::to_string_with_added_zeros<type>(input, left_digits, right_digits);
     }
 
     /** Convert an arithmetic data type to an std::string with a specified minimum length
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a string
-     * @param length The minimum length of the output std::string (reached using leading/trailing zeros)
-     * @param append Whether to append zeros (trailing zeros) or not (leading zeros) in order to reach the minimum length
-     * @param alwaysIncludeSign Whether to include a positive sign if the input is positive or not (sign contributes to the desired length)
-     * @returns An std::string where each character represents a part of the input and also beginning with either a positive or negatie sign; leading or trailing zeros are included to reach a specified minimum string length
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into a string
+     * \param length The minimum length of the output std::string (reached using leading/trailing zeros)
+     * \param add_leading_zeros Whether to add leading zeros or not (trailing zeros) in order to reach the minimum length
+     * \returns An std::string where each character represents a part of the input and also beginning with either a positive or negatie sign; leading or trailing zeros are included to reach a specified minimum string length
      */
-    template <typename ArithType> std::string tstr_Length(const ArithType &input, const unsigned long int &length, const bool &append, const bool &alwaysIncludeSign) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        std::string output = btils::toString<ArithType>(input);
+    template <class type> std::string to_string_with_target_length(const type &input, const unsigned long int &length, const bool &add_leading_zeros) {
+        static_assert(std::is_arithmetic<type>::value, "type must be an arithmetic type");
+        std::string output = btils::to_string<type>(input);
 
         // Adding leading zeros until the desired length is reached
-        if (!append) {
-            const bool insertPos = alwaysIncludeSign || input < 0;
+        if (add_leading_zeros) {
+            const bool insert_position = input < 0;
             while (output.length() < length) {
-                output.insert(insertPos, "0");
+                output.insert(insert_position, "0");
             }
             return output;
         }
@@ -107,7 +111,7 @@ namespace btils {
         if (output.find('.') == std::string::npos) {
             // If the output would exceed the desired length by adding on a '.0', then a leading zero is added instead
             if (output.length() >= length - 1) {
-                output.insert(alwaysIncludeSign || input < 0, "0");
+                output.insert(input < 0, "0");
                 return output;
             }
             output += ".0";
@@ -121,67 +125,66 @@ namespace btils {
     }
 
     /** Convert an arithmetic data type to an std::string with a specified minimum length
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a string
-     * @param length The minimum length of the output std::string (reached using leading/trailing zeros)
-     * @param append Whether to append zeros (trailing zeros) or not (leading zeros) in order to reach the minimum length
-     * @returns An std::string where each character represents a part of the input; leading or trailing zeros are included to reach a specified minimum string length
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into a string
+     * \param length The minimum length of the output std::string (reached using leading/trailing zeros)
+     * \param add_leading_zeros Whether to add leading zeros (true) or add trailing zeros (false) to reach the minimum length
+     * \param always_include_sign Whether to include a positive sign if the input is positive or not (sign contributes to the desired length)
+     * \returns An std::string where each character represents a part of the input; leading or trailing zeros are included to reach a specified minimum string length
      */
-    template <typename ArithType> std::string tstr_Length(const ArithType &input, const unsigned long int &length, const bool &append) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        return btils::tstr_Length<ArithType>(input, length, append, false);
+    template <class type> std::string to_string_with_target_length(const type &input, const unsigned long int &length, const bool &add_leading_zeros, const bool &always_include_sign) {
+        return (always_include_sign && input >= 0 ? "+" : "") + btils::to_string_with_target_length<type>(input, length, add_leading_zeros);
     }
 
-    /** Convert an arithmetic data type to an std::u16string making use of the btils::toString() function
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a u16string
-     * @returns An std::u16string where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
+    /** Convert an arithmetic data type to an std::u16string making use of the btils::to_string() function
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into an std::u16string
+     * \returns An std::u16string where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
      */
-    template <typename ArithType> std::u16string to_u16string(const ArithType &input) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        std::string str = btils::toString<ArithType>(input);
+    template <class type> std::u16string to_u16string(const type &input) {
+        const std::string str = btils::to_string<type>(input);
         return {str.begin(), str.end()};
     }
-
-    /** Convert an arithmetic data type to an std::u32string making use of the btils::toString() function
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a u32string
-     * @returns An std::u32string where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
+    /** Convert an arithmetic data type to an std::u32string making use of the btils::to_string() function
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into an std::u32string
+     * \returns An std::u32string where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
      */
-    template <typename ArithType> std::u32string to_u32string(const ArithType &input) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        std::string str = btils::toString<ArithType>(input);
+    template <class type> std::u32string to_u32string(const type &input) {
+        const std::string str = btils::to_string<type>(input);
         return {str.begin(), str.end()};
     }
-
-    /** Convert an arithmetic data type to an std::wstring making use of the btils::toString() function
-     * @tparam ArithType An arithmetic data type to convert from
-     * @param input The arithmetic value to convert into a wstring
-     * @returns An std::wstring where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
+    /** Convert an arithmetic data type to an std::wstring making use of the btils::to_string() function
+     * \tparam type An arithmetic data type to convert from
+     * \param input The arithmetic value to convert into an std::wstring
+     * \returns An std::wstring where each character represents a part of the input; trailing zeros and decimals are omitted from floating-point conversions
      */
-    template <typename ArithType> std::wstring to_wstring(const ArithType &input) {
-        static_assert(std::is_arithmetic<ArithType>::value, "ArithType must be an arithmetic type");
-        std::string str = btils::toString<ArithType>(input);
+    template <class type> std::wstring to_wstring(const type &input) {
+        const std::string str = btils::to_string<type>(input);
         return {str.begin(), str.end()};
     }
 
     /** Convert an std::string to an std::u16string
-     * @param input The std::string to convert from
-     * @returns An std::u16string derived from the inputted std::string
+     * \param input The std::string to convert from
+     * \returns An std::u16string derived from the inputted std::string
      */
-    template <> std::u16string to_u16string<std::string>(const std::string &input) {return {input.begin(), input.end()};}
-
+    template <> std::u16string to_u16string<std::string>(const std::string &input) {
+        return {input.begin(), input.end()};
+    }
     /** Convert an std::string to an std::u32string
-     * @param input The std::string to convert from
-     * @returns An std::u32string derived from the inputted std::string
+     * \param input The std::string to convert from
+     * \returns An std::u32string derived from the inputted std::string
      */
-    template <> std::u32string to_u32string<std::string>(const std::string &input) {return {input.begin(), input.end()};}
-
+    template <> std::u32string to_u32string<std::string>(const std::string &input) {
+        return {input.begin(), input.end()};
+    }
     /** Convert an std::string to an std::wstring
-     * @param input The std::string to convert from
-     * @returns An std::wstring derived from the inputted std::string
+     * \param input The std::string to convert from
+     * \returns An std::wstring derived from the inputted std::string
      */
-    template <> std::wstring to_wstring<std::string>(const std::string &input) {return {input.begin(), input.end()};}
+    template <> std::wstring to_wstring<std::string>(const std::string &input) {
+        return {input.begin(), input.end()};
+    }
 }
 
 #endif // BTILS_STRING_hpp

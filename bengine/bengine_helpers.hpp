@@ -7,337 +7,310 @@
 #include <cmath>
 
 namespace bengine {
-    /// @brief A class to contain dimensional data relating to a grid of cells within a set zone; primarily used to calculate and store the size of said cells
-    class paddedGrid {
+    // \brief A class to contain dimensional data relating to a grid of cells within a set zone; primarily used to calculate and store the size of said cells
+    class padded_grid {
         public:
             enum class alignments : const unsigned char {
-                ALIGN_TOP_LFT = 0,    // Top-Left
-                ALIGN_TOP_CTR = 1,    // Top-Center
-                ALIGN_TOP_RHT = 2,    // Top-Right
-                ALIGN_CTR_LFT = 3,    // Center-Left
-                ALIGN_CTR_CTR = 4,    // Center-Center
-                ALIGN_CTR_RHT = 5,    // Center-Right
-                ALIGN_BTM_LFT = 6,    // Bottom-Left
-                ALIGN_BTM_CTR = 7,    // Bottom-Center
-                ALIGN_BTM_RHT = 8     // Bottom-Right
+                TOP_LEFT = 0,
+                TOP_CENTER = 1,
+                TOP_RIGHT = 2,
+                CENTER_LEFT = 3,
+                CENTER_CENTER = 4,
+                CENTER_RIGHT = 5,
+                BOTTOM_LEFT = 6,
+                BOTTOM_CENTER = 7,
+                BOTTOM_RIGHT = 8
             };
 
         private:
-            /// @brief The left-right and top-bottom alignment of the grid within the given zone; relates the top-left corner of the zone to the top-left corner of the top-left cell
-            unsigned char alignment = static_cast<unsigned char>(alignments::ALIGN_CTR_CTR);
-            /// @brief Whether the cells are square or not
-            bool squareCells = false;
+            // \brief The left-right and top-bottom alignment of the grid within the given zone; relates the top-left corner of the zone to the top-left corner of the top-left cell
+            unsigned char alignment = static_cast<unsigned char>(alignments::CENTER_CENTER);
+            // \brief Whether the cells are square or not
+            bool square_cells = false;
 
-            /// @brief The width of the zone that the grid inhabits
+            // \brief The width of the zone that the grid inhabits
             unsigned int width = 0;
-            /// @brief The height of the zone that the grid inhabits
+            // \brief The height of the zone that the grid inhabits
             unsigned int height = 0;
-            /// @brief The amount of columns that the grid has
+            // \brief The amount of columns that the grid has
             unsigned short cols = 0;
-            /// @brief The amount of rows that the grid has
+            // \brief The amount of rows that the grid has
             unsigned short rows = 0;
-            /// @brief The horizontal distance between cells
-            unsigned short gapWidth = 0;
-            /// @brief The vertical distance between cells
-            unsigned short gapHeight = 0;
+            // \brief The horizontal distance between cells
+            unsigned short gap_width = 0;
+            // \brief The vertical distance between cells
+            unsigned short gap_height = 0;
 
-            /// @brief The width of the area that the cells actually inhabit
-            unsigned int usableWidth = 0;
-            /// @brief The height of the area that the cells actually inhabit
-            unsigned int usableHeight = 0;
-            /// @brief The width of each cell
-            unsigned int cellWidth = 0;
-            /// @brief The height of each cell
-            unsigned int cellHeight = 0;
-            /// @brief The x-offset of the top-left cell's top-left corner from the zone's top-left corner
-            unsigned short xOffset = 0;
-            /// @brief The y-offset of the top-left cell's top-left corner from the zone's top-left corner
-            unsigned short yOffset = 0;
+            // \brief The width of the area that the cells actually inhabit
+            unsigned int usable_width = 0;
+            // \brief The height of the area that the cells actually inhabit
+            unsigned int usable_height = 0;
+            // \brief The width of each cell
+            unsigned int cell_width = 0;
+            // \brief The height of each cell
+            unsigned int cell_height = 0;
+            // \brief The x-offset of the top-left cell's top-left corner from the zone's top-left corner
+            unsigned short x_offset = 0;
+            // \brief The y-offset of the top-left cell's top-left corner from the zone's top-left corner
+            unsigned short y_offset = 0;
 
-            /// @brief Update all of the "output" values for the padded grid
+            // \brief Update all of the "output" values for the padded grid
             void update() {
-                this->usableWidth = this->width - this->gapWidth * (this->cols - 1);
-                this->usableHeight = this->height - this->gapHeight * (this->rows - 1);
-                this->cellWidth = this->usableWidth / this->cols;
-                this->cellHeight = this->usableHeight / this->rows;
-                
+                this->usable_width = this->width - this->gap_width * (this->cols - 1);
+                this->usable_height = this->height - this->gap_height * (this->rows - 1);
+                this->cell_width = this->usable_width / this->cols;
+                this->cell_height = this->usable_height / this->rows;
+
                 // When using square cells, both the cell's width and height are set to the smaller dimension so that the cells don't escape the zone
-                if (this->squareCells) {
-                    if (this->cellWidth < this->cellHeight) {
-                        this->cellHeight = this->cellWidth;
+                if (this->square_cells) {
+                    if (this->cell_width < this->cell_height) {
+                        this->cell_height = this->cell_width;
                     } else {
-                        this->cellWidth = this->cellHeight;
+                        this->cell_width = this->cell_height;
                     }
                 }
 
                 if (this->alignment % 3 == 0) {
-                    this->xOffset = 0;
+                    this->x_offset = 0;
                 } else if (this->alignment % 3 == 1) {
-                    this->xOffset = (this->usableWidth - this->cellWidth * this->cols) / 2;
+                    this->x_offset = (this->usable_width - this->cell_width * this->cols) / 2;
                 } else {
-                    this->xOffset = this->usableWidth - this->cellWidth * this->cols;
+                    this->x_offset = this->usable_width - this->cell_width * this->cols;
                 }
                 if (this->alignment <= 2) {
-                    this->yOffset = 0;
+                    this->y_offset = 0;
                 } else if (this->alignment <= 5) {
-                    this->yOffset = (this->usableHeight - this->cellHeight * this->rows) / 2;
+                    this->y_offset = (this->usable_height - this->cell_height * this->rows) / 2;
                 } else {
-                    this->yOffset = this->usableWidth - this->cellWidth * this->cols;
+                    this->y_offset = this->usable_width - this->cell_width * this->cols;
                 }
             }
 
         public:
-            /** bengine::paddedGrid constructor
-             * @param width The width of the zone that the grid will inhabit
-             * @param height The height of the zone that the grid will inhabit
-             * @param cols The amount of columns that the grid will have
-             * @param rows The amount of rows that the grid will have
-             * @param gapWidth The amount of horiztonal space between cells
-             * @param gapHeight The amount of vertical space between cells
-             * @param alignment The left-right and top-bottom alignment of the grid within the given zone; relates the top-left corner of the zone to the top-left corner of the top-left cell
+            /** bengine::padded_grid constructor
+             * \param width The width of the zone that the grid will inhabit
+             * \param height The height of the zone that the grid will inhabit
+             * \param cols The amount of columns that the grid will have
+             * \param rows The amount of rows that the grid will have
+             * \param gap_width The amount of horiztonal space between cells
+             * \param gap_height The amount of vertical space between cells
+             * \param alignment The left-right and top-bottom alignment of the grid within the given zone; relates the top-left corner of the zone to the top-left corner of the top-left cell
              */
-            paddedGrid(const unsigned int &width, const unsigned int &height, const unsigned short &cols, const unsigned short &rows, const unsigned short &gapWidth, const unsigned short &gapHeight, const alignments &alignment = alignments::ALIGN_CTR_CTR) : width(width), height(height), cols(cols), rows(rows), gapWidth(gapWidth), gapHeight(gapHeight) {
-                this->alignment = static_cast<unsigned char>(alignment) > static_cast<unsigned char>(alignments::ALIGN_BTM_RHT) ? static_cast<unsigned char>(alignments::ALIGN_CTR_CTR) : static_cast<unsigned char>(alignment);
+            padded_grid(const unsigned int &width, const unsigned int &height, const unsigned short &cols, const unsigned short &rows, const unsigned short &gap_width, const unsigned short &gap_height, const alignments &alignment = alignments::CENTER_CENTER) : width(width), height(height), cols(cols), rows(rows), gap_width(gap_width), gap_height(gap_height) {
+                this->alignment = static_cast<unsigned char>(alignment) > static_cast<unsigned char>(alignments::BOTTOM_RIGHT) ? static_cast<unsigned char>(alignments::CENTER_CENTER) : static_cast<unsigned char>(alignment);
                 this->update();
             }
-            /// @brief bengine::paddedGrid deconstructor
-            ~paddedGrid() {}
+            // \brief bengine::padded_grid deconstructor
+            ~padded_grid() {}
 
             /** Get the alignment of the padded grid
-             * @returns The alignment of the grid
+             * \returns The alignment of the grid
              */
-            unsigned char getAlignment() const {
+            unsigned char get_alignment() const {
                 return this->alignment;
             }
             /** Set the alignmnet for the padded grid
-             * @param alignment The new alignment for the padded grid
-             * @returns The old alignment for the padded grid
+             * \param alignment The new alignment for the padded grid
              */
-            unsigned char setAlignment(const alignments &alignment) {
-                const unsigned char output = this->alignment;
-                this->alignment = static_cast<unsigned char>(alignment) > static_cast<unsigned char>(alignments::ALIGN_BTM_RHT) ? static_cast<unsigned char>(alignments::ALIGN_CTR_CTR) : static_cast<unsigned char>(alignment);
-                return output;
+            void set_alignment(const alignments &alignment) {
+                this->alignment = static_cast<unsigned char>(alignment) > static_cast<unsigned char>(alignments::BOTTOM_RIGHT) ? static_cast<unsigned char>(alignments::CENTER_CENTER) : static_cast<unsigned char>(alignment);
+                this->update();
             }
 
             /** Check if the grid uses square cells or not
-             * @returns Whether the grid uses square cells or not
+             * \returns Whether the grid uses square cells or not
              */
-            bool hasSquareCells() const {
-                return this->squareCells;
-            }
-            /** Toggle whether the grid uses square cells or not
-             * @returns Whether the grid used to use square cells or not
-             */
-            bool toggleSquareCells() {
-                const bool output = this->squareCells;
-                this->squareCells = !this->squareCells;
-                this->update();
-                return output;
+            bool has_square_cells() const {
+                return this->square_cells;
             }
             /** Set whether the grid should use square cells or not
-             * @param state Whether the grid should use square cells or not
-             * @returns Whether the grid used to use square cells or not
+             * \param state Whether the grid should use square cells or not
              */
-            bool setCellSquareness(const bool &state = false) {
-                const bool output = this->squareCells;
-                this->squareCells = state;
+            void set_cell_squareness(const bool &state = false) {
+                this->square_cells = state;
                 this->update();
-                return output;
+            }
+            // \brief Toggle whether the grid uses square cells or not
+            void toggle_cell_squareness() {
+                this->square_cells = !this->square_cells;
+                this->update();
             }
 
             /** Get the width of the grid's zone
-             * @returns The width of the grid's zone
+             * \returns The width of the grid's zone
              */
-            unsigned int getWidth() const {
+            unsigned int get_width() const {
                 return this->width;
             }
             /** Get the height of the grid's zone
-             * @returns The height of the grid's zone
+             * \returns The height of the grid's zone
              */
-            unsigned int getHeight() const {
+            unsigned int get_height() const {
                 return this->height;
             }
             /** Get the amount of columns that the grid has
-             * @returns The amount of columns that the grid has
+             * \returns The amount of columns that the grid has
              */
-            unsigned short getCols() const {
+            unsigned short get_cols() const {
                 return this->cols;
             }
             /** Get the amount of rows that the grid has
-             * @returns The amount of rows that the grid has
+             * \returns The amount of rows that the grid has
              */
-            unsigned short getRows() const {
+            unsigned short get_rows() const {
                 return this->rows;
             }
             /** Get the horizontal distance between each cell
-             * @returns The horizontal distance between each cell
+             * \returns The horizontal distance between each cell
              */
-            unsigned short getGapWidth() const {
-                return this->gapWidth;
+            unsigned short get_gap_width() const {
+                return this->gap_width;
             }
             /** Get the vertical distance between each cell
-             * @returns The vertical distance between each cell
+             * \returns The vertical distance between each cell
              */
-            unsigned short getGapHeight() const {
-                return this->gapHeight;
+            unsigned short get_gap_height() const {
+                return this->gap_height;
             }
 
             /** Set the width of the zone that the grid will inhabit
-             * @param width The new width of the zone
-             * @returns The old width of the zone
+             * \param width The new width of the zone
              */
-            unsigned int setWidth(const unsigned int &width) {
-                const int output = this->width;
+            void set_width(const unsigned int &width) {
                 this->width = width;
                 this->update();
-                return output;
             }
             /** Set the height of the zone that the grid will inhabit
-             * @param width The new height of the zone
-             * @returns The old height of the zone
+             * \param width The new height of the zone
              */
-            unsigned int setHeight(const unsigned int &height) {
-                const int output = this->height;
+            void set_height(const unsigned int &height) {
                 this->height = height;
                 this->update();
-                return output;
             }
             /** Set the amount of the columns that the grid will have
-             * @param cols The new amount of columns
-             * @returns The old amount of columns
+             * \param cols The new amount of columns
              */
-            unsigned short setCols(const unsigned short &cols) {
-                const unsigned short output = this->cols;
+            void set_cols(const unsigned short &cols) {
                 this->cols = cols;
                 this->update();
-                return output;
             }
             /** Set the amount of the rows that the grid will have
-             * @param cols The new amount of rows
-             * @returns The old amount of rows
+             * \param cols The new amount of rows
              */
-            unsigned short setRows(const unsigned short &rows) {
-                const unsigned short output = this->rows;
+            void set_rows(const unsigned short &rows) {
                 this->rows = rows;
                 this->update();
-                return output;
             }
             /** Set the horizontal distance between cells
-             * @param gapWidth The new horizontal distance between cells
-             * @returns The old horiztonal distance between cells
+             * \param gap_width The new horizontal distance between cells
              */
-            unsigned short setGapWidth(const unsigned short &gapWidth) {
-                const unsigned short output = this->gapWidth;
-                this->gapWidth = gapWidth;
+            void set_gap_width(const unsigned short &gap_width) {
+                this->gap_width = gap_width;
                 this->update();
-                return output;
             }
             /** Set the vertical distance between cells
-             * @param gapWidth The new vertical distance between cells
-             * @returns The old vertical distance between cells
+             * \param gap_width The new vertical distance between cells
              */
-            unsigned short setGapHeight(const unsigned short &gapHeight) {
-                const unsigned short output = this->gapHeight;
-                this->gapHeight = gapHeight;
+            void set_gap_height(const unsigned short &gap_height) {
+                this->gap_height = gap_height;
                 this->update();
-                return output;
             }
 
             /** Get the width of the area that the cells inhabit
-             * @returns The width of the area that the cells inhabit
+             * \returns The width of the area that the cells inhabit
              */
-            unsigned int getUsableWidth() const {
-                return this->usableWidth;
+            unsigned int get_usable_width() const {
+                return this->usable_width;
             }
             /** Get the height of the area that the cells inhabit
-             * @returns The height of the area that the cells inhabit
+             * \returns The height of the area that the cells inhabit
              */
-            unsigned int getUsableHeight() const {
-                return this->usableHeight;
+            unsigned int get_usable_height() const {
+                return this->usable_height;
             }
             /** Get the width of each cell
-             * @returns The width of each cell
+             * \returns The width of each cell
              */
-            unsigned int getCellWidth() const {
-                return this->cellWidth;
+            unsigned int get_cell_width() const {
+                return this->cell_width;
             }
             /** Get the height of each cell
-             * @returns The height of each cell
+             * \returns The height of each cell
              */
-            unsigned int getCellHeight() const {
-                return this->cellHeight;
+            unsigned int get_cell_height() const {
+                return this->cell_height;
             }
             /** Get the horizontal distance between the top-left corner of the zone and the top-left corner of the top-left cell in the grid
-             * @returns The horizontal distance between the top-left corner of the zone and the top-left corner of the top-left cell in the grid
+             * \returns The horizontal distance between the top-left corner of the zone and the top-left corner of the top-left cell in the grid
              */
-            unsigned short getXOffset() const {
-                return this->xOffset;
+            unsigned short get_x_offset() const {
+                return this->x_offset;
             }
             /** Get the vertical distance between the top-left corner of the zone and the top-left corner of the top-left cell in the grid
-             * @returns The vertical distance between the top-left corner of the zone and the top-left corner of the top-left cell in the grid
+             * \returns The vertical distance between the top-left corner of the zone and the top-left corner of the top-left cell in the grid
              */
-            unsigned short getYOffset() const {
-                return this->yOffset;
+            unsigned short get_y_offset() const {
+                return this->y_offset;
             }
     };
 
-    /// @brief A class containing useful functions designed for 4/8-bit autotiling
+    // \brief A class containing useful functions designed for 4/8-bit autotiling
     class autotiler {
         private:
-            /// @brief Key containing the 47 bitmasks relevant to 8-bit autotiling
-            const static unsigned char key[47];
+            // \brief Key containing the 47 bitmasks relevant to 8-bit autotiling
+            const static unsigned char eight_bit_mask_key[47];
 
-            /// @brief List of unicode characters used in terminal-based 4-bit autotiling
-            const static char* fourBitUnicode[32];
-            /// @brief List of unicode characters used in terminal-based 8-bit autotiling
-            const static char* eightBitUnicode[94];
+            // \brief List of unicode characters used in terminal-based 4-bit autotiling
+            const static char* four_bit_unicode_key[32];
+            // \brief List of unicode characters used in terminal-based 8-bit autotiling
+            const static char* eight_bit_unicode_key[94];
 
             /** Calculate the 4-bit mask value for a given tile within a grid
              * 
              * Any bounds-checking needs to happen outside of this function
              * 
-             * @param grid The grid containing 4-bit mask values
-             * @param x The x-position (col) of the tile to update within the grid
-             * @param y The y-position (row) of the tile to update within the grid
-             * @param solidBoundaries Whether to consider the edges of the grid as full or empty tiles
-             * @returns The updated value of the indicated tile or -1 if the tile is is already -1
+             * \param grid The grid containing 4-bit mask values
+             * \param x The x-position (col) of the tile to update within the grid
+             * \param y The y-position (row) of the tile to update within the grid
+             * \param use_solid_boundaries Whether to consider the edges of the grid as full or empty tiles
+             * \returns The updated value of the indicated tile or -1 if the tile is is already -1
              */
-            static char calc4BitMaskValue(const std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &solidBoundaries = false) {
+            static char calculate_4_bit_mask(const std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &use_solid_boundaries = false) {
                 // Check to see if the current tile would even display anything
                 if (grid.at(y).at(x) < 0) {
                     return -1;
                 }
-                return (y > 0 ? (grid.at(y - 1).at(x) >= 0) : solidBoundaries) + (x > 0 ? (grid.at(y).at(x - 1) >= 0) : solidBoundaries) * 2 + (x < grid.at(0).size() - 1 ? (grid.at(y).at(x + 1) >= 0) : solidBoundaries) * 4 + (y < grid.size() - 1 ? (grid.at(y + 1).at(x) >= 0) : solidBoundaries) * 8;
+                return (y > 0 ? (grid.at(y - 1).at(x) >= 0) : use_solid_boundaries) + (x > 0 ? (grid.at(y).at(x - 1) >= 0) : use_solid_boundaries) * 2 + (x < grid.at(0).size() - 1 ? (grid.at(y).at(x + 1) >= 0) : use_solid_boundaries) * 4 + (y < grid.size() - 1 ? (grid.at(y + 1).at(x) >= 0) : use_solid_boundaries) * 8;
             }
 
             /** Calculate the 8-bit mask value for a given tile within a grid
              * 
              * Any bounds-checking needs to happen outside of this function
              * 
-             * @param grid The grid containing 8-bit mask values
-             * @param x The x-position (col) of the tile to update within the grid
-             * @param y The y-position (row) of the tile to update within the grid
-             * @param solidBoundaries Whether to consider the edges of the grid as full or empty tiles
-             * @returns The updated value of the indicated tile or -1 if the tile is is already -1
+             * \param grid The grid containing 8-bit mask values
+             * \param x The x-position (col) of the tile to update within the grid
+             * \param y The y-position (row) of the tile to update within the grid
+             * \param use_solid_boundaries Whether to consider the edges of the grid as full or empty tiles
+             * \returns The updated value of the indicated tile or -1 if the tile is is already -1
              */
-            static char calc8BitMaskValue(const std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &solidBoundaries = false, const bool &doBoundsCheck = false) {
+            static char calculate_8_bit_mask(const std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &use_solid_boundaries = false) {
                 // Check to see if the current tile would even display anything
                 if (grid.at(y).at(x) < 0) {
                     return -1;
                 }
 
-                const bool tl = y > 0 && x > 0 ? (grid.at(y - 1).at(x - 1) >= 0) : solidBoundaries;
-                const bool t = y > 0 ? (grid.at(y - 1).at(x) >= 0) : solidBoundaries;
-                const bool tr = y > 0 && x < grid.at(0).size() - 1 ? (grid.at(y - 1).at(x + 1) >= 0) : solidBoundaries;
-                const bool l = x > 0 ? (grid.at(y).at(x - 1) >= 0) : solidBoundaries;
-                const bool r = x < grid.at(0).size() - 1 ? (grid.at(y).at(x + 1) >= 0) : solidBoundaries;
-                const bool bl = y < grid.size() - 1 && x > 0 ? (grid.at(y + 1).at(x - 1) >= 0) : solidBoundaries;
-                const bool b = y < grid.size() - 1 ? (grid.at(y + 1).at(x) >= 0) : solidBoundaries;
-                const bool br = y < grid.size() - 1 && x < grid.at(0).size() - 1 ? (grid.at(y + 1).at(x + 1) >= 0) : solidBoundaries;
+                const bool tl = y > 0 && x > 0 ? (grid.at(y - 1).at(x - 1) >= 0) : use_solid_boundaries;
+                const bool t = y > 0 ? (grid.at(y - 1).at(x) >= 0) : use_solid_boundaries;
+                const bool tr = y > 0 && x < grid.at(0).size() - 1 ? (grid.at(y - 1).at(x + 1) >= 0) : use_solid_boundaries;
+                const bool l = x > 0 ? (grid.at(y).at(x - 1) >= 0) : use_solid_boundaries;
+                const bool r = x < grid.at(0).size() - 1 ? (grid.at(y).at(x + 1) >= 0) : use_solid_boundaries;
+                const bool bl = y < grid.size() - 1 && x > 0 ? (grid.at(y + 1).at(x - 1) >= 0) : use_solid_boundaries;
+                const bool b = y < grid.size() - 1 ? (grid.at(y + 1).at(x) >= 0) : use_solid_boundaries;
+                const bool br = y < grid.size() - 1 && x < grid.at(0).size() - 1 ? (grid.at(y + 1).at(x + 1) >= 0) : use_solid_boundaries;
 
-                const unsigned char maskVal = (tl && t && l) + t * 2 + (tr && t && r) * 4 + l * 8 + r * 16 + (bl && b && l) * 32 + b * 64 + (br && b && r) * 128;
+                const unsigned char mask = (tl && t && l) + t * 2 + (tr && t && r) * 4 + l * 8 + r * 16 + (bl && b && l) * 32 + b * 64 + (br && b && r) * 128;
                 for (unsigned char i = 0; i < 47; i++) {
-                    if (maskVal == bengine::autotiler::key[i]) {
+                    if (mask == bengine::autotiler::eight_bit_mask_key[i]) {
                         return i;
                     }
                 }
@@ -345,24 +318,24 @@ namespace bengine {
             }
 
         public:
-            /// @brief bengine::autoTiler constructor
+            // \brief bengine::autotiler constructor
             autotiler() {}
-            /// @brief bengine::autoTiler deconstructor
+            // \brief bengine::autotiler deconstructor
             ~autotiler() {}
 
             /** Change a tile and update surrounding ones in a 4-bit autotiling grid
-             * @param grid Grid of indexing values that dictate the source frame for the texture sheet
-             * @param x x-position of the changed tile in the grid
-             * @param y y-position of the changed tile in the grid
-             * @param addTile Whether to add or remove a tile in the indicated position
-             * @param solidBoundaries Whether to consider the edges of the grid as full or empty tiles
-             * @returns The value of the updated tile
+             * \param grid Grid of indexing values that dictate the source frame for the texture sheet
+             * \param x x-position of the changed tile in the grid
+             * \param y y-position of the changed tile in the grid
+             * \param state Whether to add or remove a tile in the indicated position
+             * \param use_solid_boundaries Whether to consider the edges of the grid as full or empty tiles
+             * \returns The value of the updated tile
              */
-            static char fourBit(std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &addTile = true, const bool &solidBoundaries = false) {
+            static char modify_4_bit_grid(std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &state = true, const bool &use_solid_boundaries = false) {
                 if (y >= grid.size() || x >= grid.at(0).size()) {
                     return -1;
                 }
-                grid[y][x] = addTile - 1;
+                grid[y][x] = state - 1;
 
                 for (char i = -1; i <= 1; i++) {
                     for (char j = -1; j <= 1; j++) {
@@ -375,24 +348,24 @@ namespace bengine {
                             continue;
                         }
                         // Update the mask value for the current tile
-                        grid[y + i][x + j] = bengine::autotiler::calc4BitMaskValue(grid, x + j, y + i, solidBoundaries);
+                        grid[y + i][x + j] = bengine::autotiler::calculate_4_bit_mask(grid, x + j, y + i, use_solid_boundaries);
                     }
                 }
                 return grid.at(y).at(x);
             }
             /** Change a tile and update surrounding ones in an 8-bit autotiling grid
-             * @param grid Grid of indexing values that dictate the source frame for the texture sheet
-             * @param x x-position of the changed tile in the grid
-             * @param y y-position of the changed tile in the grid
-             * @param addTile Whether to add or remove a tile in the indicated position
-             * @param solidBoundaries Whether to consider the edges of the grid as full or empty tiles
-             * @returns The value of the updated tile
+             * \param grid Grid of indexing values that dictate the source frame for the texture sheet
+             * \param x x-position of the changed tile in the grid
+             * \param y y-position of the changed tile in the grid
+             * \param state Whether to add or remove a tile in the indicated position
+             * \param use_solid_boundaries Whether to consider the edges of the grid as full or empty tiles
+             * \returns The value of the updated tile
              */
-            static char eightBit(std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &addTile = true, const bool &solidBoundaries = false) {
+            static char modify_8_bit_grid(std::vector<std::vector<char>> &grid, const unsigned long int &x, const unsigned long int &y, const bool &state = true, const bool &use_solid_boundaries = false) {
                 if (y >= grid.size() || x >= grid.at(0).size()) {
                     return -1;
                 }
-                grid[y][x] = addTile - 1;
+                grid[y][x] = state - 1;
 
                 for (char i = -1; i <= 1; i++) {
                     for (char j = -1; j <= 1; j++) {
@@ -401,18 +374,18 @@ namespace bengine {
                             continue;
                         }
                         // Update the mask value for the current tile
-                        grid[y + i][x + j] = bengine::autotiler::calc8BitMaskValue(grid, x + j, y + i, solidBoundaries);
+                        grid[y + i][x + j] = bengine::autotiler::calculate_8_bit_mask(grid, x + j, y + i, use_solid_boundaries);
                     }
                 }
                 return grid.at(y).at(x);
             }
 
             /** Populate a grid of full/empty tiles with appropriate 4-bit mask values
-             * @param grid The grid containing full (true) or empty (false) tiles to be populated
-             * @param solidBoundaries Whether to consider the borders of the grid to have full or empty tiles
-             * @returns A grid of the same dimensions as the input grid, but containing 4-bit mask values rather than boolean ones
+             * \param grid The grid containing full (true) or empty (false) tiles to be populated
+             * \param use_solid_boundaries Whether to consider the borders of the grid to have full or empty tiles
+             * \returns A grid of the same dimensions as the input grid, but containing 4-bit mask values rather than boolean ones
              */
-            static std::vector<std::vector<char>> populateGridFourBit(const std::vector<std::vector<bool>> &grid, const bool &solidBoundaries = false) {
+            static std::vector<std::vector<char>> populate_4_bit_grid(const std::vector<std::vector<bool>> &grid, const bool &use_solid_boundaries = false) {
                 std::vector<std::vector<char>> output;
                 for (std::size_t i = 0; i < grid.size(); i++) {
                     output.emplace_back();
@@ -422,18 +395,18 @@ namespace bengine {
                 }
                 for (std::size_t i = 0; i < grid.size(); i++) {
                     for (std::size_t j = 0; j < grid.at(i).size(); j++) {
-                        output[i][j] = bengine::autotiler::calc4BitMaskValue(output, j, i, false);
+                        output[i][j] = bengine::autotiler::calculate_4_bit_mask(output, j, i, false);
                     }
                 }
                 return output;
             }
 
             /** Populate a grid of full/empty tiles with appropriate 8-bit mask values
-             * @param grid The grid containing full (true) or empty (false) tiles to be populated
-             * @param solidBoundaries Whether to consider the borders of the grid to have full or empty tiles
-             * @returns A grid of the same dimensions as the input grid, but containing 8-bit mask values rather than boolean ones
+             * \param grid The grid containing full (true) or empty (false) tiles to be populated
+             * \param use_solid_boundaries Whether to consider the borders of the grid to have full or empty tiles
+             * \returns A grid of the same dimensions as the input grid, but containing 8-bit mask values rather than boolean ones
              */
-            static std::vector<std::vector<char>> populateGridEightBit(const std::vector<std::vector<bool>> &grid, const bool &solidBoundaries = false) {
+            static std::vector<std::vector<char>> populate_8_bit_grid(const std::vector<std::vector<bool>> &grid, const bool &use_solid_boundaries = false) {
                 std::vector<std::vector<char>> output;
                 for (std::size_t i = 0; i < grid.size(); i++) {
                     output.emplace_back();
@@ -443,23 +416,23 @@ namespace bengine {
                 }
                 for (std::size_t i = 0; i < grid.size(); i++) {
                     for (std::size_t j = 0; j < grid.at(i).size(); j++) {
-                        output[i][j] = bengine::autotiler::calc8BitMaskValue(output, j, i, false);
+                        output[i][j] = bengine::autotiler::calculate_8_bit_mask(output, j, i, false);
                     }
                 }
                 return output;
             }
 
             /** Print a grid of 4-bit mask values to iostream using unicode block element characters
-             * @param grid The grid of 4-bit mask values to print
+             * \param grid The grid of 4-bit mask values to print
              */
-            static void printFourBitGrid(const std::vector<std::vector<char>> &grid) {
+            static void print_4_bit_grid(const std::vector<std::vector<char>> &grid) {
                 for (std::size_t i = 0; i < grid.size(); i++) {
                     for (std::size_t j = 0; j < grid.at(i).size(); j++) {
                         if (grid.at(i).at(j) < 0) {
                             std::cout << "    ";
                             continue;
                         }
-                        std::cout << bengine::autotiler::fourBitUnicode[(unsigned char)grid.at(i).at(j)];
+                        std::cout << bengine::autotiler::four_bit_unicode_key[(unsigned char)grid.at(i).at(j)];
                     }
                     std::cout << "\n";
                     for (std::size_t j = 0; j < grid.at(i).size(); j++) {
@@ -467,23 +440,23 @@ namespace bengine {
                             std::cout << "    ";
                             continue;
                         }
-                        std::cout << bengine::autotiler::fourBitUnicode[(unsigned char)grid.at(i).at(j) + 16];
+                        std::cout << bengine::autotiler::four_bit_unicode_key[(unsigned char)grid.at(i).at(j) + 16];
                     }
                     std::cout << "\n";
                 }
             }
 
             /** Print a grid of 8-bit mask values to iostream using unicode block element characters
-             * @param grid The grid of 8-bit mask values to print
+             * \param grid The grid of 8-bit mask values to print
              */
-            static void printEightBitGrid(const std::vector<std::vector<char>> &grid) {
+            static void print_8_bit_grid(const std::vector<std::vector<char>> &grid) {
                 for (std::size_t i = 0; i < grid.size(); i++) {
                     for (std::size_t j = 0; j < grid.at(i).size(); j++) {
                         if (grid.at(i).at(j) < 0) {
                             std::cout << "    ";
                             continue;
                         }
-                        std::cout << bengine::autotiler::eightBitUnicode[(unsigned char)grid.at(i).at(j)];
+                        std::cout << bengine::autotiler::eight_bit_unicode_key[(unsigned char)grid.at(i).at(j)];
                     }
                     std::cout << "\n";
                     for (std::size_t j = 0; j < grid.at(i).size(); j++) {
@@ -491,18 +464,18 @@ namespace bengine {
                             std::cout << "    ";
                             continue;
                         }
-                        std::cout << bengine::autotiler::eightBitUnicode[(unsigned char)grid.at(i).at(j) + 47];
+                        std::cout << bengine::autotiler::eight_bit_unicode_key[(unsigned char)grid.at(i).at(j) + 47];
                     }
                     std::cout << "\n";
                 }
             }
     };
-    /// @brief Key containing the 47 bitmasks relevant to 8-bit autotiling
-    const unsigned char bengine::autotiler::key[47] = {0, 2, 8, 10, 11, 16, 18, 22, 24, 26, 27, 30, 31, 64, 66, 72, 74, 75, 80, 82, 86, 88, 90, 91, 94, 95, 104, 106, 107, 120, 122, 123, 126, 127, 208, 210, 214, 216, 218, 219, 222, 223, 248, 250, 251, 254, 255};
-    /// @brief List of unicode characters used in terminal-based 4-bit autotiling
-    const char* bengine::autotiler::fourBitUnicode[32] = {" ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", " ▄▄▄", " ██▄", "▄▄▄▄", "▄██▄", " ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", " ▄▄▄", " ██▄", "▄▄▄▄", "▄██▄", " ▀▀ ", " ▀▀ ", "▀▀▀ ", "▀▀▀ ", " ▀▀▀", " ▀▀▀", "▀▀▀▀", "▀▀▀▀", " ██ ", " ██ ", "▀██ ", "▀██ ", " ██▀", " ██▀", "▀██▀", "▀██▀"};
-    /// @brief List of unicode characters used in terminal-based 8-bit autotiling
-    const char* bengine::autotiler::eightBitUnicode[94] = {" ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", "███ ", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", "███ ", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", "▄▄▄ ", "▄██ ", "███ ", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▀▀ ", " ▀▀ ", "▀▀▀ ", "▀▀▀ ", "▀▀▀ ", " ▀▀▀", " ▀▀▀", " ▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", " ██ ", " ██ ", "▀██ ", "▀██ ", "▀██ ", " ██▀", " ██▀", " ██▀", "▀██▀", "▀██▀", "▀██▀", "▀██▀", "▀██▀", "███ ", "███ ", "███ ", "███▀", "███▀", "███▀", "███▀", "███▀", " ███", " ███", " ███", "▀███", "▀███", "▀███", "▀███", "▀███", "████", "████", "████", "████", "████"};
+    // \brief Key containing the 47 bitmasks relevant to 8-bit autotiling
+    const unsigned char bengine::autotiler::eight_bit_mask_key[47] = {0, 2, 8, 10, 11, 16, 18, 22, 24, 26, 27, 30, 31, 64, 66, 72, 74, 75, 80, 82, 86, 88, 90, 91, 94, 95, 104, 106, 107, 120, 122, 123, 126, 127, 208, 210, 214, 216, 218, 219, 222, 223, 248, 250, 251, 254, 255};
+    // \brief List of unicode characters used in terminal-based 4-bit autotiling
+    const char* bengine::autotiler::four_bit_unicode_key[32] = {" ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", " ▄▄▄", " ██▄", "▄▄▄▄", "▄██▄", " ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", " ▄▄▄", " ██▄", "▄▄▄▄", "▄██▄", " ▀▀ ", " ▀▀ ", "▀▀▀ ", "▀▀▀ ", " ▀▀▀", " ▀▀▀", "▀▀▀▀", "▀▀▀▀", " ██ ", " ██ ", "▀██ ", "▀██ ", " ██▀", " ██▀", "▀██▀", "▀██▀"};
+    // \brief List of unicode characters used in terminal-based 8-bit autotiling
+    const char* bengine::autotiler::eight_bit_unicode_key[94] = {" ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", "███ ", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", "███ ", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", "▄▄▄ ", "▄██ ", "███ ", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▀▀ ", " ▀▀ ", "▀▀▀ ", "▀▀▀ ", "▀▀▀ ", " ▀▀▀", " ▀▀▀", " ▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", " ██ ", " ██ ", "▀██ ", "▀██ ", "▀██ ", " ██▀", " ██▀", " ██▀", "▀██▀", "▀██▀", "▀██▀", "▀██▀", "▀██▀", "███ ", "███ ", "███ ", "███▀", "███▀", "███▀", "███▀", "███▀", " ███", " ███", " ███", "▀███", "▀███", "▀███", "▀███", "▀███", "████", "████", "████", "████", "████"};
 
     class kinematics_helper {
         private:
@@ -535,18 +508,18 @@ namespace bengine {
                 return starting_height + magnitude * std::sin(angle) * peak - 0.5 * bengine::kinematics_helper::gravitational_constant * peak * peak;    // max height is achieved by substituting the time at which the projectile reaches its peak into the kinematic equation y = y0 + vy*t - 0.5*g*t^2
             }
 
-            static double launchAngle(const double &magnitude, const double &x_difference, const double &y_difference, const bool &minimize_peak = true) {
+            static double launch_angle(const double &magnitude, const double &x_difference, const double &y_difference, const bool &minimize_peak = true) {
                 const double root = std::sqrt(magnitude * magnitude * magnitude * magnitude - bengine::kinematics_helper::gravitational_constant * (bengine::kinematics_helper::gravitational_constant * x_difference * x_difference + 2 * y_difference * magnitude * magnitude));
                 const double angle_1 = std::atan2(magnitude * magnitude + root, bengine::kinematics_helper::gravitational_constant * x_difference);
                 const double angle_2 = std::atan2(magnitude * magnitude - root, bengine::kinematics_helper::gravitational_constant * x_difference);
                 return minimize_peak ? std::fmin(bengine::kinematics_helper::peak_height(magnitude, angle_1, 0), bengine::kinematics_helper::peak_height(magnitude, angle_2, 0)) : std::fmax(bengine::kinematics_helper::peak_height(magnitude, angle_1, 0), bengine::kinematics_helper::peak_height(magnitude, angle_2, 0));    // the peak heights of each angle are compared to determine which angle should be returned
             }
 
-            static std::pair<double, double> landingVector(const double &magnitude, const double &angle, const double &y_difference) {
+            static std::pair<double, double> landing_vector(const double &magnitude, const double &angle, const double &y_difference) {
                 return {magnitude * std::cos(angle), magnitude * std::sin(angle) - bengine::kinematics_helper::gravitational_constant * bengine::kinematics_helper::air_time(magnitude, angle, y_difference)};    // the y-component of this vector is computed using the kinematic equation v = v0 + y*t; v = landing vertical velocity, v0 = initial vertical velocity, y = difference between y2 & y1 (dy), t = time for projectile to land
             }
     };
-    double kinematics_helper::gravitational_constant = 9.0665;
+    double bengine::kinematics_helper::gravitational_constant = 9.0665;
 }
 
 #endif // BENGINE_HELPERS_hpp
