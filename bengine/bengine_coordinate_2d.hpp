@@ -3,7 +3,8 @@
 
 #include <cmath>
 #include <vector>
-#include <string>
+
+#include "btils_string.hpp"
 
 namespace bengine {
     template <class type = double> class coordinate_2d {
@@ -39,17 +40,23 @@ namespace bengine {
             static bengine::coordinate_2d<type>::relation get_relation_metric() {
                 return bengine::coordinate_2d<type>::relation_metric;
             }
-            static void set_relation_metric(const bengine::coordinate_2d<type>::relation &metric = bengine::coordinate_2d<type>::relation::DEFAULT) {
+            static void set_relation_metric(const bengine::coordinate_2d<type>::relation &metric) {
                 bengine::coordinate_2d<type>::relation_metric = (static_cast<unsigned char>(metric) > 4 || static_cast<unsigned char>(metric) < 0) ? bengine::coordinate_2d<type>::relation::DEFAULT : metric;
+            }
+            static void reset_relation_metric() {
+                bengine::coordinate_2d<type>::relation_metric = bengine::coordinate_2d<type>::relation::DEFAULT;
             }
             static bengine::coordinate_2d<type> get_reference_point() {
                 return bengine::coordinate_2d<type>::reference_point;
             }
-            static void set_reference_point(const bengine::coordinate_2d<type> &coord = bengine::coordinate_2d<type>(0, 0)) {
+            static void set_reference_point(const bengine::coordinate_2d<type> &coord) {
                 bengine::coordinate_2d<type>::reference_point = coord;
             }
             static void set_reference_point(const type &x_pos, const type &y_pos) {
                 bengine::coordinate_2d<type>::set_reference_point(bengine::coordinate_2d<type>(x_pos, y_pos));
+            }
+            static void reset_reference_point() {
+                bengine::coordinate_2d<type>::reference_point = bengine::coordinate_2d<type>(0, 0);
             }
 
             type get_x_pos() const {
@@ -64,14 +71,14 @@ namespace bengine {
             void set_y_pos(const type &y_pos) {
                 this->y_pos = y_pos;
             }
-            void adjust_x_pos(const type &x_component) {
-                this->x_pos += x_component;
+            void translate_horizontally(const type &x_comp) {
+                this->x_pos += x_comp;
             }
-            void adjust_y_pos(const type &y_component) {
-                this->y_pos += y_component;
+            void translate_vertically(const type &y_comp) {
+                this->y_pos += y_comp;
             }
 
-            void invert_x_and_y() {
+            void swap_x_and_y() {
                 const type temp = this->x_pos;
                 this->x_pos = this->y_pos;
                 this->y_pos = temp;
@@ -102,8 +109,7 @@ namespace bengine {
             template <class arithmetic_type = double> void reflect_over_line(const arithmetic_type &slope, const arithmetic_type &y_intercept) {
                 static_assert(std::is_arithmetic<arithmetic_type>::value, "Template type \"arithmetic_type\" must be an arithmetic type (int, long, float, double, etc)");
                 if (slope == 0) {
-                    this->reflect_over_horizontal_line<arithmetic_type>(y_intercept);
-                    return;
+                    return this->reflect_over_horizontal_line<arithmetic_type>(y_intercept);
                 }
                 if (std::isnan(slope)) {
                     return;
@@ -130,8 +136,7 @@ namespace bengine {
             template <class arithmetic_type = double> void reflect_over_line(const arithmetic_type &x_pos, const arithmetic_type &y_pos, const arithmetic_type &slope) {
                 static_assert(std::is_arithmetic<arithmetic_type>::value, "Template type \"arithmetic_type\" must be an arithmetic type (int, long, float, double, etc)");
                 if (std::isnan(slope)) {
-                    this->reflect_over_vertical_line<arithmetic_type>(x_pos);
-                    return;
+                    return this->reflect_over_vertical_line<arithmetic_type>(x_pos);
                 }
                 this->reflect_over_line<arithmetic_type>(slope, y_pos - slope * x_pos);
             }
@@ -149,8 +154,7 @@ namespace bengine {
             template <class arithmetic_type = double> void reflect_over_line(const arithmetic_type &x_pos_1, const arithmetic_type &y_pos_1, const arithmetic_type &x_pos_2, const arithmetic_type &y_pos_2) {
                 static_assert(std::is_arithmetic<arithmetic_type>::value, "Template type \"arithmetic_type\" must be an arithmetic type (int, long, float, double, etc)");
                 if (x_pos_2 - x_pos_1 == 0) {
-                    this->reflect_over_vertical_line<arithmetic_type>(x_pos_1);
-                    return;
+                    return this->reflect_over_vertical_line<arithmetic_type>(x_pos_1);
                 }
                 this->reflect_over_line<arithmetic_type>(x_pos_1, y_pos_1, (y_pos_2 - y_pos_1) / (x_pos_2 - x_pos_1));
             }
@@ -163,8 +167,17 @@ namespace bengine {
                 static_assert(std::is_arithmetic<arithmetic_type>::value, "Template type \"arithmetic_type\" must be an arithmetic type (int, long, float, double, etc)");
                 this->y_pos = std::is_integral<type>::value ? std::round(this->y_pos * scalar) : this->y_pos * scalar;
             }
-            // TODO: Add a stretch along any line
-            
+            template <class arithmetic_type = double> void stretch_along_slope(const arithmetic_type &slope, const arithmetic_type &scalar) {
+                static_assert(std::is_arithmetic<arithmetic_type>::value, "Template type \"arithmetic_type\" must be an arithmetic type (int, long, float, double, etc)");
+                if (std::isnan(slope)) {
+                    this->x_pos = 0;
+                    return this->stretch_vertically<arithmetic_type>(scalar);
+                }
+                const double angle = std::atan(slope);
+                this->x_pos = std::is_integral<type>::value ? std::round(this->x_pos * scalar * std::cos(angle)) : this->x_pos * scalar * std::cos(angle);
+                this->y_pos = std::is_integral<type>::value ? std::round(this->y_pos * scalar * std::sin(angle)) : this->y_pos * scalar * std::sin(angle);
+            }
+
             void rotate_about_pivot(const bengine::coordinate_2d<type> &pivot, const double &angle) {
                 const double sin = std::sin(angle);
                 const double cos = std::cos(angle);
@@ -194,15 +207,15 @@ namespace bengine {
             }
 
             bengine::coordinate_2d<type>& operator=(const bengine::coordinate_2d<type> &rhs) {
-                this->set_x_pos(rhs.get_x_pos());
-                this->set_y_pos(rhs.get_y_pos());
+                this->x_pos = rhs.get_x_pos();
+                this->y_pos = rhs.get_y_pos();
                 return *this;
             }
             bengine::coordinate_2d<type> operator!() const {
                 return bengine::coordinate_2d<type>(-this->x_pos, -this->y_pos);
             }
             std::string to_string() const {
-                return "(" + std::to_string(this->x_pos) + ", " + std::to_string(this->y_pos) + ")";
+                return "(" + btils::to_string(this->x_pos) + ", " + btils::to_string(this->y_pos) + ")";
             }
             std::vector<type> to_vector() const {
                 return {this->x_pos, this->y_pos};
