@@ -3,7 +3,6 @@
 
 #include <type_traits>
 #include <cmath>
-#include <vector>
 
 // \brief pi/8 rad or 22.5 deg
 #define C_PI_8      0.39269908169872415481
