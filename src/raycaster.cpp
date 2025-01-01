@@ -24,10 +24,10 @@ class player_top_down {
         }
 
         double get_x_pos() const {
-            return this->collider.get_x_pos() + this->collider.get_width() / 2;
+            return this->collider.get_x_pos();
         }
         double get_y_pos() const {
-            return this->collider.get_y_pos() + this->collider.get_height() / 2;
+            return this->collider.get_y_pos();
         }
         double get_rotation() const {
             return this->rotation;
@@ -36,17 +36,29 @@ class player_top_down {
             return this->movespeed;
         }
         double get_radius() const {
-            return this->collider.get_width() / 2;
+            return this->collider.get_width_2();
         }
         double get_diameter() const {
             return this->collider.get_width();
         }
+        double get_left_x() const {
+            return this->collider.get_left_x();
+        }
+        double get_right_x() const {
+            return this->collider.get_right_x();
+        }
+        double get_top_y() const {
+            return this->collider.get_top_y();
+        }
+        double get_bottom_y() const {
+            return this->collider.get_bottom_y();
+        }
 
         void set_x_pos(const double &x_pos) {
-            this->collider.set_x_pos(x_pos - this->collider.get_width() / 2);
+            this->collider.set_x_pos(x_pos);
         }
         void set_y_pos(const double &y_pos) {
-            this->collider.set_y_pos(y_pos - this->collider.get_height() / 2);
+            this->collider.set_y_pos(y_pos);
         }
         void set_rotation(const double &rotation) {
             this->rotation = btils::normalize_radian_angle(rotation);
@@ -89,14 +101,14 @@ class player_top_down {
 class player_raycaster : public player_top_down {
     private:
         // \brief angle that represents the area that the player can see (radians)
-        double fov = C_PI_2;
+        double fov = C_PI_3;
         // \brief how far one ray from the player will reach before expiring ([length-unit]s | [m])
         double view_distance = 5;
         // \brief how fast the player can look left/right (radians per second)
-        double look_speed = C_PI_2;
+        double look_speed = C_PI_8;
         // \brief how fast the player can zoom in/out ([length-unit]s per second [m/s])
         double zoom_speed = 0.5;
-    
+
     public:
         player_raycaster() : player_top_down() {}
         player_raycaster(const double &x_pos, const double &y_pos, const double &rotation) : player_top_down(x_pos, y_pos, rotation) {}
@@ -166,9 +178,11 @@ class raycaster : public bengine::loop {
          */
         Uint8 minimap_settings = 3;
         Uint8 minimap_cell_size = 16;
+        Uint16 minimap_side_length = 360;
 
         player_raycaster player;
-        player_raycaster minimap_player = player_raycaster(360 / 2, 360 / 2, this->player.get_rotation()); // Change 360 to a different variable later
+        player_raycaster minimap_player = player_raycaster(this->minimap_side_length / 2, this->minimap_side_length / 2, this->player.get_rotation());
+        bengine::hitscanner_2d hitscanner;
 
         std::vector<bengine::basic_collider_2d> colliders;
 
@@ -222,19 +236,19 @@ class raycaster : public bengine::loop {
                 player.move_x(this->player.get_movespeed() * this->delta_time);
                 this->visuals_changed = true;
             }
+            // Temp hitscanner updating
+            this->hitscanner.set_x_pos(this->player.get_x_pos());
+            this->hitscanner.set_y_pos(this->player.get_y_pos());
 
             if (this->keystate[this->keybinds.look_left]) {
-                player.look_ccw(this->player.get_look_speed() * this->delta_time);
+                player.look_cw(this->player.get_look_speed() * this->delta_time);
+                this->hitscanner.set_angle(this->hitscanner.get_angle() - this->player.get_look_speed() * this->delta_time);
                 this->visuals_changed = true;
             } else if (this->keystate[this->keybinds.look_right]) {
-                player.look_cw(this->player.get_look_speed() * this->delta_time);
+                player.look_ccw(this->player.get_look_speed() * this->delta_time);
+                this->hitscanner.set_angle(this->hitscanner.get_angle() + this->player.get_look_speed() * this->delta_time);
                 this->visuals_changed = true;
             }
-            // if (keystate[SDL_SCANCODE_UP]) {
-            //     player.zoomOut(zoomspeed);
-            // } else if (keystate[SDL_SCANCODE_DOWN]) {
-            //     player.zoomIn(zoomspeed);
-            // }
 
             for (std::size_t i = 0; i < this->colliders.size(); i++) {
                 if (this->player.fix_collision(this->colliders[i], bengine::basic_collider_2d::fix_mode::MOVE_SELF, true)) {
@@ -262,46 +276,76 @@ class raycaster : public bengine::loop {
             this->window.clear_renderer();
         }
         void render() override {
+            std::vector<std::optional<bengine::coordinate_2d<double>>> raycast_collisions;
+            const double original_hitscanner_angle = this->hitscanner.get_angle();
+            for (double angle = original_hitscanner_angle - this->player.get_fov() / 2; angle <= original_hitscanner_angle + this->player.get_fov() / 2; angle += this->player.get_fov() / this->window.get_width()) {
+                this->hitscanner.set_angle(angle);
+                raycast_collisions.emplace_back(this->hitscanner.get_hit(this->colliders));
+            }
+            this->hitscanner.set_angle(original_hitscanner_angle);
+
             // Minimap rendering
             if ((Uint8)(this->minimap_settings << 7) >> 7 == 1) {
-                const Uint16 minimap_side_length = 360;
                 const Uint16 minimap_corner_offset = 32;
-                const Uint16 minimap_x_pos = ((Uint8)(this->minimap_settings << 5) >> 6) % 2 == 0 ? minimap_corner_offset : this->window.get_width() - minimap_side_length - minimap_corner_offset;
-                const Uint16 minimap_y_pos = (Uint8)(this->minimap_settings << 5) >> 6 <= 1 ? minimap_corner_offset : this->window.get_height() - minimap_side_length - minimap_corner_offset;
+                const Uint16 minimap_x_pos = ((Uint8)(this->minimap_settings << 5) >> 6) % 2 == 0 ? minimap_corner_offset : this->window.get_width() - this->minimap_side_length - minimap_corner_offset;
+                const Uint16 minimap_y_pos = (Uint8)(this->minimap_settings << 5) >> 6 <= 1 ? minimap_corner_offset : this->window.get_height() - this->minimap_side_length - minimap_corner_offset;
                 
                 const double view_distance = this->player.get_view_distance() * 2 > this->grid.size() || this->player.get_view_distance() * 2 > this->grid.at(0).size() ? std::min(this->grid.size(), this->grid.at(0).size()) / 2 : this->player.get_view_distance();
                 const Uint16 minimap_view_x_pos = this->player.get_x_pos() - view_distance < 0 ? 0 : (this->player.get_x_pos() + view_distance > this->grid.at(0).size() ? (this->grid.at(0).size() - view_distance * 2) * this->minimap_cell_size : (this->player.get_x_pos() - view_distance) * this->minimap_cell_size);
                 const Uint16 minimap_view_y_pos = this->player.get_y_pos() - view_distance < 0 ? 0 : (this->player.get_y_pos() + view_distance > this->grid.size() ? (this->grid.size() - view_distance * 2) * this->minimap_cell_size : (this->player.get_y_pos() - view_distance) * this->minimap_cell_size);
-                const double minimap_scale_factor = minimap_side_length / (2 * view_distance * this->minimap_cell_size);
+                const double minimap_scale_factor = this->minimap_side_length / (2 * view_distance * this->minimap_cell_size);
 
                 if (this->player.get_x_pos() < view_distance) {
                     this->minimap_player.set_x_pos(this->player.get_x_pos() * minimap_scale_factor * this->minimap_cell_size);
                 } else if (this->player.get_x_pos() > this->grid.at(0).size() - view_distance) {
-                    this->minimap_player.set_x_pos(minimap_side_length - (this->grid.at(0).size() - this->player.get_x_pos()) * minimap_scale_factor * this->minimap_cell_size);
+                    this->minimap_player.set_x_pos(this->minimap_side_length - (this->grid.at(0).size() - this->player.get_x_pos()) * minimap_scale_factor * this->minimap_cell_size);
                 }
                 if (this->player.get_y_pos() < view_distance) {
                     this->minimap_player.set_y_pos(this->player.get_y_pos() * minimap_scale_factor * this->minimap_cell_size);
                 } else if (this->player.get_y_pos() > this->grid.size() - view_distance) {
-                    this->minimap_player.set_y_pos(minimap_side_length - (this->grid.size() - this->player.get_y_pos()) * minimap_scale_factor * this->minimap_cell_size);
+                    this->minimap_player.set_y_pos(this->minimap_side_length - (this->grid.size() - this->player.get_y_pos()) * minimap_scale_factor * this->minimap_cell_size);
                 }
 
-                this->window.fill_rectangle(minimap_x_pos - minimap_side_length / 30, minimap_y_pos - minimap_side_length / 30, minimap_side_length + minimap_side_length / 15, minimap_side_length + minimap_side_length / 15, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
+                this->window.fill_rectangle(minimap_x_pos - this->minimap_side_length / 30, minimap_y_pos - this->minimap_side_length / 30, this->minimap_side_length + this->minimap_side_length / 15, this->minimap_side_length + this->minimap_side_length / 15, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
                 this->minimap_texture.set_frame({minimap_view_x_pos, minimap_view_y_pos, (int)(view_distance * this->minimap_cell_size * 2), (int)(view_distance * this->minimap_cell_size * 2)});
-                this->window.render_basic_texture(this->minimap_texture, {minimap_x_pos, minimap_y_pos, minimap_side_length, minimap_side_length});
+                this->window.render_basic_texture(this->minimap_texture, {minimap_x_pos, minimap_y_pos, this->minimap_side_length, this->minimap_side_length});
 
-                minimap_player.set_radius(this->player.get_radius() * (minimap_side_length / (2 * view_distance * this->minimap_cell_size)) * this->minimap_cell_size);
+                for (std::size_t i = 0; i < raycast_collisions.size(); i++) {
+                    if (raycast_collisions.at(i).has_value()) {
+                        this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + (raycast_collisions.at(i).value().get_x_pos() - this->player.get_x_pos()) * this->minimap_cell_size, minimap_y_pos + minimap_player.get_y_pos() + (raycast_collisions.at(i).value().get_y_pos() - this->player.get_y_pos()) * this->minimap_cell_size, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::LIGHT_GRAY));
+                    } else {
+                        if (this->hitscanner.get_range() >= 0) {
+                            const double angle = this->hitscanner.get_angle() - this->player.get_fov() / 2 + i * this->player.get_fov() / this->window.get_width();
+                            this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + view_distance * std::cos(angle) * this->minimap_cell_size, minimap_y_pos + minimap_player.get_y_pos() + view_distance * std::sin(angle) * this->minimap_cell_size, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
+                        }
+                    }
+                }
+
+                minimap_player.set_radius(this->player.get_radius() * (this->minimap_side_length / (2 * view_distance * this->minimap_cell_size)) * this->minimap_cell_size);
                 this->window.fill_rectangle(minimap_x_pos + minimap_player.get_x_pos() - minimap_player.get_radius(), minimap_y_pos + minimap_player.get_y_pos() - minimap_player.get_radius(), minimap_player.get_radius() * 2, minimap_player.get_radius() * 2, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
             }
 
             // Temporary full-view of the map
-            this->window.render_text(this->font, btils::to_u16string("(" + btils::to_string<double>(this->player.get_x_pos()) + ", " + btils::to_string<double>(this->player.get_y_pos()) + ")").c_str(), 0, 0);
+            this->window.render_text(this->font, btils::to_u16string("(" + btils::to_string_with_added_zeros<double>(this->player.get_x_pos(), 2, 5) + ", " + btils::to_string_with_added_zeros<double>(this->player.get_y_pos(), 2, 5) + ", " + btils::to_string_with_added_zeros<double>(this->hitscanner.get_angle() * U_180_PI, 3, 5) + ")").c_str(), 0, 0);
             this->window.render_SDLTexture(this->minimap_texture.get_texture(), {0, 0, (int)(this->grid.at(0).size() * this->minimap_cell_size), (int)(this->grid.size() * this->minimap_cell_size)}, {50, 50, (int)(this->grid.at(0).size() * this->minimap_cell_size), (int)(this->grid.size() * this->minimap_cell_size)});
-            this->window.fill_rectangle(50 + (this->player.get_x_pos() - this->player.get_radius()) * this->minimap_cell_size, 50 + (this->player.get_y_pos() - this->player.get_radius()) * this->minimap_cell_size, this->player.get_radius() * this->minimap_cell_size * 2, this->player.get_radius() * this->minimap_cell_size * 2, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
         
             // Tempoarary viewing of the colliders
             for (std::size_t i = 0; i < this->colliders.size(); i++) {
-                this->window.draw_rectangle(51 + this->colliders.at(i).get_x_pos() * this->minimap_cell_size, 51 + this->colliders.at(i).get_y_pos() * this->minimap_cell_size, this->colliders.at(i).get_width() * this->minimap_cell_size - 2, this->colliders.at(i).get_height() * this->minimap_cell_size - 2, {255, 0, 0, 255});
+                this->window.draw_rectangle(51 + this->colliders.at(i).get_left_x() * this->minimap_cell_size, 51 + this->colliders.at(i).get_bottom_y() * this->minimap_cell_size, this->colliders.at(i).get_width() * this->minimap_cell_size - 2, this->colliders.at(i).get_height() * this->minimap_cell_size - 2, {255, 0, 0, 255});
             }
+
+            for (std::size_t i = 0; i < raycast_collisions.size(); i++) {
+                if (raycast_collisions.at(i).has_value()) {
+                    this->window.draw_line(50 + this->hitscanner.get_x_pos() * this->minimap_cell_size, 50 + this->hitscanner.get_y_pos() * this->minimap_cell_size, 50 + raycast_collisions.at(i).value().get_x_pos() * this->minimap_cell_size, 50 + raycast_collisions.at(i).value().get_y_pos() * this->minimap_cell_size, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::LIME));
+                } else {
+                    if (this->hitscanner.get_range() >= 0) {
+                        const double angle = this->hitscanner.get_angle() - this->player.get_fov() / 2 + i * this->player.get_fov() / this->window.get_width();
+                        this->window.draw_line(50 + this->hitscanner.get_x_pos() * this->minimap_cell_size, 50 + this->hitscanner.get_y_pos() * this->minimap_cell_size, 50 + this->hitscanner.get_x_pos() * this->minimap_cell_size + this->hitscanner.get_range() * std::cos(angle) * this->minimap_cell_size, 50 + this->hitscanner.get_y_pos() * this->minimap_cell_size + this->hitscanner.get_range() * std::sin(angle) * this->minimap_cell_size, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::GREEN));
+                    }
+                }
+            }
+
+            this->window.fill_rectangle(50 + (this->player.get_x_pos() - this->player.get_radius()) * this->minimap_cell_size, 50 + (this->player.get_y_pos() - this->player.get_radius()) * this->minimap_cell_size, this->player.get_radius() * this->minimap_cell_size * 2, this->player.get_radius() * this->minimap_cell_size * 2, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
         }
 
     public:
@@ -326,10 +370,10 @@ class raycaster : public bengine::loop {
                     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
                 };
-                this->colliders.emplace_back(bengine::basic_collider_2d(0, 0, 16, 1));
-                this->colliders.emplace_back(bengine::basic_collider_2d(0, 1, 1, 15));
-                this->colliders.emplace_back(bengine::basic_collider_2d(15, 1, 1, 14));
-                this->colliders.emplace_back(bengine::basic_collider_2d(1, 15, 15, 1));
+                this->colliders.emplace_back(bengine::basic_collider_2d(8, 0.5, 16, 1));
+                this->colliders.emplace_back(bengine::basic_collider_2d(0.5, 8.5, 1, 15));
+                this->colliders.emplace_back(bengine::basic_collider_2d(15.5, 8.5, 1, 15));
+                this->colliders.emplace_back(bengine::basic_collider_2d(8, 15.5, 14, 1));
             } else {
                 // Basic copying of an input vector to and output, but also ensures that the output is rectangular
                 std::size_t longest_row_cols = 0;
@@ -362,6 +406,27 @@ class raycaster : public bengine::loop {
 
                 std::size_t row_start = 0, col_start = 0;
                 while (row_start < this->grid.size() && col_start < this->grid.at(0).size()) {
+                    // The new starting row/column is found by searching for the next spot that is unvisited
+                    bool found_unvisited_cell = false;
+                    while (row_start < this->grid.size()) {
+                        while (col_start < this->grid.at(0).size()) {
+                            if (!visit_grid.at(row_start).at(col_start)) {
+                                found_unvisited_cell = true;
+                                break;
+                            }
+                            col_start++;
+                        }
+                        if (found_unvisited_cell) {
+                            break;
+                        }
+                        row_start++;
+                        col_start = 0;
+                        found_unvisited_cell = false;
+                    }
+                    if (!found_unvisited_cell) {
+                        break;
+                    }
+
                     std::size_t row_end = row_start, col_end = col_start;
                     // First, start by going to the right until reached a cell visited before (which either means that its blank or has been used already; it can't be included in either case)
                     while (col_end < this->grid.at(0).size()) {
@@ -397,28 +462,7 @@ class raycaster : public bengine::loop {
 
                     // At this point, there should be the top-left and bottom-right corners of a new mesh defined
                     // Here, a new collider is added based upon the start/end positions of the mesh
-                    this->colliders.emplace_back(bengine::basic_collider_2d(col_start, row_start, col_end - col_start, row_end - row_start + 1));
-
-                    // Now, the new starting row/column is found by searching for the next spot that is unvisited
-                    bool found_unvisited_cell = false;
-                    while (row_start < this->grid.size()) {
-                        while (col_start < this->grid.at(0).size()) {
-                            if (!visit_grid.at(row_start).at(col_start)) {
-                                found_unvisited_cell = true;
-                                break;
-                            }
-                            col_start++;
-                        }
-                        if (found_unvisited_cell) {
-                            break;
-                        }
-                        row_start++;
-                        col_start = 0;
-                        found_unvisited_cell = false;
-                    }
-                    if (!found_unvisited_cell) {
-                        break;
-                    }
+                    this->colliders.emplace_back(bengine::basic_collider_2d(col_start + static_cast<double>(col_end - col_start) / 2, row_start + static_cast<double>(row_end - row_start + 1) / 2, col_end - col_start, row_end - row_start + 1));
                 }
             }
 
@@ -426,6 +470,7 @@ class raycaster : public bengine::loop {
             this->player.set_x_pos(this->grid.at(0).size() / 2);
             this->player.set_y_pos(this->grid.size() / 2);
             this->player.set_movespeed(0.25);
+            this->hitscanner = bengine::hitscanner_2d(this->player.get_x_pos(), this->player.get_y_pos(), 0, this->player.get_view_distance(), false);
         }
         ~raycaster() {
             TTF_CloseFont(this->font);
