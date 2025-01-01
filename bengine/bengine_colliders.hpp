@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <optional>
+#include <vector>
 
 #include "btils.hpp"
 #include "bengine_coordinate_2d.hpp"
@@ -17,10 +18,9 @@ namespace bengine {
             };
 
         protected:
-            double x_pos = 0;
-            double y_pos = 0;
-            double width = 0;
-            double height = 0;
+            bengine::coordinate_2d<double> position = bengine::coordinate_2d<double>(0, 0);
+            double width_2 = 0;
+            double height_2 = 0;
 
         public:
             basic_collider_2d() {}
@@ -36,71 +36,93 @@ namespace bengine {
             ~basic_collider_2d() {}
 
             bengine::basic_collider_2d& operator=(const bengine::basic_collider_2d &rhs) {
-                this->x_pos = rhs.get_x_pos();
-                this->y_pos = rhs.get_y_pos();
-                this->width = rhs.get_width();
-                this->height = rhs.get_height();
+                this->position = bengine::coordinate_2d<double>(rhs.get_x_pos(), rhs.get_y_pos());
+                this->width_2 = rhs.get_width_2();
+                this->height_2 = rhs.get_height_2();
                 return *this;
             }
 
-            std::string to_string() const {
-                return "{" + btils::to_string<double>(this->x_pos) + ", " + btils::to_string<double>(this->y_pos) + ", " + btils::to_string<double>(this->width) + ", " + btils::to_string<double>(this->height) + "}";
+            /** Export the collider as a string
+             * @param verbose Whether to label each value (true) or not (false)
+             * @returns An std::string representing the collider
+             */
+            std::string to_string(const bool &verbose = true) const {
+                if (verbose) {
+                    return "{Origin: " + this->position.to_string() + ", Width: " + btils::to_string<double>(this->width_2 + this->width_2) + ", Height: " + btils::to_string<double>(this->height_2 + this->height_2) + "}";
+                }
+                return "{" + btils::to_string<double>(this->position.get_x_pos()) + ", " + btils::to_string<double>(this->position.get_y_pos()) + ", " + btils::to_string<double>(this->height_2 + this->height_2) + ", " + btils::to_string<double>(this->height_2 + this->height_2) + "}";
             }
 
             double get_x_pos() const {
-                return this->x_pos;
+                return this->position.get_x_pos();
             }
             double get_y_pos() const {
-                return this->y_pos;
+                return this->position.get_y_pos();
             }
             double get_width() const {
-                return this->width;
+                return this->width_2 + this->width_2;
             }
             double get_height() const {
-                return this->height;
+                return this->height_2 + this->height_2;
+            }
+            double get_width_2() const {
+                return this->width_2;
+            }
+            double get_height_2() const {
+                return this->height_2;
             }
 
             double get_left_x() const {
-                return this->get_x_pos();
-            }
-            double get_top_y() const {
-                return this->get_y_pos();
+                return this->position.get_x_pos() - this->width_2;
             }
             double get_right_x() const {
-                return this->x_pos + this->width;
+                return this->position.get_x_pos() + this->width_2;
+            }
+            double get_top_y() const {
+                return this->position.get_y_pos() + this->height_2;
             }
             double get_bottom_y() const {
-                return this->y_pos + this->height;
+                return this->position.get_y_pos() - this->height_2;
             }
 
             void set_x_pos(const double &x_pos) {
-                this->x_pos = x_pos;
+                this->position.set_x_pos(x_pos);
             }
             void set_y_pos(const double &y_pos) {
-                this->y_pos = y_pos;
+                this->position.set_y_pos(y_pos);
             }
             void set_width(const double &width) {
-                this->width = width < 0 ? -width : width;
+                this->set_width_2(width / 2);
             }
             void set_height(const double &height) {
-                this->height = height < 0 ? -height : height;
+                this->set_height_2(height / 2);
+            }
+            void set_width_2(const double &width_2) {
+                if (width_2 >= 0) {
+                    this->width_2 = width_2;
+                    return;
+                }
+                this->position.translate_horizontally(width_2);
+                this->width_2 = -width_2;
+            }
+            void set_height_2(const double &height_2) {
+                if (height_2 >= 0) {
+                    this->height_2 = height_2;
+                    return;
+                }
+                this->position.translate_vertically(height_2);
+                this->height_2 = -height_2;
             }
 
-            void set_left_x(const double &x_pos) {
-                this->set_x_pos(x_pos);
+            void translate_horizontally(const double &amount) {
+                this->position.translate_horizontally(amount);
             }
-            void set_top_y(const double &y_pos) {
-                this->set_y_pos(y_pos);
-            }
-            void set_right_x(const double &x_pos) {
-                this->set_width(x_pos - this->x_pos);
-            }
-            void set_bottom_y(const double &y_pos) {
-                this->set_height(y_pos - this->y_pos);
+            void translate_vertically(const double &amount) {
+                this->position.translate_vertically(amount);
             }
 
             bool detect_collision(const bengine::basic_collider_2d &other) const {
-                return !(this->get_right_x() < other.get_left_x() || this->get_left_x() > other.get_right_x() || this->get_bottom_y() < other.get_top_y() || this->get_top_y() > other.get_bottom_y());
+                return !(this->get_right_x() < other.get_left_x() || this->get_left_x() > other.get_right_x() || this->get_top_y() < other.get_bottom_y() || this->get_bottom_y() > other.get_top_y());
             }
 
             /** Fix the collision between two colliders so that they are no longer colliding
@@ -116,12 +138,11 @@ namespace bengine {
                     }
                 }
 
-                const double right_overlap = this->get_right_x() - other.get_left_x();
-                const double top_overlap = this->get_bottom_y() - other.get_top_y();
+                const double top_overlap = this->get_top_y() - other.get_bottom_y();
                 const double left_overlap = other.get_right_x() - this->get_left_x();
-                const double bottom_overlap = other.get_bottom_y() - this->get_top_y();
+                const double bottom_overlap = other.get_top_y() - this->get_bottom_y();
 
-                double smallest_overlap = right_overlap;
+                double smallest_overlap = this->get_right_x() - other.get_left_x();
                 double x_vector = -smallest_overlap, y_vector = 0;
 
                 if (top_overlap < smallest_overlap) {
@@ -142,16 +163,16 @@ namespace bengine {
 
                 switch (fix_mode) {
                     case bengine::basic_collider_2d::fix_mode::MOVE_SELF:
-                        this->x_pos += x_vector;
-                        this->y_pos += y_vector;
+                        this->position.translate_horizontally(x_vector);
+                        this->position.translate_vertically(y_vector);
                         break;
                     case bengine::basic_collider_2d::fix_mode::MOVE_OTHER:
                         other.set_x_pos(other.get_x_pos() - x_vector);
                         other.set_y_pos(other.get_y_pos() - y_vector);
                         break;
                     case bengine::basic_collider_2d::fix_mode::MOVE_BOTH:
-                        this->x_pos += x_vector / 2;
-                        this->y_pos += y_vector / 2;
+                        this->position.translate_horizontally(x_vector / 2);
+                        this->position.translate_vertically(y_vector / 2);
                         other.set_x_pos(other.get_x_pos() - x_vector / 2);
                         other.set_y_pos(other.get_y_pos() - y_vector / 2);
                         break;
@@ -162,18 +183,25 @@ namespace bengine {
 
     class hitscanner_2d {
         private:
-            double x_pos = 0;
-            double y_pos = 0;
-            double angle = 0;
-            double range = -1;
+            bengine::coordinate_2d<double> position = bengine::coordinate_2d<double>(0, 0);
+            bengine::fast_vector_2d<double> vector = bengine::fast_vector_2d<double>(1, 0, true);
+            bool infinite_range = false;
+
+            std::optional<bengine::coordinate_2d<double>> do_range_check(const bengine::coordinate_2d<double> &position) const {
+                if (this->has_infinite_range() || this->position.get_euclidean_distance_to(position) <= std::fabs(this->vector.get_magnitude())) {
+                    return position;
+                }
+                return std::nullopt;
+            }
 
         public:
             hitscanner_2d() {}
-            hitscanner_2d(const double &x_pos, const double &y_pos, const double &angle, const double &range) {
-                this->x_pos = x_pos;
-                this->y_pos = y_pos;
-                this->angle = btils::normalize_radian_angle(angle);
-                this->range = range < 0 ? -1 : range;
+            hitscanner_2d(const double &x_pos, const double &y_pos, const double &angle, const double &range, const bool &have_infinite_range = false) {
+                this->set_x_pos(x_pos);
+                this->set_y_pos(y_pos);
+                this->set_angle(angle);
+                this->set_range(range);
+                this->make_range_infinite(have_infinite_range);
             }
             hitscanner_2d(const bengine::hitscanner_2d &rhs) {
                 *this = rhs;
@@ -181,77 +209,113 @@ namespace bengine {
             ~hitscanner_2d() {}
 
             bengine::hitscanner_2d& operator=(const bengine::hitscanner_2d &rhs) {
-                this->x_pos = rhs.get_x_pos();
-                this->y_pos = rhs.get_y_pos();
-                this->angle = rhs.get_angle();
-                this->range = rhs.get_range();
+                this->position = rhs.get_position();
+                this->vector = rhs.get_vector();
+                this->infinite_range = rhs.has_infinite_range();
+                return *this;
             }
 
             double get_x_pos() const {
-                return this->x_pos;
+                return this->position.get_x_pos();
             }
             double get_y_pos() const {
-                return this->y_pos;
+                return this->position.get_y_pos();
+            }
+            bengine::coordinate_2d<double> get_position() const {
+                return this->position;
             }
             double get_angle() const {
-                return this->angle;
+                return this->vector.get_angle(true);
             }
             double get_range() const {
-                return this->range;
+                return this->vector.get_magnitude();
+            }
+            bengine::fast_vector_2d<double> get_vector() const {
+                return this->vector;
             }
 
             void set_x_pos(const double &x_pos) {
-                this->x_pos = x_pos;
+                this->position.set_x_pos(x_pos);
             }
             void set_y_pos(const double &y_pos) {
-                this->y_pos = y_pos;
+                this->position.set_y_pos(y_pos);
+            }
+            void set_position(const bengine::coordinate_2d<double> &position) {
+                this->position = position;
             }
             void set_angle(const double &angle) {
-                this->angle = btils::normalize_radian_angle(angle);
+                this->vector.set_angle(angle, true);
             }
             void set_range(const double &range) {
-                this->range = range < 0 ? -1 : range;
+                this->vector.set_magnitude(std::fabs(range));
+            }
+            void set_vector(const bengine::fast_vector_2d<double> &vector) {
+                this->set_angle(vector.get_angle(true));
+                this->set_range(vector.get_magnitude());
+            }
+
+            bool has_infinite_range() const {
+                return this->infinite_range;
+            }
+            void make_range_infinite(const bool &have_infinite_range) {
+                this->infinite_range = have_infinite_range;
+            }
+            void toggle_infinite_range() {
+                this->infinite_range = !this->infinite_range;
             }
 
             std::optional<bengine::coordinate_2d<double>> get_hit(const bengine::basic_collider_2d &collider) const {
-                // If the hitscanner is inside the collider, then it should hit no matter what angle or range it has
-                if (this->x_pos >= collider.get_left_x() && this->x_pos <= collider.get_right_x() && this->y_pos >= collider.get_top_y() && this->y_pos <= collider.get_bottom_y()) {
-                    return bengine::coordinate_2d<double>(this->x_pos, this->y_pos);
+                // Colliders are treated as solid, so a hitscanner physically placed inside of one will always hit
+                if (this->get_x_pos() >= collider.get_left_x() && this->get_x_pos() <= collider.get_right_x() && this->get_y_pos() >= collider.get_top_y() && this->get_y_pos() <= collider.get_bottom_y()) {
+                    return this->position;
                 }
-                // If the hitscanner is outside the collider and has a range of zero, then it will never hit the collider
-                if (this->range == 0) {
+                if (this->vector.get_magnitude() == 0 && !this->has_infinite_range()) {
                     return std::nullopt;
                 }
 
-                // Handle the four most common angles immediately and also handle any potential divide-by-zero errors that would occur with cos(PI/2) or cos(3*PI/2)
-                // if (this->angle == 0) {
-                //     return this->x_pos + this->range >= collider.get_left_x() && this->y_pos >= collider.get_top_y() && this->y_pos <= collider.get_bottom_y();
-                // } else if (this->angle == C_PI_2) {
-                //     return this->y_pos - this->range <= collider.get_bottom_y() && this->x_pos >= collider.get_left_x() && this->x_pos <= collider.get_right_x();
-                // } else if (this->angle == C_PI) {
-                //     return this->x_pos - this->range <= collider.get_right_x() && this->y_pos >= collider.get_top_y() && this->y_pos <= collider.get_bottom_y();
-                // } else if (this->angle == C_3PI_2) {
-                //     return this->y_pos + this->range >= collider.get_top_y() && this->x_pos >= collider.get_left_x() && this->x_pos <= collider.get_right_x();
-                // }
-
-                const double x_component = this->range * std::cos(this->angle);
-                const double y_component = this->range * std::sin(this->angle);
-
-                if (this->range > 0) {
-
+                // Some basic culling can be done for hitscanners that obviously (to a computer at least) look away from the collider
+                // Annoyingly, having an angle of zero and being below the collider will not be properly culled by the obvious conditions (so another one was added at the end), but this can probably be fixed somehow
+                if ((this->get_angle() <= C_PI && this->get_y_pos() > collider.get_top_y()) || (this->get_angle() >= C_PI && this->get_y_pos() < collider.get_bottom_y()) || ((this->get_angle() <= C_PI_2 || this->get_angle() >= C_3PI_2) && this->get_x_pos() > collider.get_right_x()) || ((this->get_angle() >= C_PI_2 && this->get_angle() <= C_3PI_2) && this->get_x_pos() < collider.get_left_x()) || (this->get_angle() == 0 && this->get_y_pos() < collider.get_bottom_y())) {
+                    return std::nullopt;
                 }
 
-                const double slope = y_component / x_component;
-
-                const double y_value = slope * (this->angle < C_PI_2 || this->angle > C_3PI_2 ? collider.get_left_x() : collider.get_right_x()) + this->y_pos;
-                if (y_value >= collider.get_top_y() && y_value <= collider.get_bottom_y()) {
-                    return bengine::coordinate_2d<double>((this->angle < C_PI_2 || this->angle > C_3PI_2 ? collider.get_left_x() : collider.get_right_x()), y_value);
+                // Angles that would produce either an undefined slope or a slope of zero are handled seperately for clarity's sake as well as being a bit faster for these specific cases
+                if (this->vector.get_x_comp() == 0) {
+                    return this->do_range_check(bengine::coordinate_2d<double>(this->get_x_pos(), this->get_angle() < C_PI ? collider.get_bottom_y() : collider.get_top_y()));
+                } else if (this->vector.get_y_comp() == 0) {
+                    return this->do_range_check(bengine::coordinate_2d<double>(this->get_angle() < C_PI_2 || this->get_angle() > C_3PI_2 ? collider.get_left_x() : collider.get_right_x(), this->get_y_pos()));
                 }
-                const double x_value = ((this->angle > C_PI_2 && this->angle < C_3PI_2 ? collider.get_top_y() : collider.get_bottom_y()) - this->y_pos) / slope;
-                if (x_value >= collider.get_left_x() && x_value <= collider.get_right_x()) {
-                    return bengine::coordinate_2d<double>(x_value, (this->angle > C_PI_2 && this->angle < C_3PI_2 ? collider.get_top_y() : collider.get_bottom_y()));
+
+                const double slope = this->vector.get_y_comp() / this->vector.get_x_comp();
+                const double x_difference = this->get_angle() < C_PI_2 || this->get_angle() > C_3PI_2 ? collider.get_left_x() - this->get_x_pos() : collider.get_right_x() - this->get_x_pos();
+                const double y_difference = this->get_angle() < C_PI ? collider.get_bottom_y() - this->get_y_pos() : collider.get_top_y() - this->get_y_pos();
+
+                // works both as a guess for a y-position and then as a guess for an x-position if the first guess fails
+                double guess_pos = this->get_y_pos() + slope * x_difference;
+                if (guess_pos >= collider.get_bottom_y() && guess_pos <= collider.get_top_y()) {
+                    return this->do_range_check(bengine::coordinate_2d<double>(this->get_x_pos() + x_difference, guess_pos));
+                }
+                guess_pos = this->get_x_pos() + y_difference / slope;
+                if (guess_pos >= collider.get_left_x() && guess_pos <= collider.get_right_x()) {
+                    return this->do_range_check(bengine::coordinate_2d<double>(guess_pos, this->get_y_pos() + y_difference));
                 }
                 return std::nullopt;
+            }
+            std::optional<bengine::coordinate_2d<double>> get_hit(const std::vector<bengine::basic_collider_2d> &colliders) const {
+                std::optional<bengine::coordinate_2d<double>> output = std::nullopt;
+                double output_distance = DBL_MAX;
+                for (std::size_t current_index = 0; current_index < colliders.size(); current_index++) {
+                    const std::optional<bengine::coordinate_2d<double>> scan = this->get_hit(colliders.at(current_index));
+                    if (!scan.has_value()) {
+                        continue;
+                    }
+                    const double current_distance = scan.value().get_euclidean_distance_to(this->position);
+                    if (current_distance < output_distance) {
+                        output_distance = current_distance;
+                        output = scan;
+                    }
+                }
+                return output;
             }
     };
 }
