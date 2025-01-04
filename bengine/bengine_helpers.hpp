@@ -477,6 +477,56 @@ namespace bengine {
     // \brief List of unicode characters used in terminal-based 8-bit autotiling
     const char* bengine::autotiler::eight_bit_unicode_key[94] = {" ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", "███ ", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▄▄ ", " ██ ", "▄▄▄ ", "▄██ ", "███ ", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", "▄▄▄ ", "▄██ ", "███ ", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▄▄▄", " ██▄", " ███", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", "▄▄▄▄", "▄██▄", "███▄", "▄███", "████", " ▀▀ ", " ▀▀ ", "▀▀▀ ", "▀▀▀ ", "▀▀▀ ", " ▀▀▀", " ▀▀▀", " ▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", "▀▀▀▀", " ██ ", " ██ ", "▀██ ", "▀██ ", "▀██ ", " ██▀", " ██▀", " ██▀", "▀██▀", "▀██▀", "▀██▀", "▀██▀", "▀██▀", "███ ", "███ ", "███ ", "███▀", "███▀", "███▀", "███▀", "███▀", " ███", " ███", " ███", "▀███", "▀███", "▀███", "▀███", "▀███", "████", "████", "████", "████", "████"};
 
+    // \brief A class containing useful functions that help with using bitwise operators in clever ways, especially in the realm of storing several values within a single integral variable
+    class bitwise_manipulator {
+        public:
+            // \brief bengine::bitwise_manipulator constructor
+            bitwise_manipulator() {}
+            // \brief bengine::bitwise_manipulator deconstructor
+            ~bitwise_manipulator() {}
+
+            /** Set the indicated bits of an integral variable to 1 regardless of their original state
+             * \tparam type An integral type
+             * \param input The starting value
+             * \param bits The bits to activate, best inputted as 0x101 (5 as represented by a 3-bit integer) or something similar to easily visualize the bits that will be activated
+             * \returns The value of the input but with the indicated bits set to 1 (literally input | bits)
+             */
+            template <class type> static type activate_bits(const type &input, const type &bits) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return input | bits;
+            }
+            /** Set the indicated bit of an integral variable to a 1 regardless of its original state
+             * \tparam type An integral type
+             * \param input The starting value
+             * \param bit The bit to activate where 0 indicates the least significant bit while 7 would be the most significant bit of an 8-bit type (like char); if this value is greater than the amount of bits available nothing will be changed
+             * \returns The value of the input but with the indicated bit set to 1
+             */
+            template <class type> static type activate_bit(const type &input, const unsigned char &bit) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return input | static_cast<type>(std::pow<type, type>(2, bit));
+            }
+            /** Set the indicated bits of an integral variable to 0 regardless of their original state
+             * \tparam type An integral type
+             * \param input The starting value
+             * \param bits The bits to deactivate, best inputted as 0x101 (5 as represented by a 3-bit integer) or something similar to easily visualize the bits that will be deactivated
+             * \returns The value of the input but with the indicated bits set to 0 (essentially input & (bits ^ type_max_value) )
+             */
+            template <class type> static type deactivate_bits(const type &input, const type &bits) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return input & (bits ^ static_cast<type>(std::pow<type, type>(2, sizeof(input) * 8) - 1));    // sizeof(input) * 8 yields amount of bits in input data type, which is then used to find max unsigned value of input data type with 2^bits - 1
+            }
+            /** Set the indicated bit of an integral variable to a 0 regardless of its original state
+             * \tparam type An integral type
+             * \param input The starting value
+             * \param bit The bit to activate where 0 indicates the least significant bit while 7 would be the most significant bit of an 8-bit type (like char); if this value is greater than the amount of bits available nothing will be changed
+             * \returns The value of the input but with the indicated bit set to 0
+             */
+            template <class type> static type deactivate_bit(const type &input, const unsigned char &bit) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return bengine::bitwise_manipulator::deactivate_bits<type>(input, bengine::bitwise_manipulator::activate_bit<type>(0, bit));
+            }
+    };
+
     class kinematics_helper {
         private:
             // \brief The gravitational constant mainly used when looking at how the vertical motion of a projectile acts
