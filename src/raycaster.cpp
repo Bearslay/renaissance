@@ -101,7 +101,7 @@ class player_top_down {
 class player_raycaster : public player_top_down {
     private:
         // \brief angle that represents the area that the player can see (radians)
-        double fov = C_PI_3;
+        double fov = C_PI_2;
         // \brief how far one ray from the player will reach before expiring ([length-unit]s | [m])
         double view_distance = 5;
         // \brief how fast the player can look left/right (radians per second)
@@ -157,6 +157,10 @@ class raycaster : public bengine::loop {
             int strafe_right = SDL_SCANCODE_D;
             int look_left = SDL_SCANCODE_LEFT;
             int look_right = SDL_SCANCODE_RIGHT;
+            int zoom_in = SDL_SCANCODE_UP;
+            int zoom_out = SDL_SCANCODE_DOWN;
+            int toggle_minimap = SDL_SCANCODE_M;
+            int cycle_minimap_position = SDL_SCANCODE_P;
             int toggle_debug_screen = SDL_SCANCODE_F3;
         } keybinds;
 
@@ -192,25 +196,21 @@ class raycaster : public bengine::loop {
             if (f && !b) {
                 if (l && !r) {
                     return C_3PI_4;
-                }
-                if (!l && r) {
+                } else if (!l && r) {
                     return C_PI_4;
                 }
                 return C_PI_2;
-            }
-            if (!f && b) {
+            } else if (!f && b) {
                 if (l && !r) {
                     return C_5PI_4;
-                }
-                if (!l && r) {
+                } else if (!l && r) {
                     return C_7PI_4;
                 }
                 return C_3PI_2;
             }
             if (l && !r) {
                 return C_PI;
-            }
-            if (!l && r) {
+            } else if (!l && r) {
                 return 0;
             }
             return -1;
@@ -224,6 +224,17 @@ class raycaster : public bengine::loop {
                             this->show_debug_screen = !this->show_debug_screen;
                             this->visuals_changed = true;
                         }
+                        if (this->keystate[this->keybinds.toggle_minimap]) {
+                            if (((Uint8)(this->minimap_settings << 7) >> 7) == 1) {
+                                this->minimap_settings = bengine::bitwise_manipulator::deactivate_bits<Uint8>(this->minimap_settings, 1);
+                            } else {
+                                this->minimap_settings = bengine::bitwise_manipulator::activate_bits<Uint8>(this->minimap_settings, 1);
+                            }
+                            this->visuals_changed = true;
+                        }
+                        if (this->keystate[this->keybinds.cycle_minimap_position]) {
+
+                        }
                     }
                     break;
             }
@@ -233,20 +244,10 @@ class raycaster : public bengine::loop {
                 this->loop_running = false;
             }
 
-            if (this->keystate[this->keybinds.move_forwards]) {
-                player.move_y(-this->player.get_movespeed() * this->delta_time);
-                this->visuals_changed = true;
-            }
-            if (this->keystate[this->keybinds.move_backwards]) {
-                player.move_y(this->player.get_movespeed() * this->delta_time);
-                this->visuals_changed = true;
-            }
-            if (this->keystate[this->keybinds.strafe_left]) {
-                player.move_x(-this->player.get_movespeed() * this->delta_time);
-                this->visuals_changed = true;
-            }
-            if (this->keystate[this->keybinds.strafe_right]) {
-                player.move_x(this->player.get_movespeed() * this->delta_time);
+            if (this->calc_move_angle(this->keystate[this->keybinds.move_forwards], this->keystate[this->keybinds.move_backwards], this->keystate[this->keybinds.strafe_left], this->keystate[this->keybinds.strafe_right]) >= 0) {
+                const double move_angle = this->calc_move_angle(this->keystate[this->keybinds.move_forwards], this->keystate[this->keybinds.move_backwards], this->keystate[this->keybinds.strafe_left], this->keystate[this->keybinds.strafe_right]) - this->player.get_rotation() - C_PI_2;
+                this->player.move_x(this->player.get_movespeed() * std::cos(move_angle) * this->delta_time);
+                this->player.move_y(-this->player.get_movespeed() * std::sin(move_angle) * this->delta_time);
                 this->visuals_changed = true;
             }
             // Temp hitscanner updating
@@ -261,6 +262,11 @@ class raycaster : public bengine::loop {
                 player.look_ccw(this->player.get_look_speed() * this->delta_time);
                 this->hitscanner.set_angle(this->hitscanner.get_angle() + this->player.get_look_speed() * this->delta_time);
                 this->visuals_changed = true;
+            }
+            if (this->keystate[this->keybinds.zoom_in]) {
+
+            } else if (this->keystate[this->keybinds.zoom_out]) {
+
             }
 
             for (std::size_t i = 0; i < this->colliders.size(); i++) {
@@ -291,9 +297,18 @@ class raycaster : public bengine::loop {
         void render() override {
             std::vector<std::optional<bengine::coordinate_2d<double>>> raycast_collisions;
             const double original_hitscanner_angle = this->hitscanner.get_angle();
-            for (double angle = original_hitscanner_angle - this->player.get_fov() / 2; angle <= original_hitscanner_angle + this->player.get_fov() / 2; angle += this->player.get_fov() / this->window.get_width()) {
-                this->hitscanner.set_angle(angle);
+            for (double angle = -this->player.get_fov() / 2; angle <= this->player.get_fov() / 2; angle += this->player.get_fov() / this->window.get_width()) {
+                this->hitscanner.set_angle(original_hitscanner_angle + angle);
                 raycast_collisions.emplace_back(this->hitscanner.get_hit(this->colliders));
+                if (!raycast_collisions.back().has_value()) {
+                    continue;
+                }
+                const bengine::fast_vector_2d<double> projection(std::fabs(player.get_x_pos() - raycast_collisions.back().value().get_x_pos()), std::fabs(player.get_y_pos() - raycast_collisions.back().value().get_y_pos()));
+                const double distance = projection.get_magnitude() * std::cos(angle);
+
+                const unsigned char rectangle_brightness = btils::map_value_to_range<double, unsigned char>(distance, 0, player.get_view_distance(), 255, 0);
+                const int rectangle_height = btils::map_value_to_range<double, int>(distance, 0, player.get_view_distance(), this->window.get_height(), 0);
+                this->window.fill_rectangle(raycast_collisions.size(), this->window.get_height_2() - rectangle_height / 2, 1, rectangle_height, {rectangle_brightness, rectangle_brightness, rectangle_brightness, 255});
             }
             this->hitscanner.set_angle(original_hitscanner_angle);
 
@@ -337,8 +352,6 @@ class raycaster : public bengine::loop {
                 minimap_player.set_radius(this->player.get_radius() * (this->minimap_side_length / (2 * view_distance * this->minimap_cell_size)) * this->minimap_cell_size);
                 this->window.fill_rectangle(minimap_x_pos + minimap_player.get_x_pos() - minimap_player.get_radius(), minimap_y_pos + minimap_player.get_y_pos() - minimap_player.get_radius(), minimap_player.get_radius() * 2, minimap_player.get_radius() * 2, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::RED));
             }
-
-            
 
             // Debug screen rendering
             if (this->show_debug_screen) {
