@@ -485,35 +485,68 @@ namespace bengine {
             // \brief bengine::bitwise_manipulator deconstructor
             ~bitwise_manipulator() {}
 
+            /** Convert a range of bits indicated by a starting bit and amount of bits into a value where the bits within the range are set to 1's and all others are 0's
+             * \tparam type An integral type
+             * \param starting_bit The bit where the range starts (least significant; starts from 0)
+             * \param bit_range Amount of bits within the range
+             * \returns A value that encodes the desired range of bits as consecutive 1's in binary
+             */
+            template <class type> static type bit_range_to_value(const unsigned char &starting_bit, const unsigned char &bit_range) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return static_cast<type>(static_cast<type>(std::pow<type, type>(2, bit_range) - 1) << starting_bit);    // Basically just calculate max integer value for a number with bit_range amount of bits and then shift it over
+            }
+
             /** Set the indicated bits of an integral variable to 1 regardless of their original state
              * \tparam type An integral type
              * \param input The starting value
-             * \param bits The bits to activate, best inputted as 0x101 (5 as represented by a 3-bit integer) or something similar to easily visualize the bits that will be activated
+             * \param bits The bits to activate as indicated by a 1, best inputted as 0x101 (5 as represented by a 3-bit integer) or something similar to easily visualize the bits that will be activated
              * \returns The value of the input but with the indicated bits set to 1 (literally input | bits)
              */
             template <class type> static type activate_bits(const type &input, const type &bits) {
                 static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
                 return input | bits;
             }
+            /** Set the indicated bits of an integral variable to 1 regardless of their original state
+             * \tparam type An integral type
+             * \param input The starting value
+             * \param starting_bit The bit where the range of bits to activate starts (least significant; starts from 0)
+             * \param bit_range Amount of bits within the range to activate
+             * \returns The value of the input but with the indicated bits set to 1
+             */
+            template <class type> static type activate_bits(const type &input, const unsigned char &starting_bit, const unsigned char &bit_range) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return bengine::bitwise_manipulator::activate_bits<type>(input, bengine::bitwise_manipulator::bit_range_to_value<type>(starting_bit, bit_range));
+            }
             /** Set the indicated bit of an integral variable to a 1 regardless of its original state
              * \tparam type An integral type
              * \param input The starting value
              * \param bit The bit to activate where 0 indicates the least significant bit while 7 would be the most significant bit of an 8-bit type (like char); if this value is greater than the amount of bits available nothing will be changed
-             * \returns The value of the input but with the indicated bit set to 1
+             * \returns The value of the input but with the indicated bit set to 1; value will match the input if the inputted bit is too large
              */
             template <class type> static type activate_bit(const type &input, const unsigned char &bit) {
                 static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
-                return input | static_cast<type>(std::pow<type, type>(2, bit));
+                return bit > sizeof(input) * 8 - 1 ? input : input | static_cast<type>(std::pow<type, type>(2, bit));
             }
             /** Set the indicated bits of an integral variable to 0 regardless of their original state
              * \tparam type An integral type
              * \param input The starting value
-             * \param bits The bits to deactivate, best inputted as 0x101 (5 as represented by a 3-bit integer) or something similar to easily visualize the bits that will be deactivated
+             * \param bits The bits to deactivate as indicated by a 1, best inputted as 0x101 (5 as represented by a 3-bit integer) or something similar to easily visualize the bits that will be deactivated
              * \returns The value of the input but with the indicated bits set to 0 (essentially input & (bits ^ type_max_value) )
              */
             template <class type> static type deactivate_bits(const type &input, const type &bits) {
                 static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
                 return input & (bits ^ static_cast<type>(std::pow<type, type>(2, sizeof(input) * 8) - 1));    // sizeof(input) * 8 yields amount of bits in input data type, which is then used to find max unsigned value of input data type with 2^bits - 1
+            }
+            /** Set the indicated bits of an integral variable to 0 regardless of their original state
+             * \tparam type An integral type
+             * \param input The starting value
+             * \param starting_bit The bit where the range of bits to deactivate starts (least significant; starts from 0)
+             * \param bit_range Amount of bits within the range to deactivate
+             * \returns The value of the input but with the indicated bits set to 0
+             */
+            template <class type> static type deactivate_bits(const type &input, const unsigned char &starting_bit, const unsigned char &bit_range) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return bengine::bitwise_manipulator::deactivate_bits<type>(input, bengine::bitwise_manipulator::bit_range_to_value<type>(starting_bit, bit_range));
             }
             /** Set the indicated bit of an integral variable to a 0 regardless of its original state
              * \tparam type An integral type
@@ -524,6 +557,63 @@ namespace bengine {
             template <class type> static type deactivate_bit(const type &input, const unsigned char &bit) {
                 static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
                 return bengine::bitwise_manipulator::deactivate_bits<type>(input, bengine::bitwise_manipulator::activate_bit<type>(0, bit));
+            }
+
+            /** Check whether a specified set of bits are true or not
+             * \tparam type An integral type
+             * \param source Set of bits to check the state of
+             * \param bits The bits to check
+             */
+            template <class type> static bool check_for_activated_bits(const type &source, const type &bits) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                return (source & bits) == bits;
+            }
+            /** Get whether a particular bit of a source variable is set to a 0 or 1
+             * \tparam type An integral type
+             * \param source The source value to analyze
+             * \param bit The bit to read the value of
+             * \returns Whether the designated bit is a 0 (false) or 1 (true); returns false if the inputted bit is too large for the given data type
+             */
+            template <class type> static bool get_bit_state(const type &source, const unsigned char &bit) {
+                static_assert(std::is_integral<type>::value, "Template type \"type\" must be an integral type (int, long, unsigned char, etc)");
+                const unsigned char max_bitshift = sizeof(source) * 8 - 1;
+                return bit > max_bitshift ? false : static_cast<type>(source << (max_bitshift - bit)) >> max_bitshift;
+            }
+
+            /** Extract a set of bits held within a larger set as a "subvalue" of the full value
+             * 
+             * As an example: A subvalue of the 8-bit integer 0x00010011 (19) could be described by a start of 3 and a range of 5 to yield the 5-bit integer 0x00010 (2)
+             * 
+             * \tparam value_type An integral type
+             * \tparam subvalue_type An integral type for the subvalue (typically smaller than value_type size-wise)
+             * \param value The larger value to extract a subvalue from
+             * \param subvalue_start The bit where the subvalue starts (least significant; starts from 0)
+             * \param subvalue_range Amount of bits that the subvalue has
+             * \returns A subvalue of value as represented by a set of bits from value
+             */
+            template <class value_type, class subvalue_type = value_type> static subvalue_type get_subvalue(const value_type &value, const unsigned char &subvalue_start, const unsigned char &subvalue_range) {
+                static_assert(std::is_integral<value_type>::value, "Template type \"value_type\" must be an integral type (int, long, unsigned char, etc)");
+                static_assert(std::is_integral<subvalue_type>::value, "Template type \"subvalue_type\" must be an integral type (int, long, unsigned char, etc)");
+                const unsigned char max_bitshift = sizeof(value) * 8 - 1 - subvalue_range;
+                return static_cast<subvalue_type>(static_cast<value_type>(value << (max_bitshift - subvalue_start)) >> max_bitshift);
+            }
+
+            /** Set a set of bits held within a larger set as a "subvalue" of the full value to a new "subvalue"
+             * 
+             * As an example: Setting the subvalue described by a start of 0, a range of 4, and the value of 0x1001 (9) of the 8-bit integer 0x0110011 (51) changes said integer to 0x0111001 (57) 
+             * 
+             * \tparam value_type An integral type
+             * \tparam subvalue_type An integral type for the subvalue (typically smaller than value_type size-wise)
+             * \param value The larger value containing a subvalue to be changed
+             * \param subvalue The new subvalue for the main value to have imprinted on it
+             * \param subvalue_start The bit where the subvalue starts (least significant; starts from 0)
+             * \param subvalue_range Amount of bits that the subvalue has
+             * \returns The inputted value but with the subvalue imprinted to it at the designated bitwise location
+             */
+            template <class value_type, class subvalue_type = value_type> static value_type set_subvalue(const value_type &value, const subvalue_type &subvalue, const unsigned char &subvalue_start, const unsigned char &subvalue_range) {
+                static_assert(std::is_integral<value_type>::value, "Template type \"value_type\" must be an integral type (int, long, unsigned char, etc)");
+                static_assert(std::is_integral<subvalue_type>::value, "Template type \"subvalue_type\" must be an integral type (int, long, unsigned char, etc)");
+                return bengine::bitwise_manipulator::activate_bits<value_type>(bengine::bitwise_manipulator::deactivate_bits<value_type>(value, subvalue_start, subvalue_range), static_cast<value_type>(subvalue << subvalue_start));
             }
     };
 
