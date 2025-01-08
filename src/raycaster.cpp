@@ -159,6 +159,8 @@ class raycaster : public bengine::loop {
             int look_right = SDL_SCANCODE_RIGHT;
             int zoom_in = SDL_SCANCODE_UP;
             int zoom_out = SDL_SCANCODE_DOWN;
+            int shrink_fov = SDL_SCANCODE_Q;
+            int grow_fov = SDL_SCANCODE_E;
             int toggle_minimap = SDL_SCANCODE_M;
             int cycle_minimap_position = SDL_SCANCODE_P;
             int toggle_debug_screen = SDL_SCANCODE_F3;
@@ -225,7 +227,7 @@ class raycaster : public bengine::loop {
                             this->visuals_changed = true;
                         }
                         if (this->keystate[this->keybinds.toggle_minimap]) {
-                            if (((Uint8)(this->minimap_settings << 7) >> 7) == 1) {
+                            if (bengine::bitwise_manipulator::get_bit_state<Uint8>(this->minimap_settings, 0)) {
                                 this->minimap_settings = bengine::bitwise_manipulator::deactivate_bits<Uint8>(this->minimap_settings, 1);
                             } else {
                                 this->minimap_settings = bengine::bitwise_manipulator::activate_bits<Uint8>(this->minimap_settings, 1);
@@ -233,7 +235,10 @@ class raycaster : public bengine::loop {
                             this->visuals_changed = true;
                         }
                         if (this->keystate[this->keybinds.cycle_minimap_position]) {
-
+                            this->minimap_settings = bengine::bitwise_manipulator::set_subvalue<Uint8>(this->minimap_settings, (bengine::bitwise_manipulator::get_subvalue<Uint8>(this->minimap_settings, 1, 2) + 1) % 4, 1, 2);
+                            if (bengine::bitwise_manipulator::get_bit_state<Uint8>(this->minimap_settings, 0)) {
+                                this->visuals_changed = true;
+                            }
                         }
                     }
                     break;
@@ -248,11 +253,10 @@ class raycaster : public bengine::loop {
                 const double move_angle = this->calc_move_angle(this->keystate[this->keybinds.move_forwards], this->keystate[this->keybinds.move_backwards], this->keystate[this->keybinds.strafe_left], this->keystate[this->keybinds.strafe_right]) - this->player.get_rotation() - C_PI_2;
                 this->player.move_x(this->player.get_movespeed() * std::cos(move_angle) * this->delta_time);
                 this->player.move_y(-this->player.get_movespeed() * std::sin(move_angle) * this->delta_time);
+                this->hitscanner.set_x_pos(this->player.get_x_pos());
+                this->hitscanner.set_y_pos(this->player.get_y_pos());
                 this->visuals_changed = true;
             }
-            // Temp hitscanner updating
-            this->hitscanner.set_x_pos(this->player.get_x_pos());
-            this->hitscanner.set_y_pos(this->player.get_y_pos());
 
             if (this->keystate[this->keybinds.look_left]) {
                 player.look_cw(this->player.get_look_speed() * this->delta_time);
@@ -264,13 +268,29 @@ class raycaster : public bengine::loop {
                 this->visuals_changed = true;
             }
             if (this->keystate[this->keybinds.zoom_in]) {
-
+                this->player.set_view_distance(this->player.get_view_distance() - this->player.get_zoom_speed() * this->delta_time);
+                if (this->player.get_view_distance() < 1) {
+                    this->player.set_view_distance(1);
+                }
+                this->hitscanner.set_range(this->player.get_view_distance());
+                this->visuals_changed = true;
             } else if (this->keystate[this->keybinds.zoom_out]) {
-
+                this->player.set_view_distance(this->player.get_view_distance() + this->player.get_zoom_speed() * this->delta_time);
+                this->hitscanner.set_range(this->player.get_view_distance());
+                this->visuals_changed = true;
+            }
+            if (this->keystate[this->keybinds.shrink_fov]) {
+                this->player.set_fov(this->player.get_fov() - this->player.get_zoom_speed() * this->delta_time);
+                this->visuals_changed = true;
+            } else if (this->keystate[this->keybinds.grow_fov]) {
+                this->player.set_fov(this->player.get_fov() + this->player.get_zoom_speed() * this->delta_time);
+                this->visuals_changed = true;
             }
 
             for (std::size_t i = 0; i < this->colliders.size(); i++) {
                 if (this->player.fix_collision(this->colliders[i], bengine::basic_collider_2d::fix_mode::MOVE_SELF, true)) {
+                    this->hitscanner.set_x_pos(this->player.get_x_pos());
+                    this->hitscanner.set_y_pos(this->player.get_y_pos());
                     this->visuals_changed = true;
                 }
             }
@@ -313,25 +333,25 @@ class raycaster : public bengine::loop {
             this->hitscanner.set_angle(original_hitscanner_angle);
 
             // Minimap rendering
-            if ((Uint8)(this->minimap_settings << 7) >> 7 == 1) {
+            if (bengine::bitwise_manipulator::get_bit_state<Uint8>(this->minimap_settings, 0)) {
                 const Uint16 minimap_corner_offset = 32;
-                const Uint16 minimap_x_pos = ((Uint8)(this->minimap_settings << 5) >> 6) % 2 == 0 ? minimap_corner_offset : this->window.get_width() - this->minimap_side_length - minimap_corner_offset;
-                const Uint16 minimap_y_pos = (Uint8)(this->minimap_settings << 5) >> 6 <= 1 ? minimap_corner_offset : this->window.get_height() - this->minimap_side_length - minimap_corner_offset;
+                const Uint16 minimap_x_pos = bengine::bitwise_manipulator::get_subvalue<Uint8>(this->minimap_settings, 1, 2) % 2 == 0 ? minimap_corner_offset : this->window.get_width() - this->minimap_side_length - minimap_corner_offset;
+                const Uint16 minimap_y_pos = bengine::bitwise_manipulator::get_subvalue<Uint8>(this->minimap_settings, 1, 2) <= 1 ? minimap_corner_offset : this->window.get_height() - this->minimap_side_length - minimap_corner_offset;
                 
                 const double view_distance = this->player.get_view_distance() * 2 > this->grid.size() || this->player.get_view_distance() * 2 > this->grid.at(0).size() ? std::min(this->grid.size(), this->grid.at(0).size()) / 2 : this->player.get_view_distance();
                 const Uint16 minimap_view_x_pos = this->player.get_x_pos() - view_distance < 0 ? 0 : (this->player.get_x_pos() + view_distance > this->grid.at(0).size() ? (this->grid.at(0).size() - view_distance * 2) * this->minimap_cell_size : (this->player.get_x_pos() - view_distance) * this->minimap_cell_size);
                 const Uint16 minimap_view_y_pos = this->player.get_y_pos() - view_distance < 0 ? 0 : (this->player.get_y_pos() + view_distance > this->grid.size() ? (this->grid.size() - view_distance * 2) * this->minimap_cell_size : (this->player.get_y_pos() - view_distance) * this->minimap_cell_size);
-                const double minimap_scale_factor = this->minimap_side_length / (2 * view_distance * this->minimap_cell_size);
+                const double minimap_scale_factor = this->minimap_side_length / (2 * view_distance * this->minimap_cell_size) * this->minimap_cell_size;
 
                 if (this->player.get_x_pos() < view_distance) {
-                    this->minimap_player.set_x_pos(this->player.get_x_pos() * minimap_scale_factor * this->minimap_cell_size);
+                    this->minimap_player.set_x_pos(this->player.get_x_pos() * minimap_scale_factor);
                 } else if (this->player.get_x_pos() > this->grid.at(0).size() - view_distance) {
-                    this->minimap_player.set_x_pos(this->minimap_side_length - (this->grid.at(0).size() - this->player.get_x_pos()) * minimap_scale_factor * this->minimap_cell_size);
+                    this->minimap_player.set_x_pos(this->minimap_side_length - (this->grid.at(0).size() - this->player.get_x_pos()) * minimap_scale_factor);
                 }
                 if (this->player.get_y_pos() < view_distance) {
-                    this->minimap_player.set_y_pos(this->player.get_y_pos() * minimap_scale_factor * this->minimap_cell_size);
+                    this->minimap_player.set_y_pos(this->player.get_y_pos() * minimap_scale_factor);
                 } else if (this->player.get_y_pos() > this->grid.size() - view_distance) {
-                    this->minimap_player.set_y_pos(this->minimap_side_length - (this->grid.size() - this->player.get_y_pos()) * minimap_scale_factor * this->minimap_cell_size);
+                    this->minimap_player.set_y_pos(this->minimap_side_length - (this->grid.size() - this->player.get_y_pos()) * minimap_scale_factor);
                 }
 
                 this->window.fill_rectangle(minimap_x_pos - this->minimap_side_length / 30, minimap_y_pos - this->minimap_side_length / 30, this->minimap_side_length + this->minimap_side_length / 15, this->minimap_side_length + this->minimap_side_length / 15, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
@@ -340,11 +360,16 @@ class raycaster : public bengine::loop {
 
                 for (std::size_t i = 0; i < raycast_collisions.size(); i++) {
                     if (raycast_collisions.at(i).has_value()) {
-                        this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + (raycast_collisions.at(i).value().get_x_pos() - this->player.get_x_pos()) * this->minimap_cell_size * minimap_scale_factor, minimap_y_pos + minimap_player.get_y_pos() + (raycast_collisions.at(i).value().get_y_pos() - this->player.get_y_pos()) * this->minimap_cell_size * minimap_scale_factor, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::LIGHT_GRAY));
+                        if (minimap_player.get_x_pos() + (raycast_collisions.at(i).value().get_x_pos() - this->player.get_x_pos()) * minimap_scale_factor < 0 || minimap_player.get_x_pos() + (raycast_collisions.at(i).value().get_x_pos() - this->player.get_x_pos()) * minimap_scale_factor > this->minimap_side_length || minimap_player.get_y_pos() + (raycast_collisions.at(i).value().get_y_pos() - this->player.get_y_pos()) * minimap_scale_factor < 0 || minimap_player.get_y_pos() + (raycast_collisions.at(i).value().get_y_pos() - this->player.get_y_pos()) * minimap_scale_factor > this->minimap_side_length) {
+                            const double angle = this->hitscanner.get_angle() - this->player.get_fov() / 2 + i * this->player.get_fov() / this->window.get_width();
+                            this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + view_distance * std::cos(angle) * minimap_scale_factor, minimap_y_pos + minimap_player.get_y_pos() + view_distance * std::sin(angle) * minimap_scale_factor, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::LIGHT_GRAY));
+                        } else {
+                            this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + (raycast_collisions.at(i).value().get_x_pos() - this->player.get_x_pos()) * minimap_scale_factor, minimap_y_pos + minimap_player.get_y_pos() + (raycast_collisions.at(i).value().get_y_pos() - this->player.get_y_pos()) * minimap_scale_factor, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::LIGHT_GRAY));
+                        }
                     } else {
                         if (this->hitscanner.get_range() >= 0) {
                             const double angle = this->hitscanner.get_angle() - this->player.get_fov() / 2 + i * this->player.get_fov() / this->window.get_width();
-                            this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + view_distance * std::cos(angle) * this->minimap_cell_size * minimap_scale_factor, minimap_y_pos + minimap_player.get_y_pos() + view_distance * std::sin(angle) * this->minimap_cell_size * minimap_scale_factor, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
+                            this->window.draw_line(minimap_x_pos + minimap_player.get_x_pos(), minimap_y_pos + minimap_player.get_y_pos(), minimap_x_pos + minimap_player.get_x_pos() + view_distance * std::cos(angle) * minimap_scale_factor, minimap_y_pos + minimap_player.get_y_pos() + view_distance * std::sin(angle) * minimap_scale_factor, bengine::render_window::get_color_from_preset(bengine::render_window::preset_color::DARK_GRAY));
                         }
                     }
                 }
