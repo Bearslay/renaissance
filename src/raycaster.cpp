@@ -134,7 +134,7 @@ class player_raycaster : public player_top_down {
          * \param fov New FOV for the player
          */
         void set_fov(const double &fov) {
-            this->fov = fov <= 0 ? C_0_RIGHT : (fov >= C_2PI ? C_2PI_LEFT : fov);
+            this->fov = fov <= 0 ? C_0_RIGHT : (fov >= C_PI ? C_PI_LEFT : fov);
         }
         void set_view_distance(const double &view_distance) {
             this->view_distance = view_distance < 0 ? 0 : view_distance;
